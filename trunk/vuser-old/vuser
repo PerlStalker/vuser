@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.14 2004-08-16 18:32:45 stewatvireo Exp $
+# $Id: vuser,v 1.15 2004-08-26 20:03:51 perlstalker Exp $
 
 #
 # Configuration
@@ -41,6 +41,7 @@ my $logindomainlist = $cfg{courier}{etc}."/logindomainlist";
 my $makehosteddomains = $cfg{courier}{sbin}."/makehosteddomains";
 my $makeacceptmailfor = $cfg{courier}{sbin}."/makeacceptmailfor";
 my $courier_rc = $cfg{courier}{courier_rc};
+my $couriermlm = $cfg{courier}{bin}.'/couriermlm';
 
 if( 0+$cfg{courier_mysql}{use_authmysql} )
 {
@@ -240,6 +241,7 @@ elsif ($cmd eq 'show')	{ show(@ARGV); }
 elsif ($cmd eq 'alias')	{ alias(@ARGV); }
 elsif ($cmd eq 'domain'){ domain(@ARGV); }
 elsif ($cmd eq 'list')	{ list(@ARGV); }
+elsif ($cmd eq 'mailman') { mailman(@ARGV); }
 elsif ($cmd eq 'help'
        or $cmd eq '-h')	{ help(@ARGV); }
 else			{ help(); }
@@ -314,7 +316,7 @@ sub del
     my ($user, $domain) = $account =~ m/^(\S+?)\@(\S+)$/;
     my $userdir = get_home_directory( $user, $domain );
 
-    $domain = 'default' if not $domain;
+    die "No domain specified\n" if not $domain;
     $domain = lc($domain);
 #     my $XY = substr($user, 0, 2);	# Get the first 2 chars of $user
 
@@ -883,7 +885,7 @@ sub domain_help { help(); }
 
 sub list
 {
-    die "Mailman is not enabled\n" unless $cfg{mailman}{use_mailman};
+    die "couriermlm is not enabled\n" unless $cfg{couriermlm}{enable};
 
     my ($list_cmd, @params) = @_;
 
@@ -893,7 +895,90 @@ sub list
     else			{ list_help(@params); }
 }
 
+# vuser list add foo@domain foo-list|foo-list@domain owner [args ...] 
 sub list_add
+{
+    my ($account, $list_name, $owner, @params) = @_;
+
+    my ($user, $domain) = $account =~ m/^(\S+?)\@(\S+)$/;
+    $list_name =~ m/^$user(-(\S+))?(?:\@$domain)?$/;
+    my $list_ext = $2;
+
+    $domain = lc($domain);
+
+    my $homedir = get_home_directory ($user, $domain);
+    my $listdir = $cfg{couriermlm}{prefix}."-$list_name";
+
+    # We can add lists to new or existing accounts.
+    add($account) unless user_exists($account);
+
+    if (-e "$homedir/$listdir") {
+	die "List directory already exists. Please remove and try again.\n";
+    }
+    system($couriermlm, 'create', "$homedir/$listdir");
+
+    # Now we need to create a bunch of .courier files.
+    my $dot_courier = '.courier';
+    $dot_courier .= "-$list_ext" if $list_ext;
+
+    # .courier-listname - Regular posting
+    open (DOT_COURIER, ">$homedir/$dot_courier")
+	or die "Can't open $dot_courier: $!\n";
+    print DOT_COURIER "|$couriermlm msg $homedir/$listdir\n";
+    close DOT_COURIER;
+
+    # .courier-listname-default - Commands
+    open (DOT_COURIER, ">$homedir/$dot_courier-default")
+	or die "Can't open $dot_courier-default: $!\n";
+    print DOT_COURIER "|$couriermlm ctlmsg $homedir/$listdir\n";
+    close DOT_COURIER;
+
+    # .courier-listname-owner - List owner
+    open (DOT_COURIER, ">$homedir/$dot_courier-owner")
+	or die "Can't open $dot_courier-owner: $!\n";
+    print DOT_COURIER "$owner\n";
+    close DOT_COURIER;
+
+}
+
+sub list_del
+{
+    my ($account, $listname) = @_;
+
+    die "User '$account' doesn't exist.\n" unless user_exists($account);
+
+    my ($user, $domain) = $account =~ m/^(S+?)\@(\S+)$/;
+    $domain = 'default' unless $domain;
+    $domain = lc($domain);
+
+    my $userdir = get_home_directory($user, $domain);
+    my $listdir = $cfg{couriermlm}{prefix}."-$listname";
+
+    $list_name =~ m/^$user(-(\S+))?(?:\@$domain)?$/;
+    my $list_ext = $2;
+    $list_ext = $list_ext ? "-$list_ext" : '';
+
+    system ('rm', '-r', "$userdir/$listdir");
+    unlink ("$userdir/$listdir/.courier$list_ext-default");
+    unlink ("$userdir/$listdir/.courier$list_ext-owner");
+    unlink ("$userdir/$listdir/.courier$list_ext");
+}
+
+sub list_mod {}
+
+sub mailman
+{
+    die "Mailman is not enabled\n" unless $cfg{mailman}{use_mailman};
+
+    my ($list_cmd, @params) = @_;
+
+    if    ($list_cmd eq 'add')	{ mailman_add (@params); }
+    elsif ($list_cmd eq 'del')	{ mailman_del (@params); }
+    elsif ($list_cmd eq 'mod')	{ mailman_mod (@params); }
+    else			{ mailman_help(@params); }
+}
+
+sub mailman_add
 {
     my ($name, $account, $manager, @params) = @_;
     die "No name specified\n" if not $name;
@@ -955,7 +1040,7 @@ sub list_add
     }
 }
 
-sub list_del
+sub mailman_del
 {
     my ($name, $account, @params) = @_;
     die "No name specified\n" if not $name;
@@ -980,7 +1065,7 @@ sub list_del
     die "Problem deleting list: $@" if $@;
 }
 
-sub list_mod
+sub mailman_mod
 {
     my ($name, $account, @params) = @_;
     die "No name specified\n" if not $name;
@@ -1000,7 +1085,7 @@ sub list_mod
     }
 }
 
-sub list_help { help(@_); }
+sub mailman_help { help(@_); }
 
 sub chown_ug
 {
