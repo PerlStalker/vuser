@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.13 2004-08-16 17:56:22 stewatvireo Exp $
+# $Id: vuser,v 1.14 2004-08-16 18:32:45 stewatvireo Exp $
 
 #
 # Configuration
@@ -321,7 +321,11 @@ sub del
     die "User '$account' doesn't exist.\n" unless user_exists($account);
 
     # delete aliases first
-    alias_del($account);
+
+    if( $cfg{courier_mysql}{ALIAS_FIELD} )
+    {
+	alias_del($account);
+    }
 
     system ('rm', '-r', "$userdir");
 
