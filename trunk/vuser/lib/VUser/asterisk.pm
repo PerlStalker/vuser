@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.6 2005-02-07 16:55:32 perlstalker Exp $
+# $Id: asterisk.pm,v 1.7 2005-02-08 04:27:46 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -276,11 +276,11 @@ sub sip_add
 
     $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
 
-    if ($backend{sip}->sip_exists($user{name}, $user{context})) {
+    if ($backends{sip}->sip_exists($user{name}, $user{context})) {
 	die "Can't add SIP user $user{name}\@$user{context}: User exists\n";
     }
 
-    $backend{sip}->sip_add(%user);
+    $backends{sip}->sip_add(%user);
 }
 
 sub sip_del
@@ -289,12 +289,12 @@ sub sip_del
     my $opts = shift;
 
     my %user = ();
-    $user{name} = $otps->{name};
+    $user{name} = $opts->{name};
     $user{context} = $opts->{context};
 
     $user{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
 
-    $backend{sip}->sip_del(%user);
+    $backends{sip}->sip_del(%user);
 }
 
 sub sip_mod
@@ -314,14 +314,14 @@ sub sip_mod
 
     if ($user{newcontext} or $user{newname}) {
 	my ($nname, $ncontext) = ($user{name}, $user{context});
-	$nname = $user{name} if $box{newname};
+	$nname = $user{name} if $user{newname};
 	$ncontext = $user{newcontext} if $user{newcontext};
-	if ($backend{sip}->ext_exists($nname, $ncontext)) {
+	if ($backends{sip}->ext_exists($nname, $ncontext)) {
 	    die "Can't raname SIP userd from $user{name}\@$user{context} to $nname\@$ncontext: SIP user exists\n";
 	}
     }
 
-    $backend{sip}->sip_mod(%user);
+    $backends{sip}->sip_mod(%user);
 }
 
 sub sip_show
@@ -333,32 +333,32 @@ sub sip_show
     my $context = '%';
     my $pretty = 0;
 
-    $name = $opts->{name} if defined($opts->{name});
+    my $name = $opts->{name} if defined($opts->{name});
     $context = $opts->{context} if defined($opts->{context});
     $pretty = 1 if defined ($opts->{pretty});
 
-    my @users = $backend{sip}->sip_get($name, $context);
+    my @users = $backends{sip}->sip_get($name, $context);
 
-    if ($pretty) {
-	printf(  "       Name: %20s Context: %20s\n"
-	        ."     Secret: %20s  VM Box: %20s\n"
-		."%1s Caller ID: %s\n"
-		." IP Address: %20s    Port: %5s Reg. Sec: %s\n"
-		, $user->{name}, $user->{context},
-		$user->{secret}, $user->{mailbox},
-		$user->{restrictcid}? '*' : ' ', $user->{callerid},
-		$user->{ipaddr}, $user->{port}, $user{regseconds}
-		);
-    } else {
-	foreach my $user (@users) {
+    foreach my $user (@users) {
+	if ($pretty) {
+	    printf(  "       Name: %20s Context: %20s\n"
+		     ."     Secret: %20s  VM Box: %20s\n"
+		     ."%1s Caller ID: %s\n"
+		     ." IP Address: %20s    Port: %5s Reg. Sec: %s\n"
+		     , $user->{name}, $user->{context},
+		     $user->{secret}, $user->{mailbox},
+		     $user->{restrictcid}? '*' : ' ', $user->{callerid},
+		     $user->{ipaddr}, $user->{port}, $user->{regseconds}
+		     );
+	} else {
 	    print(join (':', map { $_ = '' unless defined $_ }
 			$user->{qw(name context username secret ipaddr
 				   port regseconds callerid restrictcid
 				   mailbox)}
 			)
 		  );
-	    print "\n";
-	}	
+	}
+	print "\n";
     }
 }
 
@@ -367,7 +367,7 @@ sub sip_write
     my $cfg = shift;
     my $opts = shift;
 
-    my @users = $backend{sip}->sip_get('%', '%');
+    my @users = $backends{sip}->sip_get('%', '%');
 
     unless (open (CONF, $cfg->{Extension_asterisk}{etc}.'/'
 		  .$cfg->{Extension_asterisk}{'sip.conf'})
@@ -388,7 +388,7 @@ sub sip_write
 
 	print CONF "ipaddr=".$user->{ipaddr}."\n" if $user->{ipaddr};
 	print CONF 'port='.$user->{port}."\n" if $user->{port};
-	print CONF 'regseconds='.$user->{regseconds}."\n" if $user->{regseconds);
+	print CONF 'regseconds='.$user->{regseconds}."\n" if $user->{regseconds};
 	print CONF 'callerid='.$user->{callerid}."\n" if $user->{callerid};
 
 	# restrictcid can be 0
@@ -419,13 +419,13 @@ sub ext_add
 
     $ext{priority} = 1 unless defined $ext{priority} and $ext{priority} >= 1;
 
-    if ($backend{ext}->ext_exists($ext{extension},
+    if ($backends{ext}->ext_exists($ext{extension},
 				  $ext{context},
 				  $ext{priority})) {
 	die "Can't add extension $ext{name}\@$ext{context} ($ext{priority}: Extension exists\n";
     }
 
-    $backend{ext}->ext_add(%ext);
+    $backends{ext}->ext_add(%ext);
 }
 
 sub ext_del
@@ -434,12 +434,12 @@ sub ext_del
     my $opts = shift;
 
     my %ext = ();
-    $ext{extension} = $otps->{extension};
+    $ext{extension} = $opts->{extension};
     $ext{context} = $opts->{context};
 
     $ext{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
 
-    $backend{sip}->ext_del(%ext);
+    $backends{sip}->ext_del(%ext);
 }
 
 sub ext_mod
@@ -460,14 +460,14 @@ sub ext_mod
 	my ($next, $ncontext) = ($ext{extension}, $ext{context});
 	$next = $ext{newextension} if $ext{newextension};
 	$ncontext = $ext{newcontext} if $ext{newcontext};
-	$npriority = $ext{priority} if $ext{priority};
+	my $npriority = $ext{priority} if $ext{priority};
 
-	if ($backend{ext}->ext_exists($next, $ncontext, $npriority)) {
+	if ($backends{ext}->ext_exists($next, $ncontext, $npriority)) {
 	    die "Can't raname extension from $ext{extension}\@$ext{context} ($ext{priority} to $next\@$ncontext ($npriority): Extension exists\n";
 	}
     }
 
-    $backend{sip}->sip_mod(%ext);
+    $backends{sip}->sip_mod(%ext);
 }
 
 sub ext_show
@@ -480,12 +480,12 @@ sub ext_show
     my $priority = '%';
     my $pretty = 0;
 
-    $name = $opts->{name} if defined($opts->{name});
+    my $name = $opts->{name} if defined($opts->{name});
     $context = $opts->{context} if defined($opts->{context});
     $priority = $opts->{priority} if defined($opts->{priority});
     $pretty = 1 if defined ($opts->{pretty});
 
-    my @exts = $backend{ext}->ext_get($ext, $context, $priority);
+    my @exts = $backends{ext}->ext_get($ext, $context, $priority);
 
     if ($pretty) {
 	# TODO: Fill this in later
@@ -507,7 +507,7 @@ sub ext_write
     my $opts = shift;
 
     my %exts;
-    foreach my $ext ($backend{ext}->ext_get('%', '%', '%'))
+    foreach my $ext ($backends{ext}->ext_get('%', '%', '%'))
     {
 	if (not exists $exts{$ext->{context}}) {
 	    $exts{$ext->{context}} = [];
@@ -548,17 +548,17 @@ sub vm_add
     my $opts = shift;
 
     my %box = ();
-    for my $item qw(context, mailbox, password, fullname, email, pager, options) {
+    for my $item qw(context mailbox password fullname email pager options) {
 	$box{$item} = $opts->{$item};
     }
 
     $box{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
 
-    if ($backend{vm}->sip_exists($box{mailbox}, $box{context})) {
+    if ($backends{vm}->sip_exists($box{mailbox}, $box{context})) {
 	die "Can't add VM box $box{mailbox}\@$box{context}: VM box exists\n";
     }
 
-    $backend{vm}->vm_add(%box);
+    $backends{vm}->vm_add(%box);
 }
 
 sub vm_del
@@ -567,13 +567,13 @@ sub vm_del
     my $opts = shift;
 
     my %box = ();
-    for my $item qw(context, mailbox, password, fullname, email, pager, options) {
+    for my $item qw(context mailbox password fullname email pager options) {
 	$box{$item} = $opts->{$item};
     }
 
     $box{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
 
-    $backend{vm}->vm_del(%box);
+    $backends{vm}->vm_del(%box);
 }
 
 sub vm_mod
@@ -593,12 +593,12 @@ sub vm_mod
 	my ($nbox, $ncontext) = ($box{mailbox}, $box{context});
 	$nbox = $box{newmailbox} if $box{newmailbox};
 	$ncontext = $box{newcontext} if $box{newcontext};
-	if ($backend{vm}->ext_exists($nbox, $ncontext)) {
+	if ($backends{vm}->ext_exists($nbox, $ncontext)) {
 	    die "Can't raname VM box from $box{mailbox}\@$box{context} to $nbox\@$ncontext: VM box exists\n";
 	}
     }
 
-    $backend{vm}->vm_mod(%box);
+    $backends{vm}->vm_mod(%box);
 
 }
 
@@ -615,7 +615,7 @@ sub vm_show
     $context = $opts->{context} if defined($opts->{context});
     $pretty = 1 if defined $opts->{pretty};
 
-    my @boxes = $backend{vm}->vm_get($box, $context);
+    my @boxes = $backends{vm}->vm_get($box, $context);
 
     if ($pretty) {
 	# TODO: fill this in
@@ -637,7 +637,7 @@ sub vm_write
     my $opts = shift;
 
     my %vms;
-    foreach my $vm ($backend{vm}->vm_get('%', '%'))
+    foreach my $vm ($backends{vm}->vm_get('%', '%'))
     {
 	if (not exists $vms{$vm->{context}}) {
 	    $vms{$vm->{context}} = [];
