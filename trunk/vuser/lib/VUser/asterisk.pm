@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.20 2005-03-08 20:52:21 perlstalker Exp $
+# $Id: asterisk.pm,v 1.21 2005-04-05 20:03:04 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.20 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.21 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -101,6 +101,7 @@ ext_dbpass=secret
 ext_dbhost=localhost
 ext_dbname=asterisk
 ext_dbport=3306
+ext_template=extensions.conf.template
 
 CONFIG
 
@@ -560,29 +561,50 @@ sub ext_write
 	push @{$exts{$ext->{context}}}, $ext;
     }
 
-
-    unless (open (CONF, '>'.$cfg->{Extension_asterisk}{etc}.'/'
+    my $etc = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{etc});
+    unless (open (CONF, '>'.$etc.'/'
 		  .$cfg->{Extension_asterisk}{'extensions.conf'})
 	    ) {
 	die "Can't open ".$cfg->{Extension_asterisk}{etc}.'/'
 	  .$cfg->{Extension_asterisk}{'extentions.conf'}.": $!\n";
     }
 
-    print CONF VUser::ExtLib::edit_warning(';');
+    my $template = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'ext_template'});
 
+    my $extensions = '';
     foreach my $context (keys %exts) {
-	print CONF "[$context]\n";
+	$extensions .= "[$context]\n";
 	foreach my $ext (@{$exts{$context}}) {
 	    next if $ext->{flags} == 0;
-	    print CONF 'exten => '.$ext->{extension};
-	    print CONF ','.$ext->{priority};
-	    print CONF ','.$ext->{application};
-	    print CONF '('.$ext->{args}.')' if defined $ext->{args};
-	    print CONF "\t" unless defined $ext->{args};
-	    print CONF "\t; ".$ext->{descr} if defined $ext->{descr};
-	    print CONF "\n";
+	    $extensions .= 'exten => '.$ext->{extension};
+	    $extensions .= ','.$ext->{priority};
+	    $extensions .= ','.$ext->{application};
+	    $extensions .= '('.$ext->{args}.')' if defined $ext->{args};
+	    $extensions .= "\t" unless defined $ext->{args};
+	    $extensions .= "\t; ".$ext->{descr} if defined $ext->{descr};
+	    $extensions .= "\n";
 	}
-	print CONF "\n";
+        $extensions .= "\n";
+    }
+
+    if ($template) {
+	use Text::Template;
+	my $template = new Text::Template (TYPE => 'FILE',
+					   SOURCE => "$etc/$template"
+					   )
+	    or die "Can't build template: $Text::Template::ERROR";
+	my $vars = {warning => VUser::ExtLib::edit_warning(';'),
+		    extensions => $extensions
+		    };
+	$template->fill_in(OUTPUT => \*CONF,
+			   HASH => $vars,
+			   DELIMITERS => ['<<', '>>']
+			   )
+	    or die "Can't fill out template: $Text::Template::ERROR";
+    } else {
+
+	print CONF VUser::ExtLib::edit_warning(';');
+	print CONF $extensions;
     }
 
     close CONF;
