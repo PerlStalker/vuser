@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.7 2005-02-08 04:27:46 perlstalker Exp $
+# $Id: asterisk.pm,v 1.8 2005-02-09 05:38:14 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -108,8 +108,8 @@ sub init
 	$type =~ s/^\s*(\S+)\s*$/$1/; # Strip whitespace
 
 	if ($type eq 'mysql') {
-	    require asterisk::mysql;
-	    $backends{$backend} = new asterisk::mysql($backend, %cfg);
+	    require VUser::asterisk::mysql;
+	    $backends{$backend} = new VUser::asterisk::mysql($backend, %cfg);
 	} else {
 	    die "Unsupported asterisk backend '$type'.\n";
 	}
@@ -621,11 +621,11 @@ sub vm_show
 	# TODO: fill this in
     } else {
 	foreach my $vmbox (@boxes) {
-	    print (join (':', map { $_ = '' unless defined $_; }
-			 $vmbox->{qw(mailbox context password fullname
-				     email pager options stamp)}
-			 )
-		   );
+	    print(join (':', map { $_ = '' unless defined $_; }
+			$vmbox->{qw(mailbox context password fullname
+				    email pager options stamp)}
+			)
+		  );
 	    print "\n";
 	}
     }

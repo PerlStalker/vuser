@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: mysql.pm,v 1.1 2005-02-09 04:39:08 perlstalker Exp $
+# $Id: mysql.pm,v 1.2 2005-02-09 05:37:52 perlstalker Exp $
 
 use DBI;
 
@@ -41,7 +41,7 @@ sub init
 
     my $port = defined $cfg{Extension_asterisk}{$service.'_dbport'} ?
 	$cfg{Extension_asterisk}{$service.'_dbport'} : 3306;
-    $dsn .= ";port=$port"
+    $dsn .= ";port=$port";
     
     my $user = defined $cfg{Extension_asterisk}{$service.'_dbuser'} ?
 	$cfg{Extension_asterisk}{$service.'_dbuser'} : '';
@@ -145,7 +145,7 @@ sub sip_get
     my $context = shift;
 
     my $sql = 'select * from sipfriends where name like ? and context like ? order by context, name';
-    my $sth = self->{_dbh}->prepare($sql)
+    my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't get SIP user: ".$self->{_dbh}->errstr."\n";
 
     $sth->execute ($user, $context)
@@ -253,7 +253,7 @@ sub ext_get
     my $priority = shift;
 
     my $sql = 'select * from extensions where extention like ? and context like ? and priority like ? order by context,extension,priority';
-    my $sth = self->{_dbh}->prepare($sql)
+    my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't get extension: ".$self->{_dbh}->errstr."\n";
 
     $sth->execute ($ext, $context)
@@ -320,7 +320,7 @@ sub vm_mod
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't change VM box: ".$self->{_dbh}->errstr."\n";
 
-    $sth->execute(@ext{@fields}, $box{newmailbox}, $box{newcontext})
+    $sth->execute(@box{@fields}, $box{newmailbox}, $box{newcontext})
 	or die "Can't change VM box: ".$self->{_dbh}->errstr."\n";
 
     $sth->finish;
@@ -355,7 +355,7 @@ sub vm_get
     my $context = shift;
 
     my $sql = 'select * from users where mailbox like ? and context like ?';
-    my $sth = self->{_dbh}->prepare($sql)
+    my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't get voice mail box: ".$self->{_dbh}->errstr."\n";
 
     $sth->execute ($box, $context)
