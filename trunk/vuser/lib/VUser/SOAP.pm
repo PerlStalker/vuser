@@ -4,11 +4,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.5 2005-03-25 18:19:56 perlstalker Exp $
+# $Id: SOAP.pm,v 1.6 2005-03-25 20:14:29 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
 our $VERSION = $main::VERSION;
 
 our %cfg;
@@ -24,6 +24,14 @@ sub hash_test {
     print "Class: $class\n";
     use Data::Dumper; print Dumper \%hash;
     return 1;
+}
+
+sub do_fault
+{
+    print "Faulting\n";
+    die SOAP::Fault
+	->faultcode('Server.Custom')
+	->faultstring('Oh! The humanity!');
 }
 
 sub AUTOLOAD

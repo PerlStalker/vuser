@@ -7,7 +7,7 @@ use strict;
 use SOAP::Lite;
 
 # Copyright 2005 Mark Bucciarelli
-# $Id: vsoapd.pl,v 1.4 2005-03-25 18:07:09 perlstalker Exp $
+# $Id: vsoapd.pl,v 1.5 2005-03-25 20:14:08 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
@@ -15,7 +15,7 @@ use FindBin;
 use Config::IniFiles;
 use SOAP::Transport::HTTP;
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -33,6 +33,7 @@ use vars qw(@etc_dirs);
 use lib (map { "$_/extensions" } @etc_dirs);
 use lib (map { "$_/lib" } @etc_dirs);
 
+use VUser::ExtHandler;
 use VUser::SOAP;
 
 my $config_file;
