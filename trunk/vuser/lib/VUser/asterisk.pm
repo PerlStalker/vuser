@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.10 2005-02-09 21:54:57 perlstalker Exp $
+# $Id: asterisk.pm,v 1.11 2005-02-14 16:57:58 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.11 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -123,7 +123,7 @@ sub init
 
     # SIP-add
     $eh->register_action('sip', 'add');
-    $eh->register_option('sip', 'add', 'name', '=s');
+    $eh->register_option('sip', 'add', 'name', '=s', 1);
     $eh->register_option('sip', 'add', 'username', '=s');
     $eh->register_option('sip', 'add', 'secret', '=s');
     $eh->register_option('sip', 'add', 'context', '=s');
@@ -137,13 +137,13 @@ sub init
 
     # SIP-del
     $eh->register_action('sip', 'del');
-    $eh->register_option('sip', 'del', 'name', '=s');
+    $eh->register_option('sip', 'del', 'name', '=s', 1);
     $eh->register_option('sip', 'del', 'context', '=s');
     $eh->register_task('sip', 'del', \&sip_del, 0);
 
     # SIP-mod
     $eh->register_action('sip', 'mod');
-    $eh->register_option('sip', 'mod', 'name', '=s');
+    $eh->register_option('sip', 'mod', 'name', '=s', 1);
     $eh->register_option('sip', 'mod', 'username', '=s');
     $eh->register_option('sip', 'mod', 'secret', '=s');
     $eh->register_option('sip', 'mod', 'context', '=s');
@@ -176,7 +176,7 @@ sub init
     # Ext-add
     $eh->register_action('ext', 'add');
     $eh->register_option('ext', 'add', 'context', '=s');
-    $eh->register_option('ext', 'add', 'extension', '=s');
+    $eh->register_option('ext', 'add', 'extension', '=s', 1);
     $eh->register_option('ext', 'add', 'priority', '=i');
     $eh->register_option('ext', 'add', 'application', '=s');
     $eh->register_option('ext', 'add', 'args', '=s');
@@ -186,15 +186,15 @@ sub init
     
     # Ext-del
     $eh->register_action('ext', 'del');
-    $eh->register_option('ext', 'del', 'context', '=s');   # required
-    $eh->register_option('ext', 'del', 'extension', '=s'); # required
+    $eh->register_option('ext', 'del', 'context', '=s');   # optional
+    $eh->register_option('ext', 'del', 'extension', '=s', 1); # required
     $eh->register_option('ext', 'del', 'priority', '=i');  # optional
     $eh->register_task('ext', 'del', \&ext_del, 0);
 
     # Ext-mod
     $eh->register_action('ext', 'mod');
     $eh->register_option('ext', 'mod', 'context', '=s');
-    $eh->register_option('ext', 'mod', 'extension', '=s');
+    $eh->register_option('ext', 'mod', 'extension', '=s', 1);
     $eh->register_option('ext', 'mod', 'priority', '=i');
     $eh->register_option('ext', 'mod', 'application', '=s');
     $eh->register_option('ext', 'mod', 'args', '=s');
@@ -202,6 +202,7 @@ sub init
     $eh->register_option('ext', 'mod', 'flags', '=i');
     $eh->register_option('ext', 'mod', 'newcontext', '=s');
     $eh->register_option('ext', 'mod', 'newext', '=s');
+    $eh->register_option('ext', 'mod', 'newpriority', '=i');
     $eh->register_task('ext', 'mod', \&ext_mod, 0);
 
     # Ext-show
@@ -218,34 +219,38 @@ sub init
     # VM-add
     $eh->register_action('vm', 'add');
     $eh->register_option('vm', 'add', 'context', '=s');
-    $eh->register_option('vm', 'add', 'mailbox', '=s');
+    $eh->register_option('vm', 'add', 'mailbox', '=s', 1);
     $eh->register_option('vm', 'add', 'password', '=s');
     $eh->register_option('vm', 'add', 'fullname', '=s');
     $eh->register_option('vm', 'add', 'email', '=s');
     $eh->register_option('vm', 'add', 'pager', '=s');
     $eh->register_option('vm', 'add', 'options', '=s');
     $eh->register_task('vm', 'add', \&vm_add, 0);
+    $eh->register_task('vm', 'add', \&vm_create_box, 10);
 
     # VM-del
     $eh->register_action('vm', 'del');
     $eh->register_option('vm', 'del', 'context', '=s');
-    $eh->register_option('vm', 'del', 'mailbox', '=s');
+    $eh->register_option('vm', 'del', 'mailbox', '=s', 1);
     $eh->register_task('vm', 'del', \&vm_del, 0);
+    $eh->register_task('vm', 'del', \&vm_rm_box, 10);
 
     # VM-mod
     $eh->register_action('vm', 'mod');
     $eh->register_option('vm', 'mod', 'context', '=s');
-    $eh->register_option('vm', 'mod', 'mailbox', '=s');
+    $eh->register_option('vm', 'mod', 'mailbox', '=s', 1);
     $eh->register_option('vm', 'mod', 'password', '=s');
     $eh->register_option('vm', 'mod', 'fullname', '=s');
     $eh->register_option('vm', 'mod', 'email', '=s');
     $eh->register_option('vm', 'mod', 'pager', '=s');
     $eh->register_option('vm', 'mod', 'options', '=s');
+    $eh->register_option('vm', 'mod', 'newmailbox', '=s');
+    $eh->register_option('vm', 'mod', 'newcontext', '=s');
     $eh->register_task('vm', 'mod', \&vm_mod, 0);
 
     # VM-show
     $eh->register_action('vm', 'show');
-    $eh->register_option('vm', 'show', 'name', '=s');
+    $eh->register_option('vm', 'show', 'mailbox', '=s');
     $eh->register_option('vm', 'show', 'context', '=s');
     $eh->register_option('vm', 'show', 'pretty', '');
     $eh->register_task('vm', 'show', \&vm_show, 0);
@@ -253,6 +258,8 @@ sub init
     # Asterisk control
     $eh->register_keyword('asterisk');
     $eh->register_action('asterisk', 'write');   # force a write
+    $eh->register_task('asterisk', 'write', \&asterisk_write);
+
     $eh->register_action('asterisk', 'restart'); # force a restart
 }
 
@@ -278,6 +285,14 @@ sub sip_add
 
     $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
 
+    $user{secret} = VUser::ExtLib::generate_password unless $user{secret};
+    $user{regseconds} = 0 if not defined $user{regseconds};
+    $user{restrictcid} = 1 if not defined $user{restrictcid};
+    $user{port} = 0 unless defined $user{port};
+    $user{callerid} = '' unless defined $user{callerid};
+    $user{mailbox} = '' unless defined $user{mailbox};
+    $user{ipaddr} = 'dynamic' unless defined $user{ipaddr};
+
     if ($backends{sip}->sip_exists($user{name}, $user{context})) {
 	die "Can't add SIP user $user{name}\@$user{context}: User exists\n";
     }
@@ -294,7 +309,7 @@ sub sip_del
     $user{name} = $opts->{name};
     $user{context} = $opts->{context};
 
-    $user{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
+    $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
 
     $backends{sip}->sip_del(%user);
 }
@@ -312,14 +327,14 @@ sub sip_mod
 	$user{$item} = $opts->{$item};
     }
 
-    $user{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
+    $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
 
     if ($user{newcontext} or $user{newname}) {
 	my ($nname, $ncontext) = ($user{name}, $user{context});
-	$nname = $user{name} if $user{newname};
+	$nname = $user{newname} if $user{newname};
 	$ncontext = $user{newcontext} if $user{newcontext};
-	if ($backends{sip}->ext_exists($nname, $ncontext)) {
-	    die "Can't raname SIP userd from $user{name}\@$user{context} to $nname\@$ncontext: SIP user exists\n";
+	if ($backends{sip}->sip_exists($nname, $ncontext)) {
+	    die "Can't raname SIP user from $user{name}\@$user{context} to $nname\@$ncontext: SIP user exists\n";
 	}
     }
 
@@ -371,12 +386,14 @@ sub sip_write
 
     my @users = $backends{sip}->sip_get('%', '%');
 
-    unless (open (CONF, $cfg->{Extension_asterisk}{etc}.'/'
+    unless (open (CONF, '>'.$cfg->{Extension_asterisk}{etc}.'/'
 		  .$cfg->{Extension_asterisk}{'sip.conf'})
 	    ) {
 	die "Can't open ".$cfg->{Extension_asterisk}{etc}.'/'
 	  .$cfg->{Extension_asterisk}{'sip.conf'}.": $!\n";
     }
+
+    print CONF VUser::ExtLib::edit_warning(';');
 
     foreach my $user (@users) {
 	print CONF '['.$user->{name}."]\n";
@@ -417,7 +434,9 @@ sub ext_add
 	$ext{$item} = $opts->{$item};
     }
 
-    $ext{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+    $ext{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+    $ext{flags} = 1 unless defined $ext{flags};
+    $ext{application} = '' unless defined $ext{application};
 
     $ext{priority} = 1 unless defined $ext{priority} and $ext{priority} >= 1;
 
@@ -438,8 +457,10 @@ sub ext_del
     my %ext = ();
     $ext{extension} = $opts->{extension};
     $ext{context} = $opts->{context};
+    $ext{priority} = $opts->{priority};
 
-    $ext{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+    $ext{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+    $ext{priority} = 1 unless defined $ext{priority};
 
     $backends{sip}->ext_del(%ext);
 }
@@ -456,20 +477,21 @@ sub ext_mod
 	$ext{$item} = $opts->{$item};
     }
 
-    $ext{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+    $ext{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+    $ext{flags} = 1 unless defined $ext{flags};
 
     if ($ext{newcontext} or $ext{newextension} or $ext{newpriority}) {
 	my ($next, $ncontext) = ($ext{extension}, $ext{context});
 	$next = $ext{newextension} if $ext{newextension};
 	$ncontext = $ext{newcontext} if $ext{newcontext};
-	my $npriority = $ext{priority} if $ext{priority};
+	my $npriority = $ext{newpriority} if $ext{newpriority};
 
 	if ($backends{ext}->ext_exists($next, $ncontext, $npriority)) {
 	    die "Can't raname extension from $ext{extension}\@$ext{context} ($ext{priority} to $next\@$ncontext ($npriority): Extension exists\n";
 	}
     }
 
-    $backends{sip}->sip_mod(%ext);
+    $backends{sip}->ext_mod(%ext);
 }
 
 sub ext_show
@@ -493,7 +515,7 @@ sub ext_show
 	# TODO: Fill this in later
     } else {
 	foreach my $exten (@exts) {
-	    print( join (':', map { $_ = '' unless defined $_; }
+	    print( join (':', map { $_ = '' unless defined $_; $_; }
 			 @{$exten}{qw(extension context priority
 				      application args descr flags)}
 			 )
@@ -519,17 +541,19 @@ sub ext_write
     }
 
 
-    unless (open (CONF, $cfg->{Extension_asterisk}{etc}.'/'
-		  .$cfg->{Extension_asterisk}{'extenstions.conf'})
+    unless (open (CONF, '>'.$cfg->{Extension_asterisk}{etc}.'/'
+		  .$cfg->{Extension_asterisk}{'extensions.conf'})
 	    ) {
 	die "Can't open ".$cfg->{Extension_asterisk}{etc}.'/'
 	  .$cfg->{Extension_asterisk}{'extentions.conf'}.": $!\n";
     }
 
+    print CONF VUser::ExtLib::edit_warning(';');
+
     foreach my $context (keys %exts) {
 	print CONF "[$context]\n";
 	foreach my $ext (@{$exts{$context}}) {
-	    next if $ext->{flags} == 1;
+	    next if $ext->{flags} == 0;
 	    print CONF 'exten => '.$ext->{extension};
 	    print CONF ','.$ext->{priority};
 	    print CONF ','.$ext->{application};
@@ -554,13 +578,53 @@ sub vm_add
 	$box{$item} = $opts->{$item};
     }
 
-    $box{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
+    $box{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
+    $box{password} = VUser::ExtLib::generate_password(4, (0..9))
+	unless $box{password};
+    $box{email} = '' unless $box{email};
+    $box{pager} = '' unless $box{pager};
+    $box{options} = '' unless $box{options};
+    $box{fullname} = '' unless $box{fullname};
 
     if ($backends{vm}->sip_exists($box{mailbox}, $box{context})) {
 	die "Can't add VM box $box{mailbox}\@$box{context}: VM box exists\n";
     }
 
     $backends{vm}->vm_add(%box);
+}
+
+sub vm_create_box
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $spool = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm spool'});
+    my $sounds = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm sounds'});
+    my $vm_user = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm user'});
+    my $vm_group = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm group'});
+
+    my %box = ();
+    for my $item qw(context mailbox password fullname email pager options) {
+	$box{$item} = $opts->{$item};
+    }
+
+    $box{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
+
+    VUser::ExtLib::mkdir_p ("$spool/$box{context}/$box{mailbox}",
+			    0755, $vm_user, $vm_group);
+
+    # Adapted from addmailbox from the asterisk package
+    `cat $sounds/vm-theperson.gsm > $spool/$box{context}/$box{mailbox}/unavail.gsm`;
+    `cat $sounds/vm-theperson.gsm > $spool/$box{context}/$box{mailbox}/busy.gsm`;
+    `cat $sounds/vm-extension.gsm > $spool/$box{context}/$box{mailbox}/greet.gsm`;
+    my @nums = split '', $box{mailbox};
+    foreach my $num (@nums) {
+	`cat $sounds/digits/$num.gsm >> $spool/$box{context}/$box{mailbox}/unavail.gsm`;
+	`cat $sounds/digits/$num.gsm >> $spool/$box{context}/$box{mailbox}/busy.gsm`;
+	`cat $sounds/digits/$num.gsm >> $spool/$box{context}/$box{mailbox}/greet.gsm`;
+    }
+    `cat $sounds/vm-isunavail.gsm >> $spool/$box{context}/$box{mailbox}/unavail.gsm`;
+    `cat $sounds/vm-isonphone.gsm >> $spool/$box{context}/$box{mailbox}/busy.gsm`;
 }
 
 sub vm_del
@@ -573,9 +637,26 @@ sub vm_del
 	$box{$item} = $opts->{$item};
     }
 
-    $box{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
+    $box{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
 
     $backends{vm}->vm_del(%box);
+}
+
+sub vm_rm_box
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $spool = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm spool'});
+    my %box = ();
+    for my $item qw(context mailbox password fullname email pager options) {
+	$box{$item} = $opts->{$item};
+    }
+
+    $box{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
+
+    eval { VUser::ExtLib::rm_r("$spool/$box{context}/$box{mailbox}") };
+    die "$@\n" if $@;
 }
 
 sub vm_mod
@@ -589,7 +670,7 @@ sub vm_mod
 	$box{$item} = $opts->{$item};
     }
 
-    $box{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
+    $box{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
 
     if ($box{newcontext} or $box{newmailbox}) {
 	my ($nbox, $ncontext) = ($box{mailbox}, $box{context});
@@ -598,6 +679,10 @@ sub vm_mod
 	if ($backends{vm}->ext_exists($nbox, $ncontext)) {
 	    die "Can't raname VM box from $box{mailbox}\@$box{context} to $nbox\@$ncontext: VM box exists\n";
 	}
+
+	# We need to rename the mailbox.
+	my $spool = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm spool'});
+	VUser::ExtLib::mkdir_p("$spool/$ncontext", 0755);
     }
 
     $backends{vm}->vm_mod(%box);
@@ -623,7 +708,7 @@ sub vm_show
 	# TODO: fill this in
     } else {
 	foreach my $vmbox (@boxes) {
-	    print(join (':', map { $_ = '' unless defined $_; }
+	    print(join (':', map { $_ = '' unless defined $_; $_;}
 			@{$vmbox}{qw(mailbox context password fullname
 				     email pager options stamp)}
 			)
@@ -648,12 +733,14 @@ sub vm_write
 	push @{$vms{$vm->{context}}}, $vm;
     }
 
-    unless (open (CONF, $cfg->{Extension_asterisk}{etc}.'/'
+    unless (open (CONF, '>'.$cfg->{Extension_asterisk}{etc}.'/'
 		  .$cfg->{Extension_asterisk}{'voicemail.conf'})
 	    ) {
 	die "Can't open ".$cfg->{Extension_asterisk}{etc}.'/'
 	  .$cfg->{Extension_asterisk}{'voicemail.conf'}.": $!\n";
     }
+
+    print CONF VUser::ExtLib::edit_warning(';');
 
     foreach my $context (keys %vms) {
 	print CONF "[$context]\n";
@@ -662,13 +749,21 @@ sub vm_write
 	    print CONF ','.$vm->{fullname};
 	    print CONF ','.$vm->{email};
 	    print CONF ','.$vm->{pager};
-	    print CONF ','.$vm->{options};
+	    print CONF ','.$vm->{options} if $vm->{options};
 	    print CONF "\n";
 	}
 	print CONF "\n";
     }
 
     close CONF;
+}
+
+sub asterisk_write
+{
+    sip_write(@_);
+#    iax_write(@_);
+    ext_write(@_);
+    vm_write(@_);
 }
 
 1;
