@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: mysql.pm,v 1.2 2005-02-09 05:37:52 perlstalker Exp $
+# $Id: mysql.pm,v 1.3 2005-02-14 16:58:45 perlstalker Exp $
 
 use DBI;
 
@@ -105,13 +105,17 @@ sub sip_mod
     my @fields = grep { ! /^new/; } keys %user; # to keep keys in same order.
 
     my $sql = "update sipfriends set ";
-    $sql .= join ', ', map { "$_ = ?"; } @fields;
+    $sql .= " name = ".$self->{_dbh}->quote($user{newname}? $user{newname}:$user{name});
+    $sql .= ", context = ".$self->{_dbh}->quote($user{newcontext}? $user{newcontext}:$user{context});
+    foreach my $opt qw(username secret ipaddr port regseconds callerid restrictcid mailbox) {
+	$sql .= ", $opt = ".$self->{_dbh}->quote($user{$opt}) if defined $user{$opt};
+    }
     $sql .= ' where name = ? and context = ?';
 
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't change SIP user: ".$self->{_dbh}->errstr."\n";
 
-    $sth->execute(@user{@fields}, $user{newname}, $user{newcontext})
+    $sth->execute($user{name}, $user{context})
 	or die "Can't change SIP user: ".$self->{_dbh}->errstr."\n";
 
     $sth->finish;
@@ -193,12 +197,12 @@ sub ext_del
     my $self = shift;
     my %ext = @_;
 
-    my $sql = "delete from extensions where extension = ? and context = ?";
+    my $sql = "delete from extensions where extension = ? and context = ? and priority = ?";
 
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't delete extension: ".$self->{_dbh}->errstr."\n";
 
-    $sth->execute($ext{extension}, $ext{context})
+    $sth->execute($ext{extension}, $ext{context}, $ext{priority})
 	or die "Can't delete extension: ".$self->{_dbh}->errstr."\n";
 
     $sth->finish;
@@ -212,12 +216,19 @@ sub ext_mod
     my @fields = grep { ! /^new/; } keys %ext; # to keep keys in same order.
 
     my $sql = "update extensions set ";
-    $sql .= join ', ', map { "$_ = ?"; } @fields;
-    $sql .= ' where extension = ? and context = ?';
+    $sql .= " extension = ".$self->{_dbh}->quote($ext{newextension}? $ext{newextension}:$ext{extension});
+    $sql .= ", context = ".$self->{_dbh}->quote($ext{newcontext}? $ext{newcontext}:$ext{context});
+    $sql .= ", priority = ".$self->{_dbh}->quote($ext{newpriority}? $ext{newpriority}:$ext{priority});
+
+    foreach my $opt qw(application args descr flags) {
+	$sql .= ", $opt = ".$self->{_dbh}->quote($ext{$opt}) if defined $ext{$opt};
+    }
+    $sql .= ' where extension = ? and context = ? and priority = ?';
+
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't change extension: ".$self->{_dbh}->errstr."\n";
 
-    $sth->execute(@ext{@fields}, $ext{newext}, $ext{newcontext})
+    $sth->execute($ext{extension}, $ext{context}, $ext{priority})
 	or die "Can't change extension: ".$self->{_dbh}->errstr."\n";
 
     $sth->finish;
@@ -230,7 +241,7 @@ sub ext_exists
     my $context = shift;
     my $priority = shift;
 
-    my $sql = 'select name, context from extensions where extensions = ? and context = ? and priority = ?';
+    my $sql = 'select extension, context, priority from extensions where extension = ? and context = ? and priority = ?';
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't find extension: ".$self->{_dbh}->errstr."\n";
 
@@ -252,11 +263,11 @@ sub ext_get
     my $context = shift;
     my $priority = shift;
 
-    my $sql = 'select * from extensions where extention like ? and context like ? and priority like ? order by context,extension,priority';
+    my $sql = 'select * from extensions where extension like ? and context like ? and priority like ? order by context,extension,priority';
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't get extension: ".$self->{_dbh}->errstr."\n";
 
-    $sth->execute ($ext, $context)
+    $sth->execute ($ext, $context, $priority)
 	or die "Can't get extension: ".$sth->errstr."\n";
 
     my @exts = ();
@@ -299,7 +310,7 @@ sub vm_del
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't delete voice mail box: ".$self->{_dbh}->errstr."\n";
 
-    $sth->execute($box{extension}, $box{context})
+    $sth->execute($box{mailbox}, $box{context})
 	or die "Can't delete voice mail box: ".$self->{_dbh}->errstr."\n";
 
     $sth->finish;
@@ -314,13 +325,20 @@ sub vm_mod
     my @fields = grep { ! /^new/; } keys %box; # to keep keys in same order.
 
     my $sql = "update users set ";
-    $sql .= join ', ', map { "$_ = ?"; } @fields;
+
+    $sql .= " mailbox = ".$self->{_dbh}->quote($box{newmailbox}?$box{newmailbox}:$box{mailbox});
+    $sql .= ", context = ".$self->{_dbh}->quote($box{newcontext}?$box{newcontext}:$box{context});
+
+    foreach my $opt qw(password fullname email pager options) {
+	$sql .= ", $opt = ".$self->{_dbh}->quote($box{$opt}) if defined $box{$opt};
+    }
+
     $sql .= ' where mailbox = ? and context = ?';
 
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't change VM box: ".$self->{_dbh}->errstr."\n";
 
-    $sth->execute(@box{@fields}, $box{newmailbox}, $box{newcontext})
+    $sth->execute($box{mailbox}, $box{context})
 	or die "Can't change VM box: ".$self->{_dbh}->errstr."\n";
 
     $sth->finish;
