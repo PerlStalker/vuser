@@ -16,6 +16,9 @@ courier_rc=/usr/local/etc/rc.d/courier.sh
 # the location of the makehosteddomains/makeacceptmailfor/etc scrpits
 sbin=/usr/sbin
 
+# The location if couriermlm, etc.
+bin=/usr/bin
+
 # the default maildir quota for new users
 quota=20000000S
 
@@ -52,12 +55,20 @@ CRYPT_PWFIELD=
 CLEAR_PWFIELD=
 UID_FIELD=
 GID_FIELD=
-LOGIN_FIELD=x
+LOGIN_FIELD=
 HOME_FIELD=
 NAME_FIELD=
 MAILDIR_FIELD=
 QUOTA_FIELD=
 ALIAS_FIELD=aliasfor
+
+[couriermlm]
+# Enable couriermlm lists.
+enable=0
+
+# dir prefix - This will be used to create a directory in the account's
+# home dir named 'prefix-listname'
+prefix=list
 
 [spamassassin]
 
