@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.14 2005-02-09 05:09:58 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.15 2005-02-09 17:08:50 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.14 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.15 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -70,6 +70,7 @@ sub register_option
     my $type = shift;
     my $required = shift;
 
+    print STDERR "Reg Opt: $keyword|$action $option $type ", $required?'Req':'',"\n" if $main::DEBUG >= 2;
     unless (exists $self->{keywords}{$keyword}) {
 	die "Unable to register option on unknown keyword '$keyword'.\n";
     }
@@ -149,9 +150,14 @@ sub load_extensions
     my $self = shift;
     my %cfg = @_;
 
+    print STDERR "Loading CORE\n" if $main::DEBUG >= 1;
     $self->load_extension('VUser::CORE');
-    foreach my $extension (split( / /, VUser::ExtLib::strip_ws($cfg{ vuser }{ extensions }) ) )
+    my $exts = $cfg{ vuser }{ extensions };
+    $exts = '' unless $exts;
+    VUser::ExtLib::strip_ws($exts);
+    foreach my $extension (split( / /, $exts))
     {
+	print STDERR "Loading $extension\n" if $main::DEBUG >= 1;
 	eval { $self->load_extension( "VUser::$extension", %cfg); };
 	warn "Unable to load $extension: $@\n" if $@;
     }
@@ -186,8 +192,11 @@ sub unload_extensions
     my $self = shift;
     my %cfg = @_;
 
-    $self->load_extension('VUser::CORE');
-    foreach my $extension (split( / /, VUser::ExtLib::strip_ws($cfg{ vuser }{ extensions }) ) )
+    $self->unload_extension('VUser::CORE');
+    my $exts = $cfg{ vuser }{ extensions };
+    $exts = '' unless $exts;
+    VUser::ExtLib::strip_ws($exts);
+    foreach my $extension (split( / /, $exts))
     {
 	eval { $self->unload_extension( "VUser::$extension", %cfg); };
 	warn "Unable to unload $extension: $@\n" if $@;
@@ -200,6 +209,7 @@ sub unload_extension
     my $ext = shift;
     my %cfg = @_;
 
+    no strict ('refs');
     &{$ext.'::unload'}($self, %cfg);
 }
 
