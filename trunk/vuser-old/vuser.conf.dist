@@ -59,7 +59,7 @@ ALIAS_FIELD=aliasfor
 [spamassassin]
 
 use_sa=0
-conf=/usr/local/etc/mail/spamassassin/local.cf
+sa_conf=/usr/local/etc/mail/spamassassin/local.cf
 
 sql_database=
 sql_username=
