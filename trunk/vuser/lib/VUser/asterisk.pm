@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.8 2005-02-09 05:38:14 perlstalker Exp $
+# $Id: asterisk.pm,v 1.9 2005-02-09 17:16:29 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -255,6 +255,8 @@ sub init
     $eh->register_action('asterisk', 'write');   # force a write
     $eh->register_action('asterisk', 'restart'); # force a restart
 }
+
+sub unload { }
 
 sub sip_add
 {
