@@ -2,18 +2,18 @@
 
 use warnings;
 
-#use strict; 
-use SOAP::Lite +trace; 
+use strict; 
+use SOAP::Lite ('trace'); 
 
 # Copyright 2005 Mark Bucciarelli
-# $Id: vsoapd.pl,v 1.1 2005-03-21 23:42:40 mbucc Exp $
+# $Id: vsoapd.pl,v 1.2 2005-03-23 21:58:29 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
