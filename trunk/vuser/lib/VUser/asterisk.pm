@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.9 2005-02-09 17:16:29 perlstalker Exp $
+# $Id: asterisk.pm,v 1.10 2005-02-09 21:54:57 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -248,7 +248,7 @@ sub init
     $eh->register_option('vm', 'show', 'name', '=s');
     $eh->register_option('vm', 'show', 'context', '=s');
     $eh->register_option('vm', 'show', 'pretty', '');
-    $eh->register_task('vm', 'show', \&sip_show, 0);
+    $eh->register_task('vm', 'show', \&vm_show, 0);
 
     # Asterisk control
     $eh->register_keyword('asterisk');
@@ -331,11 +331,11 @@ sub sip_show
     my $cfg = shift;
     my $opts = shift;
 
-    my $user = '%';
+    my $name = '%';
     my $context = '%';
     my $pretty = 0;
 
-    my $name = $opts->{name} if defined($opts->{name});
+    $name = $opts->{name} if defined($opts->{name});
     $context = $opts->{context} if defined($opts->{context});
     $pretty = 1 if defined ($opts->{pretty});
 
@@ -353,14 +353,14 @@ sub sip_show
 		     $user->{ipaddr}, $user->{port}, $user->{regseconds}
 		     );
 	} else {
-	    print(join (':', map { $_ = '' unless defined $_ }
-			$user->{qw(name context username secret ipaddr
-				   port regseconds callerid restrictcid
-				   mailbox)}
+	    print(join (':', map { $_ = '' unless defined $_; $_; }	
+			@{$user}{qw(name context username secret ipaddr
+				    port regseconds callerid restrictcid
+				    mailbox)}
 			)
 		  );
+	    print "\n";
 	}
-	print "\n";
     }
 }
 
@@ -494,8 +494,8 @@ sub ext_show
     } else {
 	foreach my $exten (@exts) {
 	    print( join (':', map { $_ = '' unless defined $_; }
-			 $exten->{qw(extension context priority
-				     application args descr flags)}
+			 @{$exten}{qw(extension context priority
+				      application args descr flags)}
 			 )
 		   );
 	    print "\n";
@@ -624,8 +624,8 @@ sub vm_show
     } else {
 	foreach my $vmbox (@boxes) {
 	    print(join (':', map { $_ = '' unless defined $_; }
-			$vmbox->{qw(mailbox context password fullname
-				    email pager options stamp)}
+			@{$vmbox}{qw(mailbox context password fullname
+				     email pager options stamp)}
 			)
 		  );
 	    print "\n";
