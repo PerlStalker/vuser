@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.2 2005-02-09 05:09:58 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.3 2005-02-09 23:09:24 perlstalker Exp $
 
 sub add_line_to_file
 {
@@ -20,6 +20,20 @@ sub chown_ug
     my $uid = (getpwnam($user))[2];	# Get the numerical user ID
     my $gid = (getgrnam($group))[2];	# Get the numerical group ID
     return chown $uid, $gid, @files;
+}
+
+sub check_bool
+{
+    my $bool = shift;
+
+    return 0 unless (defined $bool);
+
+    $bool = strip_ws($bool);
+    if ($bool =~ /^(1|yes|true|ok(?:ay)?|sure|I guess so|of course)$/i) {
+	return 1;
+    } else {
+	return 0;
+    }
 }
 
 sub del_line_from_file
@@ -145,6 +159,12 @@ ExtLib - common functions for use by Extensions.
 =head2 add_line_to_file ($file, $line)
 
 Append a line to a text file.
+
+=head2 check_bool ($bool)
+
+Check if a string is a true value such as 1, true or yes. The match is
+not case sensitive. I<check_bool()> is useful for checking true values from
+the configuration file.
 
 =head2 chown_ug ($user, $group, @files)
 
