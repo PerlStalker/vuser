@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.16 2005-02-15 20:52:48 perlstalker Exp $
+# $Id: asterisk.pm,v 1.17 2005-02-25 04:39:26 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.16 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.17 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -123,6 +123,7 @@ sub init
 	if ($type eq 'mysql') {
 	    require VUser::asterisk::mysql;
 	    $backends{$backend} = new VUser::asterisk::mysql($backend, %cfg);
+	} elsif ($type eq 'none') {
 	} else {
 	    die "Unsupported asterisk backend '$type'.\n";
 	}
