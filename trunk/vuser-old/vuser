@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.12 2004-08-16 17:53:24 stewatvireo Exp $
+# $Id: vuser,v 1.13 2004-08-16 17:56:22 stewatvireo Exp $
 
 #
 # Configuration
@@ -44,7 +44,6 @@ my $courier_rc = $cfg{courier}{courier_rc};
 
 if( 0+$cfg{courier_mysql}{use_authmysql} )
 {
-    print "You are here ($cfg{courier_mysql}{use_authmysql})\n";
     my $authmysqlrc = $cfg{courier}{etc} . "/authmysqlrc";
     open (AUTHMYSQL, $authmysqlrc ) 
 	or die "Can't open $authmysqlrc.: $!\n";
