@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: mysql.pm,v 1.1 2004-12-25 15:22:29 perlstalker Exp $
+# $Id: mysql.pm,v 1.2 2004-12-28 17:21:37 perlstalker Exp $
 
 use DBI;
 
@@ -22,7 +22,7 @@ sub new
 
 sub init
 {
-    my %cfg = shift;
+    my %cfg = @_;
     # Connect to DB here
 }
 
