@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.23 2005-03-03 17:49:36 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.24 2005-03-04 22:56:39 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.23 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.24 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -13,6 +13,7 @@ use Getopt::Long;
 use VUser::ExtLib;
 
 use Regexp::Common qw /number/;
+#use Regexp::Common qw /number RE_ALL/;
 
 sub new
 {
@@ -329,21 +330,41 @@ sub run_tasks
 		my $d_type = $2;
 		my $dest_type = $3;
 
-		if (not $self->is_required($keyword, $action, $opt)
-		    and not defined $opts{$opt}) {
-		    # A non-required option is missing. Nothing to do.
-		} elsif ($d_type eq 's') {
+		if ($main::DEBUG > 2) {
+		    print "Key: $keyword; Act: $action, Opt: $opt; Type: $type d_type: $d_type\n";
+		    print "Req: ";
+		    print $self->is_required($keyword, $action, $opt)? 'Yes':'No';
+		    print " ";
+		    print "Def: ",defined $opts{$opt}?"Yes ($opts{$opt})":'No',"\n";
+		}
+
+		if ($d_type eq 's') {
 		    # There's nothing to verify here
-		} elsif ($d_type eq 'i' and not $opts{$opt} =~ /$RE{num}{int}/) {
-		    die "$opt is not an integer.\n";
+		} elsif ($d_type eq 'i'
+			 #and defined $opts{$opt}
+			 # This line is causing the warnings.
+			 #and not $opts{$opt} =~ /^$RE{num}{int}$/
+			 ) {
+		    # Ok, this is really stupid. I had to move this
+		    # check into a seperate if because it was causing
+		    # a weird warning about 'Use of uninitialized value
+		    # in string eq at vuser-ng/lib/VUser/ExtHandler.pm
+		    # line 339.'
+		    if (defined $opts{$opt}
+			and not $opts{$opt} =~ /^$RE{num}{int}$/) {
+			die "$opt is not an integer.\n";
+		    }
 		} elsif ($d_type eq 'o'
-			 and not ($opts{$opt} =~ /$RE{num}{int}/
-				  or $opts{$opt} =~ /$RE{num}{oct}/
-				  or $opts{$opt} =~ /$RE{num}{hex}/
+			 and defined $opts{$opt}
+			 and not ($opts{$opt} =~ /^$RE{num}{int}$/
+				  or $opts{$opt} =~ /^$RE{num}{oct}$/
+				  or $opts{$opt} =~ /^$RE{num}{hex}$/
 				  )
 			 ) {
 		    die "$opt is not an extended integer.";
-		} elsif ($2 eq 'f' and not $opts{$opt} =~ /$RE{num}{real}/) {
+		} elsif ($2 eq 'f'
+			 and defined $opts{$opt}
+			 and not $opts{$opt} =~ /^$RE{num}{real}$/) {
 		    die "$opt is not a real number.";
 		}
 	    } elsif ($type =~ /^:(-?\d+)([@%])?$/) {
