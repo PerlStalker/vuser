@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.13 2005-02-14 20:15:48 perlstalker Exp $
+# $Id: asterisk.pm,v 1.14 2005-02-14 22:21:55 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.13 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.14 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -599,7 +599,7 @@ sub vm_add
     $box{options} = '' unless $box{options};
     $box{fullname} = '' unless $box{fullname};
 
-    if ($backends{vm}->sip_exists($box{mailbox}, $box{context})) {
+    if ($backends{vm}->vm_exists($box{mailbox}, $box{context})) {
 	die "Can't add VM box $box{mailbox}\@$box{context}: VM box exists\n";
     }
 
