@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.2 2005-01-10 22:03:17 perlstalker Exp $
+# $Id: asterisk.pm,v 1.3 2005-01-13 18:02:11 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -243,7 +243,7 @@ sub sip_add
     $user{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
 
     if ($backend{sip}->sip_exists($user{name}, $user{context})) {
-	die "Can't add SIP user $user{name}@$user{context}: User exists\n";
+	die "Can't add SIP user $user{name}\@$user{context}: User exists\n";
     }
 
     $backend{sip}->sip_add(%user);
@@ -278,6 +278,15 @@ sub sip_mod
 
     $user{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
 
+    if ($user{newcontext} or $user{newname}) {
+	my ($nname, $ncontext) = ($user{name}, $user{context});
+	$nname = $user{name} if $box{newname};
+	$ncontext = $user{newcontext} if $user{newcontext};
+	if ($backend{sip}->ext_exists($nname, $ncontext)) {
+	    die "Can't raname SIP userd from $user{name}\@$user{context} to $nname\@$ncontext: SIP user exists\n";
+	}
+    }
+
     $backend{sip}->sip_mod(%user);
 }
 
@@ -295,23 +304,125 @@ sub ext_add
 
     my %ext = ();
     for my $item in qw(context extension priority application args descr flags) {
-	$ext{$itme} = $opts->{$item};
+	$ext{$item} = $opts->{$item};
     }
 
     $ext{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
 
     $ext{priority} = 1 unless defined $ext{priority} and $ext{priority} >= 1;
 
+    if ($backend{ext}->ext_exists($ext{extension},
+				  $ext{context},
+				  $ext{priority})) {
+	die "Can't add extension $ext{name}\@$ext{context} ($ext{priority}: Extension exists\n";
+    }
+
     $backend{ext}->ext_add(%ext);
 }
 
-sub ext_del {}
-sub ext_mod {}
+sub ext_del
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %ext = ();
+    $ext{extension} = $otps->{extension};
+    $ext{context} = $opts->{context};
+
+    $ext{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+
+    $backend{sip}->ext_del(%ext);
+}
+
+sub ext_mod
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %ext = ();
+    for my $item in qw(context extension priority application args descr flags
+		       newextension newcontext newpriority
+		       ) {
+	$ext{$item} = $opts->{$item};
+    }
+
+    $ext{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+
+    if ($ext{newcontext} or $ext{newextension} or $ext{newpriority}) {
+	my ($next, $ncontext) = ($ext{extension}, $ext{context});
+	$next = $ext{newextension} if $ext{newextension};
+	$ncontext = $ext{newcontext} if $ext{newcontext};
+	$npriority = $ext{priority} if $ext{priority};
+
+	if ($backend{ext}->ext_exists($next, $ncontext, $npriority)) {
+	    die "Can't raname extension from $ext{extension}\@$ext{context} ($ext{priority} to $next\@$ncontext ($npriority): Extension exists\n";
+	}
+    }
+
+    $backend{sip}->sip_mod(%ext);
+}
+
 sub ext_write {}
 
-sub vm_add {}
-sub vm_del {}
-sub vm_mod {}
+sub vm_add
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %box = ();
+    for my $item in qw(context, mailbox, password, fullname, email, pager, options) {
+	$box{$item} = $opts->{$item};
+    }
+
+    $box{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
+
+    if ($backend{vm}->sip_exists($box{mailbox}, $box{context})) {
+	die "Can't add VM box $box{mailbox}\@$box{context}: VM box exists\n";
+    }
+
+    $backend{vm}->vm_add(%box);
+}
+
+sub vm_del
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %box = ();
+    for my $item in qw(context, mailbox, password, fullname, email, pager, options) {
+	$box{$item} = $opts->{$item};
+    }
+
+    $box{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
+
+    $backend{vm}->vm_del(%box);
+}
+
+sub vm_mod
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %box = ();
+    for my $item in qw(context mailbox password fullname email pager options
+		       newcontext newmailbox) {
+	$box{$item} = $opts->{$item};
+    }
+
+    $box{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $box{context};
+
+    if ($box{newcontext} or $box{newmailbox}) {
+	my ($nbox, $ncontext) = ($box{mailbox}, $box{context});
+	$nbox = $box{newmailbox} if $box{newmailbox};
+	$ncontext = $box{newcontext} if $box{newcontext};
+	if ($backend{vm}->ext_exists($nbox, $ncontext)) {
+	    die "Can't raname VM box from $box{mailbox}\@$box{context} to $nbox\@$ncontext: VM box exists\n";
+	}
+    }
+
+    $backend{vm}->vm_mod(%box);
+
+}
 sub vm_write {}
 
 1;

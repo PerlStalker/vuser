@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: mysql.pm,v 1.2 2005-01-10 22:03:33 perlstalker Exp $
+# $Id: mysql.pm,v 1.3 2005-01-13 18:02:29 perlstalker Exp $
 
 use DBI;
 
@@ -109,10 +109,10 @@ sub sip_mod
     $sql .= ' where name = ? and context = ?';
 
     my $sth = $self->{_dbh}->prepare($sql)
-	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+	or die "Can't change SIP user: ".$self->{_dbh}->errstr."\n";
 
     $sth->execute(@user{@fields}, $user{newname}, $user{newcontext})
-	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+	or die "Can't change SIP user: ".$self->{_dbh}->errstr."\n";
 
     $sth->finish;
 }
@@ -173,7 +173,7 @@ sub ext_del
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't delete extension: ".$self->{_dbh}->errstr."\n";
 
-    $sth->execute($ext{extension}, $ext->{context})
+    $sth->execute($ext{extension}, $ext{context})
 	or die "Can't delete extension: ".$self->{_dbh}->errstr."\n";
 
     $sth->finish;
@@ -189,12 +189,11 @@ sub ext_mod
     my $sql = "update extensions set ";
     $sql .= join ', ', map { "$_ = ?"; } @fields;
     $sql .= ' where extension = ? and context = ?';
-
     my $sth = $self->{_dbh}->prepare($sql)
-	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+	or die "Can't change extension: ".$self->{_dbh}->errstr."\n";
 
     $sth->execute(@ext{@fields}, $ext{newext}, $ext{newcontext})
-	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+	or die "Can't change extension: ".$self->{_dbh}->errstr."\n";
 
     $sth->finish;
 }
@@ -204,12 +203,13 @@ sub ext_exists
     my $self = shift;
     my $ext = shift;
     my $context = shift;
+    my $priority = shift;
 
-    my $sql = 'select name, context from extensions where extensions = ? and context = ?';
+    my $sql = 'select name, context from extensions where extensions = ? and context = ? and priority = ?';
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't find extension: ".$self->{_dbh}->errstr."\n";
 
-    $sth->execute($ext, $context)
+    $sth->execute($ext, $context, $priority)
 	or die "Can't find extension: ".$self->{_dbh}->errstr."\n";
 
     if ($sth->fetchrow) {
@@ -220,10 +220,83 @@ sub ext_exists
     1;
 }
 
-sub vm_add {}
-sub vm_del {}
-sub vm_mod {}
-sub vm_exists { 1; }
+sub vm_add
+{
+    my $self = shift;
+    my %box = @_;
+
+    my @fields = keys %box;
+
+    my $sql = "insert into users set ";
+    $sql .= join ', ', map { "$_ = ?"; } @fields;
+
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't add voice mail box: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute(@box{@fields})
+	or die "Can't add voice mail box: ".$self->{_dbh}->errstr."\n";
+
+    $sth->finish;
+}
+
+sub vm_del
+{
+    my $self = shift;
+    my %box = @_;
+
+    my $sql = "delete from users where mailbox = ? and context = ?";
+
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't delete voice mail box: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute($box{extension}, $box{context})
+	or die "Can't delete voice mail box: ".$self->{_dbh}->errstr."\n";
+
+    $sth->finish;
+
+}
+
+sub vm_mod
+{
+    my $self = shift;
+    my %box = @_;
+
+    my @fields = grep { ! /^new/; } keys %box; # to keep keys in same order.
+
+    my $sql = "update users set ";
+    $sql .= join ', ', map { "$_ = ?"; } @fields;
+    $sql .= ' where mailbox = ? and context = ?';
+
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't change VM box: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute(@ext{@fields}, $box{newmailbox}, $box{newcontext})
+	or die "Can't change VM box: ".$self->{_dbh}->errstr."\n";
+
+    $sth->finish;
+}
+
+sub vm_exists
+{
+    my $self = shift;
+    my $box = shift;
+    my $context = shift;
+
+    my $sql = 'select mailbox, context from users where mailbox = ? and context = ?';
+
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't find voice mail box: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute($box, $context)
+	or die "Can't find voice mail box: ".$self->{_dbh}->errstr."\n";
+
+    if ($sth->fetchrow) {
+	return 1;
+    } else {
+	return 0;
+    }
+    1;
+}
 
 1;
 
