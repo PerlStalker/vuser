@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.19 2005-03-04 23:50:10 perlstalker Exp $
+# $Id: asterisk.pm,v 1.20 2005-03-08 20:52:21 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.19 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.20 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -271,10 +271,10 @@ sub init
 
     # Asterisk control
     $eh->register_keyword('asterisk');
-    $eh->register_action('asterisk', 'write');   # force a write
+    $eh->register_action('asterisk', 'write', 'Write config files.');   # force a write
     $eh->register_task('asterisk', 'write', \&asterisk_write);
 
-    $eh->register_action('asterisk', 'restart'); # force a restart
+    $eh->register_action('asterisk', 'restart', 'Not implemented'); # force a restart
 }
 
 sub unload { }
@@ -420,7 +420,7 @@ sub sip_write
 	$context = $cfg->{Extension_asterisk}{'default context'} unless $context;
 	print CONF "context=$context\n";
 
-	print CONF "ipaddr=".$user->{ipaddr}."\n" if $user->{ipaddr};
+	print CONF "host=".$user->{ipaddr}."\n" if $user->{ipaddr};
 	print CONF 'port='.$user->{port}."\n" if $user->{port};
 	print CONF 'regseconds='.$user->{regseconds}."\n" if $user->{regseconds};
 	print CONF 'callerid='.$user->{callerid}."\n" if $user->{callerid};
