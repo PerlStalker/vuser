@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.7 2004-06-08 22:33:00 stewatvireo Exp $
+# $Id: vuser,v 1.8 2004-06-08 22:56:06 stewatvireo Exp $
 
 #
 # Configuration
@@ -270,13 +270,17 @@ sub add
     my $userdir = get_home_directory( $user, $domain );
     die "Can't add account: User exists\n" if (-e "$userdir");
     die "Can't add account: Skel doesn't exist\n" if( !( -e "$cfg{courier}{skeldir}" ) );
-    if( not -e "$userdir" )
+
+    my $user_parentdir = $userdir;
+    $user_parentdir =~ s/\/[^\/]*$//;
+
+    if( not -e "$user_parentdir" )
     {
-	mkdir_p( "$userdir", 
+	mkdir_p( "$user_parentdir", 
 		 0775, 
 		 (getpwnam($cfg{courier}{courier_user}))[2],  		
 		 (getgrnam($cfg{courier}{courier_group}))[2] )
-	    || die "could not create user directory: $userdir";
+	    || die "could not create user directory: $user_parentdir";
     }
 
     my $rc = 0xffff & system ('cp', '-R', $cfg{courier}{skeldir}, "$userdir");
