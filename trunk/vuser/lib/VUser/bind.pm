@@ -4,11 +4,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Mike O'Connor <stew@vireo.org>
-# $Id: bind.pm,v 1.1 2005-01-21 20:55:07 stewatvireo Exp $
+# $Id: bind.pm,v 1.2 2005-01-24 18:01:38 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -16,6 +16,36 @@ use Pod::Usage;
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
 
+sub config_sample
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $fh;
+    if (defined $opts->{file}) {
+	open ($fh, ">".$opts->{file})
+	    or die "Can't open '".$opts->{file}."': $!\n";
+    } else {
+	$fh = \*STDOUT;
+    }
+
+    print $fh <<'CONFIG';
+[Extension_bind]
+
+namedconf=/tmp/named.conf
+masterdir=/etc/bind/master
+slavedir=/etc/bind/slave
+internaldir=/etc/bind/internal
+mastertemplate=/etc/bind/master/TEMPLATE
+slavetemplate=/etc/bind/master/TEMPLATE
+masterzonetemplate=/etc/bind/master/TEMPLATE
+
+CONFIG
+
+    if (defined $opts->{file}) {
+	close CONF;
+    }
+}
 
 sub init
 {
@@ -23,7 +53,7 @@ sub init
     my %cfg = @_;
 
     # Config
-#    $eh->regiter_task('config', 'sample', \&config_sample);
+    $eh->regiter_task('config', 'sample', \&config_sample);
 
     # email
     $eh->register_keyword('dns');
