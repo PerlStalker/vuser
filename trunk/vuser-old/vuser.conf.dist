@@ -75,21 +75,18 @@ sm_config=/usr/local/squirrelmail-live/config/config.php
 use_sm_address=0
 use_sm_userpref=0
 
-[sm_address]
-dsn=
-username=
-password=
-table=
+address_dsn=
+address_username=
+address_password=
+address_table=
 
-[sm_userpref]
-
-dsn=
-username=
-password=
-table=
-user_field=
-key_field=
-val_field=
+userpref_dsn=
+userpref_username=
+userpref_password=
+userpref_table=
+userpref_user_field=
+userpref_key_field=
+userpref_val_field=
 
 
 [mailman]
