@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.9 2005-03-28 23:54:04 perlstalker Exp $
+# $Id: vuser,v 1.10 2005-03-30 03:42:08 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -73,6 +73,11 @@ warn $@ if $@;
 eval { $eh->cleanup(%cfg); };
 
 exit;
+
+sub revision
+{
+    print $REVISION;
+}
 
 __END__
 
