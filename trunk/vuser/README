@@ -1,4 +1,4 @@
-$Id: README,v 1.1 2004-12-24 00:08:31 perlstalker Exp $
+$Id: README,v 1.2 2005-02-17 04:44:18 perlstalker Exp $
 
 Fill in doc stuff here ...
 
@@ -8,6 +8,7 @@ Fill in doc stuff here ...
 
 vuser requires the following Perl modules that are not included with Perl:
 - Config::IniFiles
+- Regexp::Common
 
 Other vuser extensions may require other Perl modules. Please see the
 documentation included with those extensions for additional requirements.
