@@ -7,7 +7,7 @@ use strict;
 use SOAP::Lite;
 
 # Copyright 2005 Mark Bucciarelli
-# $Id: vsoapd.pl,v 1.3 2005-03-25 17:58:51 perlstalker Exp $
+# $Id: vsoapd.pl,v 1.4 2005-03-25 18:07:09 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
@@ -15,7 +15,7 @@ use FindBin;
 use Config::IniFiles;
 use SOAP::Transport::HTTP;
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -81,3 +81,5 @@ my $daemon = SOAP::Transport::HTTP::Daemon
 ;
 print "Contact to SOAP server at ", $daemon->url, "\n";
 $daemon->handle;
+
+eval { $eh->cleanup(%cfg); };
