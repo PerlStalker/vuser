@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.9 2005-03-04 22:58:44 perlstalker Exp $
+# $Id: CORE.pm,v 1.10 2005-03-04 23:17:24 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -153,6 +153,7 @@ sub process_event_dir
     my @files = grep { ! (/^\.\.?$/
 			  or /^error-/
 			  or /^new-/
+			  )
 		      } readdir DIR;
     closedir DIR;
 
