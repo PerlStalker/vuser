@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.15 2005-02-09 17:08:50 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.16 2005-02-14 17:25:50 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.15 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.16 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -126,7 +126,8 @@ sub register_task
     my $self = shift;
     my $keyword = shift;
     my $action = shift;
-    my $handler = shift;        # sub ref. Takes 1 param: The tied config
+    my $handler = shift;        # sub ref. Takes 2 params: The tied config
+				#  the options ref, and the action
     my $priority = shift;
 
     unless (exists $self->{keywords}{$keyword}) {
