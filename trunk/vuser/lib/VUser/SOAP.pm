@@ -4,11 +4,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.4 2005-03-25 17:59:24 perlstalker Exp $
+# $Id: SOAP.pm,v 1.5 2005-03-25 18:19:56 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = $main::VERSION;
 
 our %cfg;
@@ -40,6 +40,12 @@ sub AUTOLOAD
 	my $action = $2;
 	print "Key: $keyword Act: $action\n";
 	eval { $eh->run_tasks($keyword, $action, \%cfg, %opts); };
+	if ($@) {
+	    die SOAP::Fault
+		->faultcode('Server.Custom')
+		->faultstring($@)
+		;
+	}
     } else {
 	return;
     }
