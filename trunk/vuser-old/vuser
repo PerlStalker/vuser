@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.6 2004-05-25 20:57:44 perlstalker Exp $
+# $Id: vuser,v 1.7 2004-06-08 22:33:00 stewatvireo Exp $
 
 #
 # Configuration
@@ -58,7 +58,10 @@ if( 0+$cfg{courier_mysql}{use_authmysql} )
 	if ($line =~ /^\s*MYSQL_(\w+)   # Get MYSQL_XXX. XXX -> $1
 	    \s+(.+)$/x)                 # Get value. -> $2
 	{
-	    $cfg{courier_mysql}{$1} = $2;
+	    if( ! $cfg{courier_mysql}{$1} )
+	    {
+	    	$cfg{courier_mysql}{$1} = $2;
+	    }
 	}
     }
     
@@ -266,6 +269,7 @@ sub add
 
     my $userdir = get_home_directory( $user, $domain );
     die "Can't add account: User exists\n" if (-e "$userdir");
+    die "Can't add account: Skel doesn't exist\n" if( !( -e "$cfg{courier}{skeldir}" ) );
     if( not -e "$userdir" )
     {
 	mkdir_p( "$userdir", 
