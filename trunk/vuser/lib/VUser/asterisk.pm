@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.3 2005-01-13 18:02:11 perlstalker Exp $
+# $Id: asterisk.pm,v 1.4 2005-01-13 18:12:22 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -130,11 +130,13 @@ sub init
     $eh->register_option('sip', 'add', 'callerid', '=s');
     $eh->register_option('sip', 'add', 'restrictcid', '');
     $eh->register_option('sip', 'add', 'mailbox', '=s');
+    $eh->register_task('sip', 'add', \&sip_add, 0);
 
     # SIP-del
     $eh->register_action('sip', 'del');
     $eh->register_option('sip', 'del', 'name', '=s');
     $eh->register_option('sip', 'del', 'context', '=s');
+    $eh->register_task('sip', 'del', \&sip_del, 0);
 
     # SIP-mod
     $eh->register_action('sip', 'mod');
@@ -150,6 +152,7 @@ sub init
     $eh->register_option('sip', 'mod', 'mailbox', '=s');
     $eh->register_option('sip', 'mod', 'newname', '=s');
     $eh->register_option('sip', 'mod', 'newcontext', '=s');
+    $eh->register_task('sip', 'mod', \&sip_mod, 0);
 
     # IAX
     $eh->register_keyword('iax');
@@ -169,12 +172,14 @@ sub init
     $eh->register_option('ext', 'add', 'args', '=s');
     $eh->register_option('ext', 'add', 'descr', '=s');
     $eh->register_option('ext', 'add', 'flags', '=i');
+    $eh->register_task('ext', 'add', \&ext_add, 0);
     
     # Ext-del
     $eh->register_action('ext', 'del');
     $eh->register_option('ext', 'del', 'context', '=s');   # required
     $eh->register_option('ext', 'del', 'extension', '=s'); # required
     $eh->register_option('ext', 'del', 'priority', '=i');  # optional
+    $eh->register_task('ext', 'del', \&ext_del, 0);
 
     # Ext-mod
     $eh->register_action('ext', 'mod');
@@ -187,6 +192,7 @@ sub init
     $eh->register_option('ext', 'mod', 'flags', '=i');
     $eh->register_option('ext', 'mod', 'newcontext', '=s');
     $eh->register_option('ext', 'mod', 'newext', '=s');
+    $eh->register_task('ext', 'mod', \&ext_mod, 0);
 
     # Voice mail
     $eh->register_keyword('vm');
@@ -200,11 +206,13 @@ sub init
     $eh->register_option('vm', 'add', 'email', '=s');
     $eh->register_option('vm', 'add', 'pager', '=s');
     $eh->register_option('vm', 'add', 'options', '=s');
+    $eh->register_task('vm', 'add', \&vm_add, 0);
 
     # VM-del
     $eh->register_action('vm', 'del');
     $eh->register_option('vm', 'del', 'context', '=s');
     $eh->register_option('vm', 'del', 'mailbox', '=s');
+    $eh->register_task('vm', 'del', \&vm_del, 0);
 
     # VM-mod
     $eh->register_action('vm', 'mod');
@@ -215,6 +223,7 @@ sub init
     $eh->register_option('vm', 'mod', 'email', '=s');
     $eh->register_option('vm', 'mod', 'pager', '=s');
     $eh->register_option('vm', 'mod', 'options', '=s');
+    $eh->register_task('vm', 'mod', \&vm_mod, 0);
 
     # Asterisk control
     $eh->register_keyword('asterisk');
