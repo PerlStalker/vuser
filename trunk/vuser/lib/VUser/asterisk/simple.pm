@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: simple.pm,v 1.2 2005-02-15 20:53:59 perlstalker Exp $
+# $Id: simple.pm,v 1.3 2005-03-03 03:59:55 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -79,6 +79,8 @@ sub voip_add
     $user{username} = $user{extension} unless $user{username};
     $user{email} = '' unless $user{email};
     $user{name} = '' unless $user{name};
+
+    $user{extension} =~ s/\D//g;
 
     eval {
 	$eh->run_tasks('sip', 'add', $cfg,
@@ -155,6 +157,8 @@ sub voip_del
 
     $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
 
+    $user{extension} =~ s/\D//g;
+
     eval {
 	$eh->run_tasks('sip', 'del', $cfg, (name => $user{extension},
 					    context => $user{context}
@@ -206,6 +210,9 @@ sub voip_mod
     $user{username} = $user{extension} unless $user{username};
     $user{email} = '' unless $user{email};
     $user{name} = '' unless $user{name};
+
+    $user{extension} =~ s/\D//g;
+    $user{newextension} =~ s/\D//g if defined $user{newextension};
 
     my ($next, $ncontext) = ($user{name}, $user{context});
     if ($user{newcontext} or $user{newextension}) {
@@ -269,6 +276,8 @@ sub voip_show
     }
 
     $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
+
+    $user{extension} =~ s/\D//g;
 
     eval {
 	print "*** SIP\n";
