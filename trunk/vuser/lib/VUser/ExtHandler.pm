@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.21 2005-02-17 15:21:40 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.22 2005-02-25 04:28:35 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.21 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.22 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -24,7 +24,8 @@ sub new
     # {keyword}{action}{tasks}[order][tasks (sub refs)]
     # {keyword}{action}{options}{option} = type
     my $me = {'keywords' => {},
-	      'required' => {}
+	      'required' => {},
+	      'descrs' => {}
 	  };
 
     bless $me, $class;
@@ -38,9 +39,12 @@ sub register_keyword
 {
     my $self = shift;
     my $keyword = shift;
+    my $descr = shift;
 
     unless (exists $self->{keywords}{$keyword}) {
 	$self->{keywords}{$keyword} = {};
+
+	$self->{descrs}{$keyword} = {_descr => $descr};
     }
 }
 
@@ -49,6 +53,7 @@ sub register_action
     my $self = shift;
     my $keyword = shift;
     my $action = shift;
+    my $descr = shift;
 
     if ($action =~ /^-/) { 
 	die "Unable to register action. Action may not start with a '-'.\n";
@@ -60,6 +65,7 @@ sub register_action
 
     unless (exists $self->{keywords}{$keyword}{$action}) {
 	$self->{keywords}{$keyword}{$action} = {tasks => [], options => {}};
+	$self->{descrs}{$keyword}{$action} = {_descr => $descr};
     }
 }
 
@@ -71,6 +77,7 @@ sub register_option
     my $option = shift;
     my $type = shift;
     my $required = shift;
+    my $descr = shift;
 
     print STDERR "Reg Opt: $keyword|$action $option $type ", $required?'Req':'',"\n" if $main::DEBUG >= 2;
     unless (exists $self->{keywords}{$keyword}) {
@@ -94,6 +101,7 @@ sub register_option
 	} else {
 	    $self->{required}{$keyword}{$action}{$option} = 0;
 	}
+	$self->{descrs}{$keyword}{$action}{$option} = {_descr => $descr};
     }
 }
 
@@ -149,6 +157,46 @@ sub register_task
 	push @{$self->{keywords}{$keyword}{$action}{tasks}[$priority]}, $handler;
     } else {
 	$self->{keywords}{$keyword}{$action}{tasks}[$priority] = [$handler];
+    }
+}
+
+sub get_keywords
+{
+    my $self = shift;
+
+    return sort keys %{ $self->{keywords}};
+}
+
+sub get_actions
+{
+    my $self = shift;
+    my $keyword = shift;
+
+    return sort keys %{ $self->{keywords}{$keyword} };
+}
+
+sub get_options
+{
+    my $self = shift;
+    my $keyword = shift;
+    my $action = shift;
+
+    return sort keys %{ $self->{keywords}{$keyword}{$action}{options}};
+}
+
+sub get_description
+{
+    my $self = shift;
+    my $keyword = shift;
+    my $action = shift;
+    my $option = shift;
+
+    if ($keyword and $action and $option) {
+	return $self->{descrs}{$keyword}{$action}{$option}{_descr};
+    } elsif ($keyword and $action) {
+	return $self->{descrs}{$keyword}{$action}{_descr};
+    } elsif ($keyword) {
+	return $self->{descrs}{$keyword}{_descr};
     }
 }
 
