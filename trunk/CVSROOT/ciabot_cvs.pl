@@ -86,7 +86,7 @@ $xml_rpc = 0;
 # 'admin', use:
 #
 # $ignore_regexp = "^(gentoo/Manifest|elinks/src/bfu/inphist.c|admin/)";
-$ignore_regexp = "";
+$ignore_regexp = "vuser-ng";
 
 # It can be useful to also grab the generated XML message by some other
 # programs and ie. autogenerate some content based on it. Here you can specify
