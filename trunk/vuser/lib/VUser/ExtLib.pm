@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.8 2005-03-08 15:53:11 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.9 2005-03-08 17:23:39 perlstalker Exp $
 
 sub add_line_to_file
 {
@@ -79,6 +79,9 @@ sub generate_password
     return $password;
 }
 
+# TODO: It may be possible to use File::Path::mkpath here to create the path
+# but we would still have to chown the created files.
+# Perhaps something like: for $dir (mkpath($path)) { chown($uid, $gid, $dir); }
 sub mkdir_p
 {
     my ($dir, $mode, $user, $group) = @_;
@@ -136,6 +139,7 @@ sub repl_line_in_file
     rename "$file.tmp", $file or die "Can't rename $file.tmp to $file: $!\n";
 }
 
+# TODO: replace the contents with a call to File::Path::rmtree
 sub rm_r
 {
     my $dir = shift;
