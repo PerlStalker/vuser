@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.8 2005-03-03 04:25:49 perlstalker Exp $
+# $Id: CORE.pm,v 1.9 2005-03-04 22:58:44 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -150,17 +150,20 @@ sub process_event_dir
     my $dir = shift;
 
     opendir DIR, $dir or die "Unable to open $dir: $!\n";
-    my @files = grep { ! /^\.\.?$/ and ! /^error-/ } readdir DIR;
+    my @files = grep { ! (/^\.\.?$/
+			  or /^error-/
+			  or /^new-/
+		      } readdir DIR;
     closedir DIR;
 
     foreach my $file (@files) {
 	if (-d "$dir/$file") {
 	    eval { process_event_dir($cfg, $opts, $eh, "$dir/$file"); };
-	    die chomp($@)."\n" if $@;
+	    die $@ if $@;
 	} elsif (-f "$dir/$file") {
 	    eval { process_event_file($cfg, $opts, $eh, $dir, $file); };
 	    if ($@) {
-		warn chomp($@)."\n";
+		warn $@;
 		rename "$dir/$file", "$dir/error-$file"
 		    or warn "Can't rename $dir/$file to error-$file: $!";
 	    }
@@ -211,7 +214,7 @@ sub process_event_file
 
     # All the data has been read, time to run the task.
     eval { $eh->run_tasks($keyword, $action, $cfg, %opts); };
-    die "$file: ".chomp($@)."\n" if $@;
+    die "$file: ".$@ if $@;
 
     unlink "$dir/$file";
 }
@@ -224,7 +227,7 @@ sub batch_mode
     my $eh = shift;
 
     eval { process_event_dir($cfg, $opts, $eh, $directory); };
-    die chomp($@)."\n" if $@;
+    die $@ if $@;
 }
 
 sub unload { }
