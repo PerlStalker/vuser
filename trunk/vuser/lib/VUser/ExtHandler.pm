@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.10 2005-01-24 20:31:58 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.11 2005-02-07 16:30:55 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.11 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -264,7 +264,7 @@ sub cleanup
     my $self = shift;
     my %cfg = @_;
 
-    eval { $self->unload_extensions(%cfg); }
+    eval { $self->unload_extensions(%cfg); };
     warn $@ if $@;
 }
 
