@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.3 2005-02-09 17:08:49 perlstalker Exp $
+# $Id: CORE.pm,v 1.4 2005-02-25 04:29:03 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -62,7 +62,40 @@ sub version
 
 sub help
 {
-    pod2usage('-verbose' => 1);
+#    pod2usage('-verbose' => 1);
+    my $cfg = shift;
+    my $opts = shift;
+    my $keyword = shift; # The 'action' for help is the keyword see details of
+    my $eh = shift;
+
+    use FindBin;
+
+    my @keywords = $eh->get_keywords();
+    if ($keyword) {
+	my $descr = $eh->get_description($keyword);
+	print "Run '$FindBin::Script help' to see all available keywords.\n";
+	print "** $keyword - $descr\n";
+	my @actions = $eh->get_actions($keyword);
+	foreach my $action (@actions) {
+	    $descr = $eh->get_description($keyword, $action)
+		|| 'No description';
+	    printf ("%8s - %s\n", $action, $descr);
+	    my @opts = $eh->get_options($keyword, $action);
+	    foreach my $opt (@opts) {
+		$descr = $eh->get_description($keyword, $action, $opt)
+		    || 'No Description';
+		printf ("%18s - %s\n", "--$opt", $descr);
+	    }
+	}
+    } else {
+	print "Run '$FindBin::Script help <keyword>' for more details.\n";
+	print "Keywords: \n";
+	foreach my $keyword (@keywords) {
+	    my $descr = $eh->get_description($keyword) || 'No description';
+	    printf ("%18s - %s\n", $keyword, $descr);
+		    
+	}
+    }
 }
 
 sub man
@@ -76,26 +109,26 @@ sub init
     my %cfg = @_;
 
     # Config
-    $eh->register_keyword('config');
-    $eh->register_action('config', 'file');
+    $eh->register_keyword('config', 'Get information about the configuration.');
+    $eh->register_action('config', 'file', 'Print the current config file.');
     $eh->register_task('config', 'file', \&config_file, 0);
 
-    $eh->register_action('config', 'sample');
+    $eh->register_action('config', 'sample', 'Print a sample config file.');
     $eh->register_task('config', 'sample', \&config_sample, 0);
-    $eh->register_option('config', 'sample', 'file', '=s');
+    $eh->register_option('config', 'sample', 'file', '=s', 0, 'Write the sample to this file.');
 
     # Help
-    $eh->register_keyword('help');
+    $eh->register_keyword('help', 'Print help/usage information.');
     $eh->register_action('help', '*');
     $eh->register_task('help', '*', \&help);
 
     # Man
-    $eh->register_keyword('man');
+    $eh->register_keyword('man', 'Print documentation');
     $eh->register_action('man', '*');
     $eh->register_task('man', '*', \&man);
 
     # Version
-    $eh->register_keyword('version');
+    $eh->register_keyword('version', 'Show version information.');
     $eh->register_action('version', '');
     $eh->register_task('version', '', \&version);
 }
