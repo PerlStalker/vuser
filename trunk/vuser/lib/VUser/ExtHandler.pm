@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.2 2004-12-30 22:30:17 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.3 2005-01-17 21:53:03 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -126,6 +126,7 @@ sub load_extension
     my $top = shift || 'VUser';
 
     eval "require $top\:\:$ext";
+    die $@ if $@;
     no strict "refs";
     &{$top.'::'.$ext.'::init'}($self, %$cfg);
 }
