@@ -1,15 +1,37 @@
 #!/usr/bin/perl -w
-
-
 use strict;
+
+# $Id: vuser,v 1.2 2004-05-20 20:59:25 perlstalker Exp $
 
 #
 # Configuration
 #
 use Config::IniFiles;
+use Getopt::Long;
+use FindBin qw($Bin);
 
+# Command line options.
+my $config_file;
+
+GetOptions("config|f=s", $config_file);
+
+if (not $config_file) {
+    for my $cfile ('/usr/local/etc/vuser.conf',
+		   '/etc/vuser.conf',
+		   "$Bin/../etc/vuser.conf",
+		   "$Bin/vuser.conf"
+		   )
+    {
+	if (-e $cfile) {
+	    $config_file = $cfile;
+	    last;
+	}
+    }
+}
+
+# Setup Config file.
 my %cfg;
-tie %cfg, 'Config::IniFiles', ( -file => "./vuser.conf" );
+tie %cfg, 'Config::IniFiles', ( -file => $config_file );
 
 my $hosteddomains = $cfg{courier}{etc}."/hosteddomains";
 my $esmtpacceptmailfor = $cfg{courier}{etc}."/esmtpacceptmailfor";
@@ -1061,24 +1083,24 @@ vuser - Adds/Removes/Modifies MySQL virtual users for Courier
 
 =head1 SYNOPSIS
 
- vuser add account [-n name] [-p password]
- vuser del account
- vuser mod account [-n name] [-p password] [-a new_account]
- vuser show account
+ vuser [options] add account [-n name] [-p password]
+ vuser [options] del account
+ vuser [options] mod account [-n name] [-p password] [-a new_account]
+ vuser [options] show account
 
- vuser alias add account alias [-n name] [-p password]
- vuser alias del account [alias]
- vuser alias mod account alias [-n name] [-p password] [-a new_alias]
- vuser alias show account
+ vuser [options] alias add account alias [-n name] [-p password]
+ vuser [options] alias del account [alias]
+ vuser [options] alias mod account alias [-n name] [-p password] [-a new_alias]
+ vuser [options] alias show account
 
- vuser domain add domain
- vuser domain del domain [-r]
- vuser domain mod domain [-d new_domain]
- vuser domain show domain
+ vuser [options] domain add domain
+ vuser [options] domain del domain [-r]
+ vuser [options] domain mod domain [-d new_domain]
+ vuser [options] domain show domain
 
- vuser list add name account manager [-p password]
- vuser list del name account [-r]
- vuser list mod name account [-a new_account]
+ vuser [options] list add name account manager [-p password]
+ vuser [options] list del name account [-r]
+ vuser [options] list mod name account [-a new_account]
 
  vuser help
 
@@ -1088,6 +1110,17 @@ B<vuser> handles virtual accounts for courier and has limited support
 for SpamAssassin and SquirrelMail.
 
 In all cases, I<account> is the name of the account to operate on.
+
+=head2 options
+
+=over 4
+
+=item config|f
+
+The location of the configuration file. If omitted, vuser will look for
+vuser.conf in some standard places.
+
+=back
 
 =head2 add
 
