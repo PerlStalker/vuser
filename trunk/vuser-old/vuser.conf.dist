@@ -41,7 +41,9 @@ userhomedir="/home/virtual/$domain/var/mail/$user"
 
 [courier_mysql]
 
-# setting this to 1 will cause fields in the authmysqlrc file to override these values
+# Setting this to 1 will cause vuser to read these values from authmysqlrc
+# if they are unset. Set them to override the value from authmysqlrc.
+# This is particularly useful if you use a read-only user for courier.
 use_authmysql=1 
 
 SERVER=localhost
