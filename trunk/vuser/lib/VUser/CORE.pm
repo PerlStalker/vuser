@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.12 2005-03-08 15:10:45 perlstalker Exp $
+# $Id: CORE.pm,v 1.13 2005-03-08 15:52:03 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.12 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.13 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -139,7 +139,7 @@ sub init
     # Batch
     $eh->register_keyword('batch', 'Run in batch mode.');
     $eh->register_action('batch', '*', '');
-    $eh->register_option('batch', '*', 'flag', 0, 'touch this file when finished with the batch.');
+    $eh->register_option('batch', '*', 'flag', '=s', 0, 'touch this file when finished with the batch.');
     $eh->register_task('batch', '*', \&batch_mode); 
 }
 
@@ -222,9 +222,8 @@ sub process_event_file
     eval { $eh->run_tasks($keyword, $action, $cfg, %opts); };
     die "$file: ".$@ if $@;
 
-    # We should only write if something was done.
-    if ($opts{flag}) {
-	eval { VUser::ExtLib::touch($opts{flag}); };
+    if ($opts->{flag}) {
+	eval { VUser::ExtLib::touch($opts->{flag}); };
 	die "$@\n" if $@;
     }
 
