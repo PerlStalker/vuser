@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.5 2005-01-25 17:22:48 perlstalker Exp $
+# $Id: asterisk.pm,v 1.6 2005-02-07 16:55:32 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -22,6 +22,9 @@ my %backends = ('sip' => undef,
 sub config_sample
 {
     my $fh;
+    my $cfg = shift;
+    my $opts = shift;
+
     if (defined $opts->{file}) {
 	open ($fh, ">".$opts->{file})
 	    or die "Can't open '".$opts->{file}."': $!\n";
@@ -266,12 +269,12 @@ sub sip_add
     # using Getopt::Long. In fact, we may not be using Getopt::Long if
     # I ever get around to building a web version of vuser.
     my %user = ();
-    for my $item in qw(name username secret context ipaddr port
-		       regseconds callerid restrictcid mailbox) {
+    for my $item qw(name username secret context ipaddr port
+		    regseconds callerid restrictcid mailbox) {
 	$user{$item} = $opts->{$item};
     }
 
-    $user{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
+    $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
 
     if ($backend{sip}->sip_exists($user{name}, $user{context})) {
 	die "Can't add SIP user $user{name}\@$user{context}: User exists\n";
@@ -300,10 +303,10 @@ sub sip_mod
     my $opts = shift;
 
     my %user = ();
-    for my $item in qw(name username secret context ipaddr port
-		       regseconds callerid restrictcid mailbox
-		       newname newcontext
-		       ) {
+    for my $item qw(name username secret context ipaddr port
+		    regseconds callerid restrictcid mailbox
+		    newname newcontext
+		    ) {
 	$user{$item} = $opts->{$item};
     }
 
@@ -408,7 +411,7 @@ sub ext_add
     my $opts = shift;
 
     my %ext = ();
-    for my $item in qw(context extension priority application args descr flags) {
+    for my $item qw(context extension priority application args descr flags) {
 	$ext{$item} = $opts->{$item};
     }
 
@@ -445,7 +448,7 @@ sub ext_mod
     my $opts = shift;
 
     my %ext = ();
-    for my $item in qw(context extension priority application args descr flags
+    for my $item qw(context extension priority application args descr flags
 		       newextension newcontext newpriority
 		       ) {
 	$ext{$item} = $opts->{$item};
@@ -545,7 +548,7 @@ sub vm_add
     my $opts = shift;
 
     my %box = ();
-    for my $item in qw(context, mailbox, password, fullname, email, pager, options) {
+    for my $item qw(context, mailbox, password, fullname, email, pager, options) {
 	$box{$item} = $opts->{$item};
     }
 
@@ -564,7 +567,7 @@ sub vm_del
     my $opts = shift;
 
     my %box = ();
-    for my $item in qw(context, mailbox, password, fullname, email, pager, options) {
+    for my $item qw(context, mailbox, password, fullname, email, pager, options) {
 	$box{$item} = $opts->{$item};
     }
 
@@ -579,7 +582,7 @@ sub vm_mod
     my $opts = shift;
 
     my %box = ();
-    for my $item in qw(context mailbox password fullname email pager options
+    for my $item qw(context mailbox password fullname email pager options
 		       newcontext newmailbox) {
 	$box{$item} = $opts->{$item};
     }
