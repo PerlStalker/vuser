@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.6 2005-01-21 21:07:47 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.7 2005-01-21 21:09:03 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -217,7 +217,7 @@ sub run_tasks
     }
 
     # Check for required options
-    my $opt = $eh->check_required ($keyword, $action, \%opts);
+    my $opt = $self->check_required ($keyword, $action, \%opts);
     if ($opt) {
 	die "Missing required option '$opt'.\n";
     }
