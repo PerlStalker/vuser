@@ -1,13 +1,15 @@
 package VUser::courier;
+
 use warnings;
 use strict;
 
+# Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: courier.pm,v 1.1 2004-12-30 22:09:56 perlstalker Exp $
+# $Id: courier.pm,v 1.2 2005-01-21 20:53:17 stewatvireo Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -32,76 +34,57 @@ sub config_sample
 
     print $fh <<'CONFIG';
 [Extension_courier]
-# the location of the courier configuration
+the location of the courier configuration
 etc=/etc/courier
 
-# the user/group that the MDA will run as
+the user/group that the MDA will run as
 user=courier
 group=courier
 
-# the command to run to restart courier
+the command to run to restart courier
 courier_rc=/usr/local/etc/rc.d/courier.sh
 
-# These commands may be wrapped but they MUST take the same options
-# as the commands themselves.
+These commands may be wrapped but they MUST take the same options
+as the commands themselves.
 
-# the path to makehosteddomains.
-# This may also be any command that wraps makehosteddomains.
-# makehosteddomains=chroot /netboot/beta /usr/local/sbin/makehosteddomains
+the path to makehosteddomains.
+This may also be any command that wraps makehosteddomains.
+makehosteddomains=chroot /netboot/beta /usr/local/sbin/makehosteddomains
 makehosteddomains=/usr/sbin/makehosteddomains
 
-# the path to makeacceptmailfor.
-# This may also be any command that wraps makeacceptmailfor.
-# makeacceptmailfor=chroot /netboot/beta /usr/local/sbin/makeacceptmailfor
+the path to makeacceptmailfor.
+This may also be any command that wraps makeacceptmailfor.
+makeacceptmailfor=chroot /netboot/beta /usr/local/sbin/makeacceptmailfor
 makeaccptmailfor=/usr/sbin/makeacceptmailfor
 
-# the path to couriermlm
-# This may be a wrapper as above.
-# couriermlm=chroot /netboot/beta /usr/local/sbin/couriermlm
+the path to couriermlm
+This may be a wrapper as above.
+couriermlm=chroot /netboot/beta /usr/local/sbin/couriermlm
 couriermlm=/usr/bin/couriermlm
 
-# The location of the files which are copies into a brand new home dir
+The location of the files which are copies into a brand new home dir
 skeldir=/usr/local/etc/courier/skel
 
-# Set to 1 to force user names to lower case
+Set to 1 to force user names to lower case
 lc_user = 0
 
-# the domain to use if the account doesn't have one
+the domain to use if the account doesn't have one
 default domain=example.com
 
-# Given $user and $domain, where will the user's home directory be located?
-# This may be a valid perl expression.
-#
-# PerlStalker's scheme:
-# domaindir="/var/mail/virtual/$domain"
-# userhomedir="/var/mail/virtual/$domain/".substr($user, 0, 2)."/$user"
-#
-# stew's scheme:
+Given $user and $domain, where will the user's home directory be located?
+This may be a valid perl expression.
+
+PerlStalker's scheme:
+domaindir="/var/mail/virtual/$domain"
+userhomedir="/var/mail/virtual/$domain/".substr($user, 0, 2)."/$user"
+
+stew's scheme:
 domaindir="/home/virtual/$domain"
 userhomedir="/home/virtual/$domain/var/mail/$user"
 
-# which authentication system to use
-# Only 'mysql' is supported currently.
+which authentication system to use
+Only 'mysql' is supported currently.
 authlib=mysql
-
-mysql_server=localhost
-mysql_username=courier
-mysql_password=secret
-mysql_socket=/tmp/mysql.sock
-mysql_port=3306
-mysql_database=
-mysql_user_table=
-mysql_crypt_pwfield=
-mysql_clear_pwfield=
-mysql_uid_field=
-mysql_gid_field=
-mysql_login_field=
-mysql_home_field=
-mysql_name_field=
-mysql_maildir_field=
-mysql_quota_field=
-mysql_auxoptions_field=
-mysql_alias_field=aliasfor
 
 list_prefix=list
 
@@ -118,23 +101,62 @@ sub init
     my %cfg = @_;
 
     if ($cfg{Extension_courier}{authlib} =~ /mysql/) {
-	require courier::mysql;
-	$authlib = new courier::mysql(%cfg);
+
+	eval( "require VUser::courier::mysql;" );
+	die $@ if $@;
+
+	$authlib = new VUser::courier::mysql(%cfg);
     } else {
 	die "Unsupported courier authlib '$cfg{Extension_courier}{authlib}'\n";
     }
 
-    # Config
-    $eh->regiter_task('config', 'sample', \&config_sample);
+#     Config
+#        $eh->regiter_task('config', 'sample', \&config_sample);
 
-    # email
+#     email
     $eh->register_keyword('email');
     $eh->register_action('email', 'add');
     $eh->register_task('email', 'add', \&email_add, 0);
-    $eh->register_option('email', 'add', 'account', '=s');
-    $eh->register_option('email', 'add', 'name', '=s');
-    $eh->register_option('email', 'add', 'password', '=s');
-    $eh->register_option('email', 'add', 'quota', '=s');
+    $eh->register_option('email', 'add', 'account', '=s' );
+
+    $eh->register_action('email', 'del');
+    $eh->register_task('email', 'del', \&email_del, 0);
+    $eh->register_option('email', 'del', 'account', '=s' );
+}
+
+sub get_home_directory
+{
+    my $cfg = shift;
+    my $user = shift;
+    my $domain = shift;
+
+    return eval( $cfg->{Extension_courier}{userhomedir} );
+}
+sub get_domain_directory
+{
+    my $cfg = shift;
+    my $domain = shift;
+    
+    return eval( $cfg->{Extension_courier}{domaindir} );
+}
+
+sub split_address
+{
+    my $cfg = shift;
+    my $account = shift;
+    my $username = shift;
+    my $domain = shift;
+
+    if ($account =~ /^(\S+)\@(\S+)$/) {
+	$$username = $1;
+	$$domain = $2;
+    } else {
+	$$username = $account;
+ 	$$domain = $cfg->{Extension_courier}{defaultdomain};
+	$$domain =~ s/^\s*(\S+)\s*/$1/;
+    }
+##    $$user = lc($$username) if 0+$cfg->{Extension_courier}{'lc_user'};
+    $$domain = lc($$domain);
 }
 
 sub email_add
@@ -145,21 +167,90 @@ sub email_add
     # ... other stuff?
 
     my $account = $opts->{account};
-    my $user, $domain;
-    if ($account =~ /^(\S+)\@(\S+)$/) {
-	$user = $1;
-	$domain = $2;
-    } else {
-	$user = $account;
-	$domain = $cfg{Extension_courier}{'default domain'};
-	$domain =~ s/^\s*(\S+)\s*/$1/;
-    }
+    my $user;
+    my $domain;
+    
+    split_address( $cfg, $account, \$user, \$domain );
+    
+    die "account must be in form user\@domain" if( !$user );
+    die "account must be in form user\@domain" if( !$domain );
 
+    
     if ($authlib->user_exists($account)) {
 	die "Unable to add email: address exists\n";
     }
+    else
+    {
+	my $userdir = get_home_directory( $cfg, $user, $domain );
+	
+	my $user_parentdir = $userdir;
+	$user_parentdir =~ s/\/[^\/]*$//;
 
-    # ... more stuff
+	if( not -e "$user_parentdir" )
+	{
+	    mkdir_p( "$user_parentdir", 
+		     0775, 
+		     (getpwnam($cfg->{Extension_courier}{courier_user}))[2],  		
+		     (getgrnam($cfg->{Extension_courier}{courier_group}))[2] )
+		|| die "could not create user directory: $user_parentdir";
+	}
+
+	my $rc = 0xffff & system ('cp', '-R', $cfg->{Extension_courier}{skeldir}, "$userdir");
+	
+	$rc <<= 8;
+	die "Can't copy skel dir $cfg->{Extension_courier}{skeldir} to $userdir: $!\n"
+	    if $rc != 0;
+	system('chown', '-R', "$cfg->{Extension_courier}{courier_user}:$cfg->{Extension_courier}{courier_group}", "$userdir");
+
+	$authlib->add_user( $opts->{account},
+			    $opts->{password},
+			    get_home_directory( $cfg, $user, $domain ),
+			    $opts->{name} );
+    }
+}
+
+sub email_del
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    # ... other stuff?
+
+    my $account = $opts->{account};
+    my $user;
+    my $domain;
+    
+    split_address( $cfg, $account, \$user, \$domain );
+    
+    die "account must be in form user\@domain" if( !$user );
+    die "account must be in form user\@domain" if( !$domain );
+
+    my $userdir = get_home_directory( $cfg, $user, $domain );
+    system ('rm', '-r', "$userdir");
+
+    $authlib->del_user( $opts->{$account} )
+
+}
+
+sub is_domain_hosted
+{
+    my $cfg = shift;
+    my $domain = shift;
+
+    my $hosteddomainsfile = $cfg->{Extension_courier}{etc} . "/hosteddomains";
+    
+    open( HD, "<$hosteddomainsfile" ) || die "couldnt' open $hosteddomainsfile";
+    while( <HD> )
+    {
+	if( /^$domain$/ )
+	{
+	    close( HD );
+	    return 1;
+	}
+    }
+    
+    close( HD );
+    return 0;
 }
 
 sub generate_password

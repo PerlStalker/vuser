@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.4 2005-01-20 15:58:59 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.5 2005-01-21 20:53:17 stewatvireo Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -13,6 +13,7 @@ use Getopt::Long;
 
 sub new
 {
+
     my $self = shift;
     my $class = ref($self) || $self;
     my $cfg = shift;
@@ -25,7 +26,7 @@ sub new
 
     bless $me, $class;
 
-    $me->load_extensions($cfg);
+    $me->load_extensions(%$cfg);
 
     return $me;
 }
@@ -145,28 +146,37 @@ sub register_task
 sub load_extensions
 {
     my $self = shift;
-    my $cfg = shift;
+    my %cfg = @_;
 
-    $self->load_extension('CORE');
-
-    foreach my $key (grep { /^Extension_/ } keys %$cfg) {
-	my $extension = $key =~ s/^Extension_//;
-	eval { $self->load_extension($extension, $cfg); };
-	warn "Unable to load $extension: $@\n" if $@;
+    $self->load_extension('VUser::CORE');
+    foreach my $extension (split( / /, $cfg{ ExtHandler }{ extensions } ) )
+    {
+	eval { $self->load_extension($extension, %cfg); };
     }
+    
+#     foreach my $key (grep { /^Extension_/ } keys %$cfg) {
+#  	my $extension = $key =~ s/^Extension_//;
+# 	print( "extension: $key\n" );
+#  	eval { $self->load_extension($key, $cfg); };
+#  	warn "Unable to load $extension: $@\n" if $@;
+#     }
 }
 
 sub load_extension
 {
     my $self = shift;
     my $ext = shift;
-    my $cfg = shift;
-    my $top = shift || 'VUser';
+    my %cfg = @_;
 
-    eval "require $top\:\:$ext";
+    my $pm = $ext;
+    $pm =~ s/::/\//g;
+    $pm .= ".pm";
+       
+    eval( "require $ext" );
     die $@ if $@;
     no strict "refs";
-    &{$top.'::'.$ext.'::init'}($self, %$cfg);
+    
+    &{$ext.'::init'}($self, %cfg);
 }
 
 sub run_tasks
