@@ -3,12 +3,12 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: mysql.pm,v 1.3 2005-01-13 18:02:29 perlstalker Exp $
+# $Id: mysql.pm,v 1.4 2005-01-25 17:22:59 perlstalker Exp $
 
 use DBI;
 
 use lib('../..');
-use ExtLib;
+use VUser::ExtLib;
 
 sub new
 {
@@ -32,11 +32,11 @@ sub init
 
     # Connect to DB here
     my $dsn = 'DBI:mysql:';
-    $dsn .= 'database='.ExtLib::strip_ws($cfg{Extension_asterisk}{$service.'_dbname'});
+    $dsn .= 'database='.VUser::ExtLib::strip_ws($cfg{Extension_asterisk}{$service.'_dbname'});
 
     my $host = defined $cfg{Extension_asterisk}{$service.'_dbhost'} ?
 	$cfg{Extension_asterisk}{$service.'_dbhost'} : 'localhost';
-    $host = ExtLib::strip_ws($host);
+    $host = VUser::ExtLib::strip_ws($host);
     $dsn .= ";host=$host";
 
     my $port = defined $cfg{Extension_asterisk}{$service.'_dbport'} ?
@@ -45,11 +45,11 @@ sub init
     
     my $user = defined $cfg{Extension_asterisk}{$service.'_dbuser'} ?
 	$cfg{Extension_asterisk}{$service.'_dbuser'} : '';
-    $user = ExtLib::strip_ws($user);
+    $user = VUser::ExtLib::strip_ws($user);
 
     my $pass = defined $cfg{Extension_asterisk}{$service.'_dbpass'} ?
 	$cfg{Extension_asterisk}{$service.'_dbpass'} : '';
-    $pass = ExtLib::strip_ws($pass);
+    $pass = VUser::ExtLib::strip_ws($pass);
 
     $self->{_dbh} = DBI->connect($dsn, $user, $pass);
     die "Unable to connect to database: ".DBI->errstr."\n" unless $self->{_dbh};
@@ -137,6 +137,31 @@ sub sip_exists
     }
 }
 
+# $user and $context can take SQL wild cards
+sub sip_get
+{
+    my $self = shift;
+    my $user = shift;
+    my $context = shift;
+
+    my $sql = 'select * from sipfriends where name like ? and context like ? order by context, name';
+    my $sth = self->{_dbh}->prepare($sql)
+	or die "Can't get SIP user: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute ($user, $context)
+	or die "Can't get SIP user: ".$sth->errstr."\n";
+
+    my @users = ();
+    my $res;
+    while (defined ($res = $sth->fetchrow_hashref())) {
+	push @users, $res;
+    }
+
+    $sth->finish;
+
+    return @users;
+}
+
 # name, secret, context, ipaddr, port, regseconds (mailbox)
 sub iax_add {}
 sub iax_del {}
@@ -220,6 +245,31 @@ sub ext_exists
     1;
 }
 
+sub ext_get
+{
+    my $self = shift;
+    my $ext = shift;
+    my $context = shift;
+    my $priority = shift;
+
+    my $sql = 'select * from extensions where extention like ? and context like ? and priority like ? order by context,extension,priority';
+    my $sth = self->{_dbh}->prepare($sql)
+	or die "Can't get extension: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute ($ext, $context)
+	or die "Can't get extension: ".$sth->errstr."\n";
+
+    my @exts = ();
+    my $res;
+    while (defined ($res = $sth->fetchrow_hashref())) {
+	push @exts, $res;
+    }
+
+    $sth->finish;
+
+    return @exts;
+}
+
 sub vm_add
 {
     my $self = shift;
@@ -282,7 +332,7 @@ sub vm_exists
     my $box = shift;
     my $context = shift;
 
-    my $sql = 'select mailbox, context from users where mailbox = ? and context = ?';
+    my $sql = 'select mailbox, context from users where mailbox = ? and context = ? order by context, mailbox';
 
     my $sth = $self->{_dbh}->prepare($sql)
 	or die "Can't find voice mail box: ".$self->{_dbh}->errstr."\n";
@@ -296,6 +346,30 @@ sub vm_exists
 	return 0;
     }
     1;
+}
+
+sub vm_get
+{
+    my $self = shift;
+    my $box = shift;
+    my $context = shift;
+
+    my $sql = 'select * from users where mailbox like ? and context like ?';
+    my $sth = self->{_dbh}->prepare($sql)
+	or die "Can't get voice mail box: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute ($box, $context)
+	or die "Can't get voice mail box: ".$sth->errstr."\n";
+
+    my @boxes = ();
+    my $res;
+    while (defined ($res = $sth->fetchrow_hashref())) {
+	push @boxes, $res;
+    }
+
+    $sth->finish;
+
+    return @boxes;
 }
 
 1;

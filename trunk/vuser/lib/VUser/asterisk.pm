@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.4 2005-01-13 18:12:22 perlstalker Exp $
+# $Id: asterisk.pm,v 1.5 2005-01-25 17:22:48 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -154,6 +154,13 @@ sub init
     $eh->register_option('sip', 'mod', 'newcontext', '=s');
     $eh->register_task('sip', 'mod', \&sip_mod, 0);
 
+    # SIP-show
+    $eh->register_action('sip', 'show');
+    $eh->register_option('sip', 'show', 'name', '=s');
+    $eh->register_option('sip', 'show', 'context', '=s');
+    $eh->register_option('sip', 'show', 'pretty', '');
+    $eh->register_task('sip', 'show', \&sip_show, 0);
+
     # IAX
     $eh->register_keyword('iax');
     $eh->register_action('iax', 'add');
@@ -194,6 +201,14 @@ sub init
     $eh->register_option('ext', 'mod', 'newext', '=s');
     $eh->register_task('ext', 'mod', \&ext_mod, 0);
 
+    # Ext-show
+    $eh->register_action('ext', 'show');
+    $eh->register_option('ext', 'show', 'extension', '=s');
+    $eh->register_option('ext', 'show', 'context', '=s');
+    $eh->register_option('ext', 'show', 'priority', '=i');
+    $eh->register_option('ext', 'show', 'pretty', '');
+    $eh->register_task('ext', 'show', \&ext_show, 0);
+
     # Voice mail
     $eh->register_keyword('vm');
 
@@ -224,6 +239,13 @@ sub init
     $eh->register_option('vm', 'mod', 'pager', '=s');
     $eh->register_option('vm', 'mod', 'options', '=s');
     $eh->register_task('vm', 'mod', \&vm_mod, 0);
+
+    # VM-show
+    $eh->register_action('vm', 'show');
+    $eh->register_option('vm', 'show', 'name', '=s');
+    $eh->register_option('vm', 'show', 'context', '=s');
+    $eh->register_option('vm', 'show', 'pretty', '');
+    $eh->register_task('vm', 'show', \&sip_show, 0);
 
     # Asterisk control
     $eh->register_keyword('asterisk');
@@ -299,7 +321,81 @@ sub sip_mod
     $backend{sip}->sip_mod(%user);
 }
 
-sub sip_write {}
+sub sip_show
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $user = '%';
+    my $context = '%';
+    my $pretty = 0;
+
+    $name = $opts->{name} if defined($opts->{name});
+    $context = $opts->{context} if defined($opts->{context});
+    $pretty = 1 if defined ($opts->{pretty});
+
+    my @users = $backend{sip}->sip_get($name, $context);
+
+    if ($pretty) {
+	printf(  "       Name: %20s Context: %20s\n"
+	        ."     Secret: %20s  VM Box: %20s\n"
+		."%1s Caller ID: %s\n"
+		." IP Address: %20s    Port: %5s Reg. Sec: %s\n"
+		, $user->{name}, $user->{context},
+		$user->{secret}, $user->{mailbox},
+		$user->{restrictcid}? '*' : ' ', $user->{callerid},
+		$user->{ipaddr}, $user->{port}, $user{regseconds}
+		);
+    } else {
+	foreach my $user (@users) {
+	    print(join (':', map { $_ = '' unless defined $_ }
+			$user->{qw(name context username secret ipaddr
+				   port regseconds callerid restrictcid
+				   mailbox)}
+			)
+		  );
+	    print "\n";
+	}	
+    }
+}
+
+sub sip_write
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my @users = $backend{sip}->sip_get('%', '%');
+
+    unless (open (CONF, $cfg->{Extension_asterisk}{etc}.'/'
+		  .$cfg->{Extension_asterisk}{'sip.conf'})
+	    ) {
+	die "Can't open ".$cfg->{Extension_asterisk}{etc}.'/'
+	  .$cfg->{Extension_asterisk}{'sip.conf'}.": $!\n";
+    }
+
+    foreach my $user (@users) {
+	print CONF '['.$user->{name}."]\n";
+	print CONF "type=friend\n";
+	print CONF "username=".$user->{username}."\n" if $user->{username};
+	print CONF "secret=".$user->{secret}."\n" if $user->{secret};
+
+	my $context = $user->{context};
+	$context = $cfg->{Extension_asterisk}{'default context'} unless $context;
+	print CONF "context=$context\n";
+
+	print CONF "ipaddr=".$user->{ipaddr}."\n" if $user->{ipaddr};
+	print CONF 'port='.$user->{port}."\n" if $user->{port};
+	print CONF 'regseconds='.$user->{regseconds}."\n" if $user->{regseconds);
+	print CONF 'callerid='.$user->{callerid}."\n" if $user->{callerid};
+
+	# restrictcid can be 0
+	print CONF 'restrictcid='.$user->{restrictcid}."\n" if defined $user->{restrictcid};
+	print CONF 'mailbox='.$user->{mailbox}."\n" if $user->{mailbox};
+	print CONF "\n";
+    }
+
+    close CONF;
+}
 
 sub iax_add {}
 sub iax_del {}
@@ -371,7 +467,77 @@ sub ext_mod
     $backend{sip}->sip_mod(%ext);
 }
 
-sub ext_write {}
+sub ext_show
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $ext = '%';
+    my $context = '%';
+    my $priority = '%';
+    my $pretty = 0;
+
+    $name = $opts->{name} if defined($opts->{name});
+    $context = $opts->{context} if defined($opts->{context});
+    $priority = $opts->{priority} if defined($opts->{priority});
+    $pretty = 1 if defined ($opts->{pretty});
+
+    my @exts = $backend{ext}->ext_get($ext, $context, $priority);
+
+    if ($pretty) {
+	# TODO: Fill this in later
+    } else {
+	foreach my $exten (@exts) {
+	    print( join (':', map { $_ = '' unless defined $_; }
+			 $exten->{qw(extension context priority
+				     application args descr flags)}
+			 )
+		   );
+	    print "\n";
+	}
+    }
+}
+
+sub ext_write
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %exts;
+    foreach my $ext ($backend{ext}->ext_get('%', '%', '%'))
+    {
+	if (not exists $exts{$ext->{context}}) {
+	    $exts{$ext->{context}} = [];
+	}
+
+	push @{$exts{$ext->{context}}}, $ext;
+    }
+
+
+    unless (open (CONF, $cfg->{Extension_asterisk}{etc}.'/'
+		  .$cfg->{Extension_asterisk}{'extenstions.conf'})
+	    ) {
+	die "Can't open ".$cfg->{Extension_asterisk}{etc}.'/'
+	  .$cfg->{Extension_asterisk}{'extentions.conf'}.": $!\n";
+    }
+
+    foreach my $context (keys %exts) {
+	print CONF "[$context]\n";
+	foreach my $ext (@{$exts{$context}}) {
+	    next if $ext->{flags} == 1;
+	    print CONF 'exten => '.$ext->{extension};
+	    print CONF ','.$ext->{priority};
+	    print CONF ','.$ext->{application};
+	    print CONF '('.$ext->{args}.')' if defined $ext->{args};
+	    print CONF "\t" unless defined $ext->{args};
+	    print CONF "\t; ".$ext->{descr} if defined $ext->{descr};
+	    print CONF "\n";
+	}
+	print CONF "\n";
+    }
+
+    close CONF;
+}
 
 sub vm_add
 {
@@ -432,7 +598,73 @@ sub vm_mod
     $backend{vm}->vm_mod(%box);
 
 }
-sub vm_write {}
+
+sub vm_show
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $box = '%';
+    my $context = '%';
+    my $pretty = 0;
+
+    $box = $opts->{mailbox} if defined $opts->{mailbox};
+    $context = $opts->{context} if defined($opts->{context});
+    $pretty = 1 if defined $opts->{pretty};
+
+    my @boxes = $backend{vm}->vm_get($box, $context);
+
+    if ($pretty) {
+	# TODO: fill this in
+    } else {
+	foreach my $vmbox (@boxes) {
+	    print (join (':', map { $_ = '' unless defined $_; }
+			 $vmbox->{qw(mailbox context password fullname
+				     email pager options stamp)}
+			 )
+		   );
+	    print "\n";
+	}
+    }
+}
+
+sub vm_write
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %vms;
+    foreach my $vm ($backend{vm}->vm_get('%', '%'))
+    {
+	if (not exists $vms{$vm->{context}}) {
+	    $vms{$vm->{context}} = [];
+	}
+
+	push @{$vms{$vm->{context}}}, $vm;
+    }
+
+    unless (open (CONF, $cfg->{Extension_asterisk}{etc}.'/'
+		  .$cfg->{Extension_asterisk}{'voicemail.conf'})
+	    ) {
+	die "Can't open ".$cfg->{Extension_asterisk}{etc}.'/'
+	  .$cfg->{Extension_asterisk}{'voicemail.conf'}.": $!\n";
+    }
+
+    foreach my $context (keys %vms) {
+	print CONF "[$context]\n";
+	foreach my $vm (@{$vms{$context}}) {
+	    print CONF $vm->{mailbox}.' => '.$vm->{password};
+	    print CONF ','.$vm->{fullname};
+	    print CONF ','.$vm->{email};
+	    print CONF ','.$vm->{pager};
+	    print CONF ','.$vm->{options};
+	    print CONF "\n";
+	}
+	print CONF "\n";
+    }
+
+    close CONF;
+}
 
 1;
 
