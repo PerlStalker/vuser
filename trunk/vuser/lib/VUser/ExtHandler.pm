@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.11 2005-02-07 16:30:55 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.12 2005-02-07 16:43:12 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.11 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.12 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -78,7 +78,7 @@ sub register_option
     }
 
     if (exists $self->{keywords}{$keyword}{$action}{options}{$option}) {
-	die "Unable to register option. '$option' already exists.\n";
+	die "Unable to register option for $keyword|$action. '$option' already exists.\n";
     } else {
 	$self->{keywords}{$keyword}{$action}{options}{$option} = $type;
 	if ($required) {
@@ -149,7 +149,7 @@ sub load_extensions
     my %cfg = @_;
 
     $self->load_extension('VUser::CORE');
-    foreach my $extension (split( / /, $cfg{ ExtHandler }{ extensions } ) )
+    foreach my $extension (split( / /, $cfg{ vuser }{ extensions } ) )
     {
 	eval { $self->load_extension( "VUser::$extension", %cfg); };
 	warn "Unable to load $extension: $@\n" if $@;
@@ -186,7 +186,7 @@ sub unload_extensions
     my %cfg = @_;
 
     $self->load_extension('VUser::CORE');
-    foreach my $extension (split( / /, $cfg{ ExtHandler }{ extensions } ) )
+    foreach my $extension (split( / /, $cfg{ vuser }{ extensions } ) )
     {
 	eval { $self->unload_extension( "VUser::$extension", %cfg); };
 	warn "Unable to unload $extension: $@\n" if $@;
