@@ -3,13 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.13 2005-02-07 16:49:21 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.14 2005-02-09 05:09:58 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.13 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.14 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
 use Getopt::Long;
+use VUser::ExtLib;
 
 sub new
 {

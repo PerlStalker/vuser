@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.1 2004-12-30 22:09:56 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.2 2005-02-09 05:09:58 perlstalker Exp $
 
 sub add_line_to_file
 {
@@ -118,7 +118,7 @@ sub run_scripts_in_dir
 
     closedir DIR;
 
-    foreach $script (@scripts) {
+    foreach my $script (@scripts) {
 	system ("$dir/$script", @args);
     }
 }
