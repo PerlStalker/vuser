@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.1 2004-12-24 00:09:23 perlstalker Exp $
+# $Id: CORE.pm,v 1.2 2004-12-25 15:23:12 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -74,10 +74,10 @@ sub init
     # Config
     $eh->register_keyword('config');
     $eh->register_action('config', 'file');
-    $eh->register_task('config', 'file', \&config_file);
+    $eh->register_task('config', 'file', \&config_file, 0);
 
     $eh->register_action('config', 'sample');
-    $eh->register_task('config', 'sample', \&config_sample);
+    $eh->register_task('config', 'sample', \&config_sample, 0);
     $eh->register_option('config', 'sample', 'file', '=s');
 
     # Help
@@ -102,7 +102,7 @@ __END__
 
 =head1 NAME
 
-ExtHandler - vuser extension handler.
+CORE - vuser core extensions
 
 =head1 DESCRIPTION
 
