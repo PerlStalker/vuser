@@ -5,11 +5,11 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: courier.pm,v 1.3 2005-01-21 21:31:07 perlstalker Exp $
+# $Id: courier.pm,v 1.4 2005-01-21 21:32:55 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -72,7 +72,7 @@ lc_user = 0
 default domain=example.com
 
 # Given $user and $domain, where will the user's home directory be located?
-This may be a valid perl expression.
+# This may be a valid perl expression.
 
 # PerlStalker's scheme:
 domaindir="/var/mail/virtual/$domain"
