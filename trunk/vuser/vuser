@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.1 2004-12-24 00:08:31 perlstalker Exp $
+# $Id: vuser,v 1.2 2004-12-30 22:08:26 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -26,8 +26,9 @@ BEGIN {
 use vars qw(@etc_dirs);
 
 use lib (map { "$_/extensions" } @etc_dirs);
+use lib (map { "$_/lib" } @etc_dirs);
 
-use ExtHandler;
+use VUser::ExtHandler;
 
 my $config_file;
 for my $etc_dir (@etc_dirs)
@@ -45,9 +46,9 @@ if (not defined $config_file) {
 my %cfg;
 tie %cfg, 'Config::IniFiles', (-file => $config_file);
 
-my $eh = new ExtHandler (\%cfg);
+my $eh = new VUser::ExtHandler (\%cfg);
 
-my $keyword = shift @ARGV;
+my $keyword = shift @ARGV || 'help';
 my $action = shift @ARGV;
 
 # Actions cannot start with -
