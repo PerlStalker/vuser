@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.4 2004-05-20 22:30:03 perlstalker Exp $
+# $Id: vuser,v 1.5 2004-05-20 23:40:24 stewatvireo Exp $
 
 #
 # Configuration
@@ -1109,6 +1109,16 @@ vuser - Adds/Removes/Modifies MySQL virtual users for Courier
  vuser [options] list mod name account [-a new_account]
 
  vuser help
+
+ options:
+
+ -e /path/to/vuser.conf
+ 	use the vuser.conf file specified.  If this option isn't specified, 
+	vuser.conf will be loaded from one of the default locations:
+		/etc/vuser.conf
+		/usr/local/etc/vuser.conf
+
+	
 
 =head1 DESCRIPTION
 
