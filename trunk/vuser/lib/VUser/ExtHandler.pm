@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.8 2005-01-21 21:10:28 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.9 2005-01-21 21:20:03 stewatvireo Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -151,7 +151,7 @@ sub load_extensions
     $self->load_extension('VUser::CORE');
     foreach my $extension (split( / /, $cfg{ ExtHandler }{ extensions } ) )
     {
-	eval { $self->load_extension($extension, %cfg); };
+	eval { $self->load_extension( "VUser::$extension", %cfg); };
 	warn "Unable to load $extension: $@\n" if $@;
     }
     
