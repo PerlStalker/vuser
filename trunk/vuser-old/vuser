@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.18 2004-10-05 17:51:45 perlstalker Exp $
+# $Id: vuser,v 1.19 2004-12-23 17:15:21 stewatvireo Exp $
 
 #
 # Configuration
@@ -426,15 +426,23 @@ sub mod
 	    $cdb->do($sql) or die "Can't update aliases to reflect account name change: ".$cdb->errstr()."\n";
 	}
 	
+	my $uid = (getpwnam($cfg{courier}{courier_user}))[2];
+	my $gid = (getgrnam($cfg{courier}{courier_group}))[2];
 
 	mkdir_p( "$nuserdir",  		 
 		 0775,  		 
-		 (getpwnam($cfg{courier}{courier_user}))[2],  		
-		 (getgrnam($cfg{courier}{courier_group}))[2] )
+		 $uid,
+		 $gid )
   	    || die "could not create user directory: $nuserdir";    
 
-	system ('mv', "$userdir/", "$nuserdir");
-	system ('rm', '-r', "$userdir");
+          # cheap fix for bug where we end up with the old account under a subdir	  
+	  # stew 2004/12/23
+	system ('rmdir', "$nuserdir" );  
+
+	system ('mv', "$userdir", "$nuserdir");
+	system ('chown', '-R', "$uid.$gid", "$nuserdir" );
+	system ('chmod', "0775", "$nuserdir" );
+#	system ('rm', '-r', "$userdir");
 
 	# We'll need to update the SpamAssassin preferences as well.
 	if ($cfg{spamassassin}{use_sa})
