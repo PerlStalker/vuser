@@ -5,11 +5,11 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: courier.pm,v 1.2 2005-01-21 20:53:17 stewatvireo Exp $
+# $Id: courier.pm,v 1.3 2005-01-21 21:31:07 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -34,59 +34,79 @@ sub config_sample
 
     print $fh <<'CONFIG';
 [Extension_courier]
-the location of the courier configuration
+# the location of the courier configuration
 etc=/etc/courier
 
-the user/group that the MDA will run as
-user=courier
-group=courier
+# the user/group that the MDA will run as
+courier_user=courier
+courier_group=courier
 
-the command to run to restart courier
+# the command to run to restart courier
 courier_rc=/usr/local/etc/rc.d/courier.sh
 
-These commands may be wrapped but they MUST take the same options
-as the commands themselves.
+# These commands may be wrapped but they MUST take the same options
+# as the commands themselves.
 
-the path to makehosteddomains.
-This may also be any command that wraps makehosteddomains.
+# the path to makehosteddomains.
+# This may also be any command that wraps makehosteddomains.
 makehosteddomains=chroot /netboot/beta /usr/local/sbin/makehosteddomains
 makehosteddomains=/usr/sbin/makehosteddomains
 
-the path to makeacceptmailfor.
-This may also be any command that wraps makeacceptmailfor.
-makeacceptmailfor=chroot /netboot/beta /usr/local/sbin/makeacceptmailfor
+# the path to makeacceptmailfor.
+# This may also be any command that wraps makeacceptmailfor.
+# makeacceptmailfor=chroot /netboot/beta /usr/local/sbin/makeacceptmailfor
 makeaccptmailfor=/usr/sbin/makeacceptmailfor
 
-the path to couriermlm
-This may be a wrapper as above.
-couriermlm=chroot /netboot/beta /usr/local/sbin/couriermlm
+# the path to couriermlm
+# This may be a wrapper as above.
+# couriermlm=chroot /netboot/beta /usr/local/sbin/couriermlm
 couriermlm=/usr/bin/couriermlm
 
-The location of the files which are copies into a brand new home dir
+# The location of the files which are copies into a brand new home dir
 skeldir=/usr/local/etc/courier/skel
 
-Set to 1 to force user names to lower case
+# Set to 1 to force user names to lower case
 lc_user = 0
 
-the domain to use if the account doesn't have one
+# the domain to use if the account doesn't have one
 default domain=example.com
 
-Given $user and $domain, where will the user's home directory be located?
+# Given $user and $domain, where will the user's home directory be located?
 This may be a valid perl expression.
 
-PerlStalker's scheme:
+# PerlStalker's scheme:
 domaindir="/var/mail/virtual/$domain"
 userhomedir="/var/mail/virtual/$domain/".substr($user, 0, 2)."/$user"
 
-stew's scheme:
+# stew's scheme:
 domaindir="/home/virtual/$domain"
 userhomedir="/home/virtual/$domain/var/mail/$user"
 
-which authentication system to use
-Only 'mysql' is supported currently.
+# which authentication system to use
+# Only 'mysql' is supported currently.
 authlib=mysql
 
 list_prefix=list
+
+[Extension_courier_mysql]
+
+server=localhost
+username=courier
+password=password
+socket=/tmp/mysql.sock
+port=3306
+database=courier
+user_table=users
+crypt_pwfield=
+clear_pwfield=clear
+uid_field=uid
+gid_field=gid
+login_field=id
+home_field=home
+name_field=name
+maildir_field=maildir
+quota_field=quota
+alias_field=aliasfor
 
 CONFIG
 
