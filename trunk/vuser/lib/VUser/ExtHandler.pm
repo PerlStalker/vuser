@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.22 2005-02-25 04:28:35 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.23 2005-03-03 17:49:36 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.22 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.23 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -317,20 +317,25 @@ sub run_tasks
 	    } elsif ($type eq '+') {
 		# All we can do here is make sure the option is an int.
 		unless ($opts{$opt} =~ $RE{num}{int}) {
-		    die "$opt is not an integer.";
+		    die "$opt is not an integer.\n";
 		}
 	    } elsif ($type =~ /^([=:])([siof])([@%])?$/) {
-		if ($1 eq '=' and not defined $opts{$opt}) {
-		    die "Missing required option: $opt";
+		if ($1 eq '='
+		    and exists $opts{$opt}
+		    and not defined $opts{$opt}) {
+		    die "Missing required value: $opt\n";
 		}
 
 		my $d_type = $2;
 		my $dest_type = $3;
 
-		if ($d_type eq 's') {
+		if (not $self->is_required($keyword, $action, $opt)
+		    and not defined $opts{$opt}) {
+		    # A non-required option is missing. Nothing to do.
+		} elsif ($d_type eq 's') {
 		    # There's nothing to verify here
 		} elsif ($d_type eq 'i' and not $opts{$opt} =~ /$RE{num}{int}/) {
-		    die "$opt is not an integer.";
+		    die "$opt is not an integer.\n";
 		} elsif ($d_type eq 'o'
 			 and not ($opts{$opt} =~ /$RE{num}{int}/
 				  or $opts{$opt} =~ /$RE{num}{oct}/
