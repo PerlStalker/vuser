@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.6 2005-02-14 16:40:46 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.7 2005-03-07 20:49:34 perlstalker Exp $
 
 sub add_line_to_file
 {
@@ -182,6 +182,18 @@ sub strip_ws
     return $string;
 }
 
+sub touch
+{
+    my $file = shift;
+    my $time = shift;
+
+    unless (-e $file) {
+	open (FILE, ">>$file") or die "Unable to open $file: $!\n";
+	close FILE;
+    }
+    utime($time, $time, $file) or die "Unable to change time on $file: $!\n";
+}
+
 1;
 
 __END__
@@ -246,6 +258,11 @@ Does not recurse into sub directories.
 =head2 strip_ws ($string)
 
 Remove leading and trailing white space.
+
+=head2 touch ($file, $time)
+
+Change the atime and mtime of file to $time or the current time if $time
+is not defined.
 
 =head1 AUTHOR
 
