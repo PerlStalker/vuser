@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.10 2005-03-04 23:17:24 perlstalker Exp $
+# $Id: CORE.pm,v 1.11 2005-03-04 23:46:23 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.11 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -157,7 +157,11 @@ sub process_event_dir
 		      } readdir DIR;
     closedir DIR;
 
-    foreach my $file (@files) {
+    foreach my $file (sort {
+	my @astat = stat("$dir/$a");
+	my @bstat = stat("$dir/$b");
+	$astat[9] <=> $bstat[9]; # Sort on mtime
+	} @files) {
 	if (-d "$dir/$file") {
 	    eval { process_event_dir($cfg, $opts, $eh, "$dir/$file"); };
 	    die $@ if $@;
