@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.5 2005-02-11 16:44:17 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.6 2005-02-14 16:40:46 perlstalker Exp $
 
 sub add_line_to_file
 {
@@ -81,8 +81,16 @@ sub generate_password
 
 sub mkdir_p
 {
-    my ($dir, $mode, $uid, $gid) = @_;
-    $dir =~ s/\/$//;
+    my ($dir, $mode, $user, $group) = @_;
+    $dir =~ s!/$!!;
+
+    # If user is a uid, use it, otherwise it must be a
+    # name. We'll get the id from the system.
+    my $uid = ($user =~ /^\d+$/ ? $user : getpwnam($user));
+    my $gid = ($group =~ /^\d+$/ ? $group : getgrnam($group));
+
+    die "Unknown user '$user'" if not defined $uid;
+    die "Unknown group '$group'" if not defined $gid;
 
     if( -e "$dir" )
     {
@@ -90,7 +98,7 @@ sub mkdir_p
     }
 
     my $parent = $dir;
-    $parent =~ s/\/[^\/]*$//;
+    $parent =~ s!/[^/]*$!!;
 
     if( !$parent ) { return 0; }
     else 
@@ -137,7 +145,7 @@ sub rm_r
     my @files = grep { ! /^\.\.?$/; } readdir DIR;
     foreach my $file (@files) {
 	if (-d "$dir/$file") {
-	    eval { rm_r "$dir/$file"; };
+	    eval { rm_r("$dir/$file"); };
 	    die "$@" if $@;
 	} else {
 	    unlink "$dir/$file" or die "Unable to delete $dir/$file: $!";
