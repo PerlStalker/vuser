@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: mysql.pm,v 1.5 2005-02-09 04:21:30 perlstalker Exp $
+# $Id: mysql.pm,v 1.6 2005-02-09 04:24:05 perlstalker Exp $
 
 use DBI;
 
