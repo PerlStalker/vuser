@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.20 2005-02-17 05:09:42 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.21 2005-02-17 15:21:40 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.20 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.21 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -251,7 +251,7 @@ sub run_tasks
 	# We need to do some error checking here on the option type.
 	# Getopt::Long takes care of it in the other case, but we need to
 	# do that ourselves here.
-	foreach my $opt (keys %opts) {
+	foreach my $opt (keys %{$self->{keywords}{$keyword}{$action}{options}}) {
 	    my $type = $self->{keywords}{$keyword}{$action}{options}{$opt};
 
 	    # Giant switch-type block to validate Getopt::Long types with the
