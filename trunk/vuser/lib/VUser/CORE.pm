@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.1 2004-12-30 22:09:56 perlstalker Exp $
+# $Id: CORE.pm,v 1.2 2005-02-07 16:45:02 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -40,6 +40,10 @@ sub config_sample
 [vuser]
 # Enable debugging
 debug = yes
+
+# Space delimited list of extensions to load
+# extensions = asterisk courier
+extensions = courier
 
 CONFIG
 
