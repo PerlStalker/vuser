@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.6 2005-02-25 17:56:03 perlstalker Exp $
+# $Id: CORE.pm,v 1.7 2005-03-03 03:55:04 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -135,6 +135,89 @@ sub init
     $eh->register_keyword('version', 'Show version information.');
     $eh->register_action('version', '');
     $eh->register_task('version', '', \&version);
+
+    # Batch
+    $eh->register_keyword('batch', 'Run in batch mode.');
+    $eh->register_action('batch', '*', '');
+    $eh->register_task('batch', '*', \&batch_mode); 
+}
+
+sub process_event_dir
+{
+    my $cfg = shift;
+    my $opts = shift;
+    my $eh = shift;
+    my $dir = shift;
+
+    opendir DIR, $dir or die "Unable to open $dir: $!\n";
+    my @files = grep { ! /^\.\.?$/ and ! /^error-/ } readdir DIR;
+    closedir DIR;
+
+    foreach my $file (@files) {
+	if (-d "$dir/$file") {
+	    eval { process_event_dir($cfg, $opts, $eh, "$dir/$file"); };
+	    die chomp($@)."\n" if $@;
+	} elsif (-f "$dir/$file") {
+	    eval { process_event_file($cfg, $opts, $eh, $dir, $file); };
+	    warn chomp($@)."\n" if $@;
+	    rename "$dir/$file", "$dir/error-$file"
+		or warn "Can't rename $dir/$file to error-$file: $!";
+	} else {
+	    warn "File $dir/$file is not a plain file. Skipping.\n";
+	}
+    }
+}
+
+sub process_event_file
+{
+    my $cfg = shift;
+    my $opts = shift;
+    my $eh = shift;
+    my $dir = shift;
+    my $file = shift;
+
+    my ($keyword, $action, $garbage) = split ('-', $file);
+
+    my %opts = ();
+    open FILE, "$dir/$file" or die "Unable to open $dir/$file: $!";
+    while (<FILE>) {
+	chomp;
+	next unless /^\s*(\S+)\s*=>\s*(.*?)\s*$/;
+	my $key = $1;
+	my $val = $2;
+
+	if (not defined $opts{$key}) {
+	    $opts{$key} = $val;
+	} elsif (ref $opts{$key} eq 'SCALAR') {
+	    # We have hit a second option for this key.
+	    # Convert the value into a list
+	    $opts{$key} = [$opts{$key}, $val];
+	} elsif (ref $opts{$key} eq 'ARRAY') {
+	    # We have hit an Nth (N > 2) value for this key.
+	    # Add it to the list.
+	    push (@{$opts{$key}}, $val);
+	} else {
+	    # This should never happen.
+	    warn "Unknown error processing $file: We should never get here.";
+	    next;
+	}
+    }
+    close FILE;
+
+    # All the data has been read, time to run the task.
+    eval { $eh->run_tasks($keyword, $action, $cfg, %opts); };
+    die "$file: ".chomp($@)."\n" if $@;
+}
+
+sub batch_mode
+{
+    my $cfg = shift;
+    my $opts = shift;
+    my $directory = shift; # The 'action' for batch is the dir/file to process
+    my $eh = shift;
+
+    eval { process_event_dir($cfg, $opts, $eh, $directory); };
+    die chomp($@)."\n" if $@;
 }
 
 sub unload { }
