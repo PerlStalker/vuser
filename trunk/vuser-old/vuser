@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.9 2004-06-12 00:38:08 perlstalker Exp $
+# $Id: vuser,v 1.10 2004-06-28 17:43:32 perlstalker Exp $
 
 #
 # Configuration
@@ -357,6 +357,8 @@ sub mod
     my ($user, $domain) = $account =~ m/^(\S+?)\@(\S+)$/;
     $domain = 'default' if not $domain;
     $domain = lc($domain);
+
+    die "User '$account' doesn't exist.\n" unless user_exists($account);
 
     # Get other params.
     my $name = '';
