@@ -1,0 +1,13 @@
+$Id: README,v 1.1 2004-12-24 00:08:31 perlstalker Exp $
+
+Fill in doc stuff here ...
+
+1.0 INSTALLATION
+
+1.0.1 Required Modules
+
+vuser requires the following Perl modules that are not included with Perl:
+- Config::IniFiles
+
+Other vuser extensions may require other Perl modules. Please see the
+documentation included with those extensions for additional requirements.
