@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.24 2005-03-04 22:56:39 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.25 2005-03-08 15:53:50 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.24 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.25 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -293,6 +293,10 @@ sub run_tasks
 	die "Unknown action '$action'\n";
     }
 
+    # If we're processessing a wild action, we need to check the
+    # '*' action instead of the passed in action.
+    my $real_action = $wild_action? '*': $action;
+
     # If opts is not empty, we'll just use the option's we're given
     # otherwise, we'll get the options using GetOptions()
 
@@ -300,8 +304,8 @@ sub run_tasks
 	# We need to do some error checking here on the option type.
 	# Getopt::Long takes care of it in the other case, but we need to
 	# do that ourselves here.
-	foreach my $opt (keys %{$self->{keywords}{$keyword}{$action}{options}}) {
-	    my $type = $self->{keywords}{$keyword}{$action}{options}{$opt};
+	foreach my $opt (keys %{$self->{keywords}{$keyword}{$real_action}{options}}) {
+	    my $type = $self->{keywords}{$keyword}{$real_action}{options}{$opt};
 
 	    # Giant switch-type block to validate Getopt::Long types with the
 	    # passed in values.
@@ -331,9 +335,9 @@ sub run_tasks
 		my $dest_type = $3;
 
 		if ($main::DEBUG > 2) {
-		    print "Key: $keyword; Act: $action, Opt: $opt; Type: $type d_type: $d_type\n";
+		    print "Key: $keyword; Act: $real_action, Opt: $opt; Type: $type d_type: $d_type\n";
 		    print "Req: ";
-		    print $self->is_required($keyword, $action, $opt)? 'Yes':'No';
+		    print $self->is_required($keyword, $real_action, $opt)? 'Yes':'No';
 		    print " ";
 		    print "Def: ",defined $opts{$opt}?"Yes ($opts{$opt})":'No',"\n";
 		}
@@ -386,8 +390,8 @@ sub run_tasks
 	# Prepare options for GetOptions();
 	my @opt_defs = ();
 	
-	foreach my $opt (keys %{$self->{keywords}{$keyword}{$action}{options}}) {
-	    my $type = $self->{keywords}{$keyword}{$action}{options}{$opt};
+	foreach my $opt (keys %{$self->{keywords}{$keyword}{$real_action}{options}}) {
+	    my $type = $self->{keywords}{$keyword}{$real_action}{options}{$opt};
 	    $type = '' unless defined $type;
 	    my $def = $opt.$type;
 	    push @opt_defs, $def;
@@ -400,7 +404,7 @@ sub run_tasks
     }
 
     # Check for required options
-    my $opt = $self->check_required ($keyword, $action, \%opts);
+    my $opt = $self->check_required ($keyword, $real_action, \%opts);
     if ($opt) {
 	die "Missing required option '$opt'.\n";
     }
