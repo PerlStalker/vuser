@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.9 2005-01-21 21:20:03 stewatvireo Exp $
+# $Id: ExtHandler.pm,v 1.10 2005-01-24 20:31:58 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -180,6 +180,28 @@ sub load_extension
     &{$ext.'::init'}($self, %cfg);
 }
 
+sub unload_extensions
+{
+    my $self = shift;
+    my %cfg = @_;
+
+    $self->load_extension('VUser::CORE');
+    foreach my $extension (split( / /, $cfg{ ExtHandler }{ extensions } ) )
+    {
+	eval { $self->unload_extension( "VUser::$extension", %cfg); };
+	warn "Unable to unload $extension: $@\n" if $@;
+    }
+}
+
+sub unload_extension
+{
+    my $self = shift;
+    my $ext = shift;
+    my %cfg = @_;
+
+    &{$ext.'::unload'}($self, %cfg);
+}
+
 sub run_tasks
 {
     my $self = shift;
@@ -235,6 +257,15 @@ sub run_tasks
 	    &$task($cfg, \%opts, $action);
 	}
     }
+}
+
+sub cleanup
+{
+    my $self = shift;
+    my %cfg = @_;
+
+    eval { $self->unload_extensions(%cfg); }
+    warn $@ if $@;
 }
 
 1;
