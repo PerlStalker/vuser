@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.18 2005-02-26 00:00:15 perlstalker Exp $
+# $Id: asterisk.pm,v 1.19 2005-03-04 23:50:10 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.18 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.19 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -347,7 +347,8 @@ sub sip_mod
 	my ($nname, $ncontext) = ($user{name}, $user{context});
 	$nname = $user{newname} if $user{newname};
 	$ncontext = $user{newcontext} if $user{newcontext};
-	if ($backends{sip}->sip_exists($nname, $ncontext)) {
+	if (($nname ne $user{name} or $ncontext ne $user{context})
+	    and $backends{sip}->sip_exists($nname, $ncontext)) {
 	    die "Can't raname SIP user from $user{name}\@$user{context} to $nname\@$ncontext: SIP user exists\n";
 	}
     }
@@ -492,15 +493,20 @@ sub ext_mod
     }
 
     $ext{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+    $ext{priority} = 1 unless defined $ext{priority};
     $ext{flags} = 1 unless defined $ext{flags};
 
     if ($ext{newcontext} or $ext{newextension} or $ext{newpriority}) {
-	my ($next, $ncontext) = ($ext{extension}, $ext{context});
+	my ($next, $ncontext, $npriority) = ($ext{extension},
+					     $ext{context},
+					     $ext{priority});
 	$next = $ext{newextension} if $ext{newextension};
 	$ncontext = $ext{newcontext} if $ext{newcontext};
-	my $npriority = $ext{newpriority} if $ext{newpriority};
+	$npriority = $ext{newpriority} if $ext{newpriority};
 
-	if ($backends{ext}->ext_exists($next, $ncontext, $npriority)) {
+	if (($next ne $ext{extension} or $ncontext ne $ext{context}
+	     or $npriority != $ext{priority})
+	    and $backends{ext}->ext_exists($next, $ncontext, $npriority)) {
 	    die "Can't raname extension from $ext{extension}\@$ext{context} ($ext{priority} to $next\@$ncontext ($npriority): Extension exists\n";
 	}
     }
@@ -690,7 +696,8 @@ sub vm_mod
 	my ($nbox, $ncontext) = ($box{mailbox}, $box{context});
 	$nbox = $box{newmailbox} if $box{newmailbox};
 	$ncontext = $box{newcontext} if $box{newcontext};
-	if ($backends{vm}->ext_exists($nbox, $ncontext)) {
+	if (($nbox ne $box{mailbox} or $ncontext ne $box{context})
+	    and $backends{vm}->ext_exists($nbox, $ncontext)) {
 	    die "Can't raname VM box from $box{mailbox}\@$box{context} to $nbox\@$ncontext: VM box exists\n";
 	}
 
