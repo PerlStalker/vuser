@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.15 2005-02-15 16:12:58 perlstalker Exp $
+# $Id: asterisk.pm,v 1.16 2005-02-15 20:52:48 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.15 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.16 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -485,8 +485,8 @@ sub ext_mod
 
     my %ext = ();
     for my $item qw(context extension priority application args descr flags
-		       newextension newcontext newpriority
-		       ) {
+		    newextension newcontext newpriority
+		    ) {
 	$ext{$item} = $opts->{$item};
     }
 
@@ -679,7 +679,7 @@ sub vm_mod
 
     my %box = ();
     for my $item qw(context mailbox password fullname email pager options
-		       newcontext newmailbox) {
+		    newcontext newmailbox) {
 	$box{$item} = $opts->{$item};
     }
 
@@ -695,7 +695,15 @@ sub vm_mod
 
 	# We need to rename the mailbox.
 	my $spool = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm spool'});
-	VUser::ExtLib::mkdir_p("$spool/$ncontext", 0755);
+	my $vm_user = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm user'});
+	my $vm_group = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm group'});
+
+	VUser::ExtLib::mkdir_p("$spool/$ncontext", 0755, $vm_user, $vm_group);
+	if ($box{mailbox} ne $nbox) {
+	    rename("$spool/$box{context}/$box{mailbox}",
+		   "$spool/$ncontext/$nbox") or
+		       die "Unable to move vm dir: $!\n";
+	}
     }
 
     $backends{vm}->vm_mod(%box);
