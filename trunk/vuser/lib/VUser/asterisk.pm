@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.12 2005-02-14 17:24:58 perlstalker Exp $
+# $Id: asterisk.pm,v 1.13 2005-02-14 20:15:48 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.12 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.13 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -34,6 +34,9 @@ sub config_sample
 
     print $fh <<'CONFIG';
 [Extension_asterisk]
+# Enable asterisk extension
+enable=yes
+
 # The location of the asterisk config files.
 etc=/etc/asterisk
 
@@ -110,6 +113,8 @@ sub init
 {
     my $eh = shift;
     my %cfg = @_;
+
+    return unless VUser::ExtLib::check_bool($cfg{Extension_asterisk}{enable});
 
     foreach my $backend (keys %backends) {
 	my $type = $cfg{Extension_asterisk}{$backend.'_dbtype'};
