@@ -5,11 +5,11 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: courier.pm,v 1.5 2005-01-21 21:33:44 perlstalker Exp $
+# $Id: courier.pm,v 1.6 2005-01-24 17:59:54 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -131,7 +131,7 @@ sub init
     }
 
 #     Config
-#        $eh->regiter_task('config', 'sample', \&config_sample);
+    $eh->regiter_task('config', 'sample', \&config_sample);
 
 #     email
     $eh->register_keyword('email');
