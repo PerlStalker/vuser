@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: mysql.pm,v 1.1 2004-12-30 22:09:57 perlstalker Exp $
+# $Id: mysql.pm,v 1.2 2005-01-10 22:03:33 perlstalker Exp $
 
 use DBI;
 
@@ -52,27 +52,178 @@ sub init
     $pass = ExtLib::strip_ws($pass);
 
     $self->{_dbh} = DBI->connect($dsn, $user, $pass);
+    die "Unable to connect to database: ".DBI->errstr."\n" unless $self->{_dbh};
 }
 
-sub sip_add {}
-sub sip_del {}
-sub sip_mod {}
-sub sip_write {}
+# Takes a hash with the following keys:
+#  name username secret context ipaddr port regseconds callerid
+#  restrictcid mailbox
+sub sip_add
+{
+    my $self = shift;
+    my %user = @_;
 
+    my @fields = keys %user; # to keep keys in same order.
+
+    my $sql = "insert into sipfriends set ";
+    #$sql = join ', ', map { "$_ = ?"; } grep { defined $user{$_}; } @fields;
+    $sql .= join ', ', map { "$_ = ?"; } @fields;
+
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute(@user{@fields})
+	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+
+    $sth->finish;
+}
+
+# Takes a hash with the following keys:
+#  name context
+sub sip_del
+{
+    my $self = shift;
+    my %user = @_;
+
+    my $sql = 'delete from sipfriends where name = ? and context = ?';
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't delete SIP user: ".$self->{_dbh}->errstr."\n";
+    $sth->execute($user{name}, $user{context})
+	or die "Can't delete SIP user: ".$self->{_dbh}->errstr."\n";
+
+    $sth->finish;
+}
+
+# Takes a hash with the following keys:
+#  name username secret context ipaddr port regseconds callerid
+#  restrictcid mailbox newname newcontext
+sub sip_mod
+{
+    my $self = shift;
+    my %user = @_;
+
+    my @fields = grep { ! /^new/; } keys %user; # to keep keys in same order.
+
+    my $sql = "update sipfriends set ";
+    $sql .= join ', ', map { "$_ = ?"; } @fields;
+    $sql .= ' where name = ? and context = ?';
+
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute(@user{@fields}, $user{newname}, $user{newcontext})
+	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+
+    $sth->finish;
+}
+
+sub sip_exists
+{ 
+    my $self = shift;
+    my $name = shift;
+    my $context = shift;
+
+    my $sql = 'select name, context from sipfriends where name = ? and context = ?';
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't find SIP user: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute($name, $context)
+	or die "Can't find SIP user: ".$self->{_dbh}->errstr."\n";
+
+    if ($sth->fetchrow) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+# name, secret, context, ipaddr, port, regseconds (mailbox)
 sub iax_add {}
 sub iax_del {}
 sub iax_mod {}
-sub iax_write {}
+sub iax_exists { 1; }
 
-sub ext_add {}
-sub ext_del {}
-sub ext_mod {}
-sub ext_write {}
+# context, extension, priority, application, args, descr, flags
+sub ext_add
+{
+    my $self = shift;
+    my %ext = @_;
+
+    my @fields = keys %ext; # to keep keys in same order.
+
+    my $sql = "insert into extensions set ";
+    $sql .= join ', ', map { "$_ = ?"; } @fields;
+
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't add extension: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute(@ext{@fields})
+	or die "Can't add extension: ".$self->{_dbh}->errstr."\n";
+
+    $sth->finish;
+}
+
+sub ext_del
+{
+    my $self = shift;
+    my %ext = @_;
+
+    my $sql = "delete from extensions where extension = ? and context = ?";
+
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't delete extension: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute($ext{extension}, $ext->{context})
+	or die "Can't delete extension: ".$self->{_dbh}->errstr."\n";
+
+    $sth->finish;
+}
+
+sub ext_mod
+{
+    my $self = shift;
+    my %ext = @_;
+
+    my @fields = grep { ! /^new/; } keys %ext; # to keep keys in same order.
+
+    my $sql = "update extensions set ";
+    $sql .= join ', ', map { "$_ = ?"; } @fields;
+    $sql .= ' where extension = ? and context = ?';
+
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute(@ext{@fields}, $ext{newext}, $ext{newcontext})
+	or die "Can't add SIP user: ".$self->{_dbh}->errstr."\n";
+
+    $sth->finish;
+}
+
+sub ext_exists
+{
+    my $self = shift;
+    my $ext = shift;
+    my $context = shift;
+
+    my $sql = 'select name, context from extensions where extensions = ? and context = ?';
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't find extension: ".$self->{_dbh}->errstr."\n";
+
+    $sth->execute($ext, $context)
+	or die "Can't find extension: ".$self->{_dbh}->errstr."\n";
+
+    if ($sth->fetchrow) {
+	return 1;
+    } else {
+	return 0;
+    }
+    1;
+}
 
 sub vm_add {}
 sub vm_del {}
 sub vm_mod {}
-sub vm_write {}
+sub vm_exists { 1; }
 
 1;
 
