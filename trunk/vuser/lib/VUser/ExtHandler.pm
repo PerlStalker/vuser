@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.3 2005-01-17 21:53:03 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.4 2005-01-20 15:58:59 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -19,7 +19,9 @@ sub new
 
     # {keyword}{action}{tasks}[order][tasks (sub refs)]
     # {keyword}{action}{options}{option} = type
-    my $me = {'keywords' => {}};
+    my $me = {'keywords' => {},
+	      'required' => {}
+	  };
 
     bless $me, $class;
 
@@ -64,6 +66,7 @@ sub register_option
     my $action = shift;
     my $option = shift;
     my $type = shift;
+    my $required = shift;
 
     unless (exists $self->{keywords}{$keyword}) {
 	die "Unable to register option on unknown keyword '$keyword'.\n";
@@ -77,7 +80,42 @@ sub register_option
 	die "Unable to register option. '$option' already exists.\n";
     } else {
 	$self->{keywords}{$keyword}{$action}{options}{$option} = $type;
+	if ($required) {
+	    $self->{required}{$keyword}{$action}{$option} = 1;
+	} else {
+	    $self->{required}{$keyword}{$action}{$option} = 0;
+	}
     }
+}
+
+sub is_required
+{
+    my $self = shift;
+    my $keyword = shift;
+    my $action = shift;
+    my $option = shift;
+
+    if ($self->{required}{$keyword}{$action}{$option}) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+sub check_required
+{
+    my $self = shift;
+    my $keyword = shift;
+    my $action = shift;
+    my $cfg = shift;
+
+    foreach my $option (grep { $self->is_required($keyword, $action, $_); }
+			keys %{$self->{required}{$keyword}{$action}}) {
+	if (not exists($cfg->{$option})) {
+	    return $option;
+	}
+    }
+    return '';
 }
 
 sub register_task
