@@ -6,11 +6,12 @@ package VUser::SOAP;
 use warnings;
 use strict;
 
-# $Id: SOAP.pm,v 1.2 2005-03-24 20:53:52 perlstalker Exp $
+# Copyright 2005 Randy Smith
+# $Id: SOAP.pm,v 1.3 2005-03-25 00:16:15 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::CORE;
