@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: simple.pm,v 1.1 2005-02-15 00:09:32 perlstalker Exp $
+# $Id: simple.pm,v 1.2 2005-02-15 20:53:59 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -46,8 +46,15 @@ sub init
     $eh->register_option('voip', 'mod', 'vmpassword', '=s');
     $eh->register_option('voip', 'mod', 'email', '=s');
     $eh->register_option('voip', 'mod', 'name', '=s');
-#    $eh->register_task('voip', 'del', \&voip_mod);
+    $eh->register_option('voip', 'mod', 'newextension', '=s');
+    $eh->register_option('voip', 'mod', 'newcontext', '=s');
+    $eh->register_task('voip', 'mod', \&voip_mod);
 
+    # voip-show
+    $eh->register_action('voip', 'show');
+    $eh->register_option('voip', 'show', 'extension', '=s', 1);
+    $eh->register_option('voip', 'show', 'context', '=s');
+    $eh->register_task('voip', 'show', \&voip_show);
 }
 
 sub unload {}
@@ -74,13 +81,14 @@ sub voip_add
     $user{name} = '' unless $user{name};
 
     eval {
-	$eh->run_tasks('sip', 'add', $cfg, (name => $user{extension},
-					    username => $user{username},
-					    secret => $user{password},
-					    context => $user{context},
-					    mailbox => $user{extension},
-					    callerid => $user{name}
-					    )
+	$eh->run_tasks('sip', 'add', $cfg,
+		       (name => $user{extension},
+			username => $user{username},
+			secret => $user{password},
+			context => $user{context},
+			mailbox => "$user{extension}\@$user{context}",
+			callerid => $user{name}
+			)
 		       );
 	$eh->run_tasks('ext', 'add', $cfg, (extension => $user{extension},
 					    context => $user{context},
@@ -199,21 +207,90 @@ sub voip_mod
     $user{email} = '' unless $user{email};
     $user{name} = '' unless $user{name};
 
+    my ($next, $ncontext) = ($user{name}, $user{context});
+    if ($user{newcontext} or $user{newextension}) {
+	$next = $user{newextension} if $user{newextension};
+	$ncontext = $user{newcontext} if $user{newcontext};
+    }
+
     eval {
 	my %opts =  (name => $user{extension},
 		     context => $user{context},
-		     newname => $user{newextension},
-		     newcontext => $user{newcontext}
+		     newname => $next,
+		     newcontext => $ncontext
 		     );
 	$opts{secret} = $user{password} if $user{password};
 	$opts{callerid} = $user{name} if $user{callerid};
-	$opts{mailbox} = $user{newextension};
+	$opts{mailbox} = "$next\@$ncontext";
+	$opts{username} = $user{username} if $user{username};
 	$eh->run_tasks('sip', 'mod', $cfg, %opts);
+
+	%opts = (extension => $user{extension},
+		 context => $user{context},
+		 newextension => $next,
+		 newcontext => $ncontext
+		 );
+	foreach my $pri (1..3) {
+	    $eh->run_tasks('ext', 'mod', $cfg, %opts, 'priority' => $pri);
+	}
+
+	%opts = (extension => "$user{extension}/$user{extension}",
+		 context => $user{context},
+		 newextension => "$next/$next",
+		 newcontext => $ncontext
+		 );
+	foreach my $pri (1..2) {
+	    $eh->run_tasks('ext', 'mod', $cfg, %opts, 'priority' => $pri);
+	}
+
+	%opts = (mailbox => $user{extension},
+		 context => $user{context},
+		 newmailbox => $next,
+		 newcontext => $ncontext
+		 );
+	$opts{email} = $user{email} if $user{email};
+	$opts{password} = $user{vmpassword} if $user{vmpassword};
+	$opts{fullname} = $user{name} if $user{name};
+	$eh->run_tasks('vm', 'mod', $cfg, %opts);
     };
     die $@ if $@;
 }
 
-sub voip_show {}
+sub voip_show
+{
+    my $cfg = shift;
+    my $opts = shift;
+    my $action = shift;
+    my $eh = shift;
+
+    my %user = ();
+    for my $item qw(extension context) {
+	$user{$item} = $opts->{$item};
+    }
+
+    $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
+
+    eval {
+	print "*** SIP\n";
+	$eh->run_tasks('sip', 'show', $cfg, (name => $user{extension},
+					     context => $user{context})
+		       );
+	print "\n*** Extensions\n";
+	$eh->run_tasks('ext', 'show', $cfg, (extension => $user{extension},
+					     context => $user{context})
+		       );
+	$eh->run_tasks('ext', 'show', $cfg,
+		       (extension => "$user{extension}/$user{extension}",
+			context => $user{context}
+			)
+		       );
+	print "\n*** Voicemail\n";
+	$eh->run_tasks('vm', 'show', $cfg, (mailbox => $user{extension},
+					    context => $user{context})
+		       );
+    };
+    die $@ if $@;
+}
 
 1;
 
