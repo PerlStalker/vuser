@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.17 2005-02-25 04:39:26 perlstalker Exp $
+# $Id: asterisk.pm,v 1.18 2005-02-26 00:00:15 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.17 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.18 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -133,112 +133,112 @@ sub init
     $eh->register_task('config', 'sample', \&config_sample);
 
     # SIP
-    $eh->register_keyword('sip');
+    $eh->register_keyword('sip', "Manage SIP users");
 
     # SIP-add
-    $eh->register_action('sip', 'add');
-    $eh->register_option('sip', 'add', 'name', '=s', 1);
-    $eh->register_option('sip', 'add', 'username', '=s');
-    $eh->register_option('sip', 'add', 'secret', '=s');
-    $eh->register_option('sip', 'add', 'context', '=s');
-    $eh->register_option('sip', 'add', 'ipaddr', '=s');
-    $eh->register_option('sip', 'add', 'port', '=i');
-    $eh->register_option('sip', 'add', 'regseconds', '=i');
-    $eh->register_option('sip', 'add', 'callerid', '=s');
-    $eh->register_option('sip', 'add', 'restrictcid', '');
-    $eh->register_option('sip', 'add', 'mailbox', '=s');
+    $eh->register_action('sip', 'add', "Add add SIP user");
+    $eh->register_option('sip', 'add', 'name', '=s', 1, 'SIP name. This is often a phone number.');
+    $eh->register_option('sip', 'add', 'username', '=s', 0, 'SIP user name');
+    $eh->register_option('sip', 'add', 'secret', '=s', 0, 'Password. Defaults to a random password.');
+    $eh->register_option('sip', 'add', 'context', '=s', 0, "The user's context. Defaults to '".$cfg{Extension_asterisk}{'default context'}."'");
+    $eh->register_option('sip', 'add', 'ipaddr', '=s', 0, "The IP address to accept connections from. Default: 'dynamic'");
+    $eh->register_option('sip', 'add', 'port', '=i', 0, "Port to accept connections from.");
+    $eh->register_option('sip', 'add', 'regseconds', '=i', 0, "How long to keep registration active.");
+    $eh->register_option('sip', 'add', 'callerid', '=s', 0, "Caller ID string.");
+    $eh->register_option('sip', 'add', 'restrictcid', '', 0, "Disallow user from setting caller ID.");
+    $eh->register_option('sip', 'add', 'mailbox', '=s', 0, "Voice mail box number.");
     $eh->register_task('sip', 'add', \&sip_add, 0);
 
     # SIP-del
-    $eh->register_action('sip', 'del');
-    $eh->register_option('sip', 'del', 'name', '=s', 1);
-    $eh->register_option('sip', 'del', 'context', '=s');
+    $eh->register_action('sip', 'del', 'Delete a SIP account.');
+    $eh->register_option('sip', 'del', 'name', '=s', 1, 'Name to delete.');
+    $eh->register_option('sip', 'del', 'context', '=s', 0, 'User context. Default:\''.$cfg{Extension_asterisk}{'default context'}."'");
     $eh->register_task('sip', 'del', \&sip_del, 0);
 
     # SIP-mod
-    $eh->register_action('sip', 'mod');
-    $eh->register_option('sip', 'mod', 'name', '=s', 1);
-    $eh->register_option('sip', 'mod', 'username', '=s');
-    $eh->register_option('sip', 'mod', 'secret', '=s');
-    $eh->register_option('sip', 'mod', 'context', '=s');
-    $eh->register_option('sip', 'mod', 'ipaddr', '=s');
-    $eh->register_option('sip', 'mod', 'port', '=i');
-    $eh->register_option('sip', 'mod', 'regseconds', '=i');
-    $eh->register_option('sip', 'mod', 'callerid', '=s');
-    $eh->register_option('sip', 'mod', 'restrictcid', '');
-    $eh->register_option('sip', 'mod', 'mailbox', '=s');
-    $eh->register_option('sip', 'mod', 'newname', '=s');
-    $eh->register_option('sip', 'mod', 'newcontext', '=s');
+    $eh->register_action('sip', 'mod', 'Modify a SIP account.');
+    $eh->register_option('sip', 'mod', 'name', '=s', 1, 'SIP name');
+    $eh->register_option('sip', 'mod', 'username', '=s', 0, 'SIP user name');
+    $eh->register_option('sip', 'mod', 'secret', '=s', 0, 'Password');
+    $eh->register_option('sip', 'mod', 'context', '=s', 0, "Context. Default:'".$cfg{Extension_asterisk}{'default context'}."'");
+    $eh->register_option('sip', 'mod', 'ipaddr', '=s', 0, "The IP address.");
+    $eh->register_option('sip', 'mod', 'port', '=i', 0, "Pot to accept connection from.");
+    $eh->register_option('sip', 'mod', 'regseconds', '=i', 0, 'How long to keep registration active.');
+    $eh->register_option('sip', 'mod', 'callerid', '=s', 0, 'Caller ID string.');
+    $eh->register_option('sip', 'mod', 'restrictcid', '', 0, 'Disallow user from setting caller ID.');
+    $eh->register_option('sip', 'mod', 'mailbox', '=s', 0, 'Voice mail box number.');
+    $eh->register_option('sip', 'mod', 'newname', '=s', 0, 'Change the SIP name to this.');
+    $eh->register_option('sip', 'mod', 'newcontext', '=s', 0, 'Change context.');
     $eh->register_task('sip', 'mod', \&sip_mod, 0);
 
     # SIP-show
-    $eh->register_action('sip', 'show');
-    $eh->register_option('sip', 'show', 'name', '=s');
-    $eh->register_option('sip', 'show', 'context', '=s');
-    $eh->register_option('sip', 'show', 'pretty', '');
+    $eh->register_action('sip', 'show', 'Show SIP users.');
+    $eh->register_option('sip', 'show', 'name', '=s', 0, 'The SIP name.');
+    $eh->register_option('sip', 'show', 'context', '=s', 0, 'Context');
+    $eh->register_option('sip', 'show', 'pretty', '', 0, 'More human readable output.');
     $eh->register_task('sip', 'show', \&sip_show, 0);
 
     # IAX
-    $eh->register_keyword('iax');
+    $eh->register_keyword('iax', '** Not Implented **');
     $eh->register_action('iax', 'add');
     $eh->register_action('iax', 'del');
     $eh->register_action('iax', 'mod');
 
     # Extensions
-    $eh->register_keyword('ext');
+    $eh->register_keyword('ext', 'Manage extensions');
 
     # Ext-add
-    $eh->register_action('ext', 'add');
-    $eh->register_option('ext', 'add', 'context', '=s');
-    $eh->register_option('ext', 'add', 'extension', '=s', 1);
-    $eh->register_option('ext', 'add', 'priority', '=i');
-    $eh->register_option('ext', 'add', 'application', '=s');
-    $eh->register_option('ext', 'add', 'args', '=s');
-    $eh->register_option('ext', 'add', 'descr', '=s');
-    $eh->register_option('ext', 'add', 'flags', '=i');
+    $eh->register_action('ext', 'add', 'Add an extension.');
+    $eh->register_option('ext', 'add', 'context', '=s', 0, 'Extension context. Default: '.$cfg{Extension_asterisk}{'default context'});
+    $eh->register_option('ext', 'add', 'extension', '=s', 1, 'Extension to add.');
+    $eh->register_option('ext', 'add', 'priority', '=i', 0, 'Priority.');
+    $eh->register_option('ext', 'add', 'application', '=s', 0, 'Application');
+    $eh->register_option('ext', 'add', 'args', '=s', 0, 'Args for application');
+    $eh->register_option('ext', 'add', 'descr', '=s', 0, 'Description');
+    $eh->register_option('ext', 'add', 'flags', '=i', 0, 'Other flags. Currently only 0 and 1 are accepted.');
     $eh->register_task('ext', 'add', \&ext_add, 0);
     
     # Ext-del
-    $eh->register_action('ext', 'del');
-    $eh->register_option('ext', 'del', 'context', '=s');   # optional
-    $eh->register_option('ext', 'del', 'extension', '=s', 1); # required
-    $eh->register_option('ext', 'del', 'priority', '=i');  # optional
+    $eh->register_action('ext', 'del', 'Delete an extension.');
+    $eh->register_option('ext', 'del', 'context', '=s', 0, "Context of extention. Default: $cfg{Extension_asterisk}{'default context'}");   # optional
+    $eh->register_option('ext', 'del', 'extension', '=s', 1, "Extension to delete"); # required
+    $eh->register_option('ext', 'del', 'priority', '=i', 0, "Priority of the extension.");  # optional
     $eh->register_task('ext', 'del', \&ext_del, 0);
 
     # Ext-mod
-    $eh->register_action('ext', 'mod');
-    $eh->register_option('ext', 'mod', 'context', '=s');
-    $eh->register_option('ext', 'mod', 'extension', '=s', 1);
-    $eh->register_option('ext', 'mod', 'priority', '=i');
-    $eh->register_option('ext', 'mod', 'application', '=s');
-    $eh->register_option('ext', 'mod', 'args', '=s');
-    $eh->register_option('ext', 'mod', 'descr', '=s');
-    $eh->register_option('ext', 'mod', 'flags', '=i');
-    $eh->register_option('ext', 'mod', 'newcontext', '=s');
-    $eh->register_option('ext', 'mod', 'newext', '=s');
-    $eh->register_option('ext', 'mod', 'newpriority', '=i');
+    $eh->register_action('ext', 'mod', 'Modify an extension');
+    $eh->register_option('ext', 'mod', 'context', '=s', 0, "Context of the extension");
+    $eh->register_option('ext', 'mod', 'extension', '=s', 1, "The exention to modify.");
+    $eh->register_option('ext', 'mod', 'priority', '=i', 0, "Priority of extension to change.");
+    $eh->register_option('ext', 'mod', 'application', '=s', 0, "Application");
+    $eh->register_option('ext', 'mod', 'args', '=s', 0, "Args for the applications.");
+    $eh->register_option('ext', 'mod', 'descr', '=s', 0, "Description of extension");
+    $eh->register_option('ext', 'mod', 'flags', '=i', 0, "Flags. See ext add for details.");
+    $eh->register_option('ext', 'mod', 'newcontext', '=s', 0, "New context");
+    $eh->register_option('ext', 'mod', 'newext', '=s', 0, "New extension");
+    $eh->register_option('ext', 'mod', 'newpriority', '=i', 0, "New priority");
     $eh->register_task('ext', 'mod', \&ext_mod, 0);
 
     # Ext-show
-    $eh->register_action('ext', 'show');
-    $eh->register_option('ext', 'show', 'extension', '=s');
-    $eh->register_option('ext', 'show', 'context', '=s');
-    $eh->register_option('ext', 'show', 'priority', '=i');
-    $eh->register_option('ext', 'show', 'pretty', '');
+    $eh->register_action('ext', 'show', "Show extensions");
+    $eh->register_option('ext', 'show', 'extension', '=s', 0, "Show this extension");
+    $eh->register_option('ext', 'show', 'context', '=s', 0, "Show this context");
+    $eh->register_option('ext', 'show', 'priority', '=i', 0, "Show this priority");
+    $eh->register_option('ext', 'show', 'pretty', '', 0, "Pretty output. (Not implemented)");
     $eh->register_task('ext', 'show', \&ext_show, 0);
 
     # Voice mail
-    $eh->register_keyword('vm');
+    $eh->register_keyword('vm', 'Manage voice mail boxes.');
 
     # VM-add
-    $eh->register_action('vm', 'add');
-    $eh->register_option('vm', 'add', 'context', '=s');
-    $eh->register_option('vm', 'add', 'mailbox', '=s', 1);
-    $eh->register_option('vm', 'add', 'password', '=s');
-    $eh->register_option('vm', 'add', 'fullname', '=s');
-    $eh->register_option('vm', 'add', 'email', '=s');
-    $eh->register_option('vm', 'add', 'pager', '=s');
-    $eh->register_option('vm', 'add', 'options', '=s');
+    $eh->register_action('vm', 'add', 'Add a new v/m box');
+    $eh->register_option('vm', 'add', 'context', '=s', 0, 'context');
+    $eh->register_option('vm', 'add', 'mailbox', '=s', 1, 'mailbox number');
+    $eh->register_option('vm', 'add', 'password', '=s', 0, 'Password');
+    $eh->register_option('vm', 'add', 'fullname', '=s', 0, 'Box owner\'s full name.');
+    $eh->register_option('vm', 'add', 'email', '=s', 0, 'Send v/m notices to this email address.');
+    $eh->register_option('vm', 'add', 'pager', '=s', 0, 'Send notices to this pager email');
+    $eh->register_option('vm', 'add', 'options', '=s', 0, 'Options');
     $eh->register_task('vm', 'add', \&vm_add, 0);
     $eh->register_task('vm', 'add', \&vm_create_box, 10);
 
