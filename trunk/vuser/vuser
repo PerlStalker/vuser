@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.5 2005-01-24 20:32:21 perlstalker Exp $
+# $Id: vuser,v 1.6 2005-02-07 16:31:39 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -65,7 +65,7 @@ $action = '' unless defined $action;
 eval { $eh->run_tasks($keyword, $action, \%cfg, @ARGV); };
 warn $@ if $@;
 
-eval { $eh->cleanup(%cfg); }
+eval { $eh->cleanup(%cfg); };
 
 exit;
 
