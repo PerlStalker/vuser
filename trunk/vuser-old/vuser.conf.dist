@@ -22,12 +22,15 @@ quota=20000000S
 # The location of the files which are copied into a brand new home dir
 skeldir=/usr/local/etc/courier/skel
 
+# Set to 1 to for user names to lower case.
+lc_user = 0
+
 #
 # Given $user and $domain, where will the users home directory be located?
 #
 #PerlStalker's scheme:
-#domaindir="/var/$domain"
-#userhomedir="/var/$domain/".substr($user, 0, 2)."/$user"
+#domaindir="/var/mail/virtual/$domain"
+#userhomedir="/var/mail/virtual/$domain/".substr($user, 0, 2)."/$user"
 
 #stew's scheme:
 domaindir="/home/virtual/$domain"
