@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.5 2004-05-20 23:40:24 stewatvireo Exp $
+# $Id: vuser,v 1.6 2004-05-25 20:57:44 perlstalker Exp $
 
 #
 # Configuration
@@ -1017,7 +1017,7 @@ sub mkdir_p
     if( !$parent ) { return 0; }
     else 
     { 
-	return mkdir_p( $parent, $mode ) 
+	return mkdir_p( $parent, $mode, $uid, $gid ) 
 	    && mkdir( $dir ) 
 	    && chown( $uid, $gid, $dir );
     }
