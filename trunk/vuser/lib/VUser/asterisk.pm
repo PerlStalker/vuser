@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.14 2005-02-14 22:21:55 perlstalker Exp $
+# $Id: asterisk.pm,v 1.15 2005-02-15 16:12:58 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.14 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.15 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -517,7 +517,7 @@ sub ext_show
     my $priority = '%';
     my $pretty = 0;
 
-    my $name = $opts->{name} if defined($opts->{name});
+    $ext = $opts->{extension} if defined($opts->{extension});
     $context = $opts->{context} if defined($opts->{context});
     $priority = $opts->{priority} if defined($opts->{priority});
     $pretty = 1 if defined ($opts->{pretty});
