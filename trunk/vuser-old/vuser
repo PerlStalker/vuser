@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.3 2004-05-20 21:10:11 perlstalker Exp $
+# $Id: vuser,v 1.4 2004-05-20 22:30:03 perlstalker Exp $
 
 #
 # Configuration
@@ -13,6 +13,7 @@ use FindBin qw($Bin);
 # Command line options.
 my $config_file;
 
+Getopt::Long::Configure('require_order', 'pass_through');
 GetOptions("config|f=s", \$config_file);
 
 if (not $config_file) {
@@ -41,8 +42,9 @@ my $makehosteddomains = $cfg{courier}{sbin}."/makehosteddomains";
 my $makeacceptmailfor = $cfg{courier}{sbin}."/makeacceptmailfor";
 my $courier_rc = $cfg{courier}{courier_rc};
 
-if( $cfg{courier_mysql}{use_authmysql} )
+if( 0+$cfg{courier_mysql}{use_authmysql} )
 {
+    print "You are here ($cfg{courier_mysql}{use_authmysql})\n";
     my $authmysqlrc = $cfg{courier}{etc} . "/authmysqlrc";
     open (AUTHMYSQL, $authmysqlrc ) 
 	or die "Can't open $authmysqlrc.: $!\n";
@@ -50,10 +52,11 @@ if( $cfg{courier_mysql}{use_authmysql} )
     while (my $line = <AUTHMYSQL>)
     {
 	chomp $line;
-	next if ($line =~ /^\s*\#/ or $line =~ /^\s*$/ );	# Skip comments and blank lines.
-	$line =~ s/\s*$//;			# Strip extra ws from the end
-	if ($line =~ /^\s*MYSQL_(\w+)	# Get MYSQL_XXX. XXX -> $1
-	    \s+(.+)$/x)		# Get value. -> $2
+	# Skip comments and blank lines.
+	next if ($line =~ /^\s*\#/ or $line =~ /^\s*$/ );
+	$line =~ s/\s*$//;              # Strip extra ws from the end
+	if ($line =~ /^\s*MYSQL_(\w+)   # Get MYSQL_XXX. XXX -> $1
+	    \s+(.+)$/x)                 # Get value. -> $2
 	{
 	    $cfg{courier_mysql}{$1} = $2;
 	}
@@ -90,8 +93,9 @@ if ($cfg{spamassassin}{use_sa} )	# If we're using SpamAssassin
 #
 # SquirrelMail
 #
-if( $cfg{sm}{use_sm_address} ||
-    $cfg{sm}{use_sm_userpref} )
+if( $cfg{sm}{sm_config} &&
+    ( $cfg{sm}{use_sm_address} ||
+      $cfg{sm}{use_sm_userpref} ))
 {
     # Read SquirrelMail conf file
     my $sm_config = $cfg{sm}{sm_config};
@@ -170,7 +174,8 @@ $cdb->do("use $cfg{courier_mysql}{DATABASE}");
 my $sadb;
 if ( $cfg{spamassassin}{use_sa} )
 {
-    $sadb = DBI->connect ( $cfg{spamassassin}{sql_database} . ":" .
+    $sadb = DBI->connect ( "DBI:mysql:".
+			   $cfg{spamassassin}{sql_database} . ":" .
 			   $cfg{spamassassin}{sql_server} . ":" .
 			   $cfg{spamassassin}{sql_port},
 			   $cfg{spamassassin}{sql_username},
@@ -260,19 +265,20 @@ sub add
 
 
     my $userdir = get_home_directory( $user, $domain );
+    die "Can't add account: User exists\n" if (-e "$userdir");
     if( not -e "$userdir" )
     {
 	mkdir_p( "$userdir", 
 		 0775, 
-		 $cfg{courier}{courier_user}, 
-		 $cfg{courier}{courier_group} ) 
+		 (getpwnam($cfg{courier}{courier_user}))[2],  		
+		 (getgrnam($cfg{courier}{courier_group}))[2] )
 	    || die "could not create user directory: $userdir";
     }
 
-    die "Can't add account: User exists\n" if (-e "$userdir");
-    my $rc = 0xffff & system ('cp', '-R', $cfg{courier}{skel}, "$userdir");
+    my $rc = 0xffff & system ('cp', '-R', $cfg{courier}{skeldir}, "$userdir");
     $rc <<= 8;
-    die "Can't copy skel dir  to $userdir: $!\n" if $rc != 0;
+    die "Can't copy skel dir $cfg{courier}{skeldir} to $userdir: $!\n"
+	if $rc != 0;
     system('chown', '-R', "$cfg{courier}{courier_user}:$cfg{courier}{courier_group}", "$userdir");
 
     # Add the user to MySQL
@@ -321,14 +327,14 @@ sub del
     # Delete SquirrelMail address book, if used
     if ($cfg{sm}{use_sm_address})
     {
-	my $sql = "DELETE from $cfg{sm_address}{table} where owner = ".$sm_addr_db->quote($account).";";
+	my $sql = "DELETE from $cfg{sm}{address_table} where owner = ".$sm_addr_db->quote($account).";";
 	$sm_addr_db->do($sql) or die "Can't delete account SquirrelMail address book: ".$sm_addr_db->errstr()."\n";
     }
 
     # Delete SquirrelMail preferences, if used
     if ($cfg{sm}{use_sm_userpref})
     {
-	my $sql = "DELETE from $cfg{sm_userpref}{table} where $cfg{sm_userpref}{user_field} = ".$sm_pref_db->quote($account).";";
+	my $sql = "DELETE from $cfg{sm}{userpref_table} where $cfg{sm}{userpref_user_field} = ".$sm_pref_db->quote($account).";";
 	$sm_pref_db->do($sql) or die "Can't delete account SquirrelMail preferences: ".$sm_pref_db->errstr()."\n";
     }
 }
@@ -396,8 +402,8 @@ sub mod
 
 	mkdir_p( "$nuserdir",  		 
 		 0775,  		 
-		 $cfg{courier}{courier_user},  		
-		 $cfg{courier}{courier_group} )
+		 (getpwnam($cfg{courier}{courier_user}))[2],  		
+		 (getgrnam($cfg{courier}{courier_group}))[2] )
   	    || die "could not create user directory: $nuserdir";    
 
 	system ('mv', "$userdir", "$nuserdir");
@@ -415,7 +421,7 @@ sub mod
 	if ($cfg{sm}{use_sm_address})
 	{
 	    # Note: The column names are hardcoded and not easy to change.
-	    my $sql = "UPDATE $cfg{sm_address}{table} set owner = ".$sm_addr_db->quote($new_acct);
+	    my $sql = "UPDATE $cfg{sm}{address_table} set owner = ".$sm_addr_db->quote($new_acct);
 	    $sql .= " where owner = ".$sm_addr_db->quote($account);
 	    $sm_addr_db->do($sql) or die "Can't update SquirrelMail address book: ".$sm_addr_db->errstr()."\n";
 	}
@@ -423,8 +429,8 @@ sub mod
 	# ... and SM prefs
 	if ($cfg{sm}{use_sm_userpref})
 	{
-	    my $sql = "UPDATE $cfg{sm_userpref}{table} set $cfg{sm_userpref}{user_field} = ".$sm_pref_db->quote($new_acct);
-	    $sql .= " where $cfg{sm_userpref}{user_field} = ".$sm_pref_db->quote($account);
+	    my $sql = "UPDATE $cfg{sm}{userpref_table} set $cfg{sm}{userpref_user_field} = ".$sm_pref_db->quote($new_acct);
+	    $sql .= " where $cfg{sm}{userpref_user_field} = ".$sm_pref_db->quote($account);
 	    $sm_pref_db->do($sql) or die "Can't update SquirrelMail preferences: ".$sm_pref_db->errstr()."\n";
 	}
     }
@@ -672,8 +678,8 @@ sub domain_add
     {
 	mkdir_p ("$domaindir", 
 		 0775,  	
-		 $cfg{courier}{courier_user},  		 		 
-		 $cfg{courier}{courier_group} )
+		 (getpwnam($cfg{courier}{courier_user}))[2],  		
+		 (getgrnam($cfg{courier}{courier_group}))[2] )
    	    || die "could not create domain directory: $domaindir";    
     }
     
@@ -784,8 +790,8 @@ sub domain_mod
 
 	mkdir_p( $domaindir, 
 		 0775,
-		 $cfg{courier}{courier_user},
-		 $cfg{courier}{courier_group} )
+		 (getpwnam($cfg{courier}{courier_user}))[2],  		
+		 (getgrnam($cfg{courier}{courier_group}))[2] )
     	    || die "could not create domain directory: $domaindir";
 
 	if ($recurse)
