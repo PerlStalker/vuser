@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.7 2005-02-14 21:06:08 perlstalker Exp $
+# $Id: vuser,v 1.8 2005-03-25 22:23:33 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -21,6 +21,9 @@ BEGIN {
 		     '/etc',
 		     "$FindBin::Bin/../etc",
 		     "$FindBin::Bin");
+    foreach my $dir (@etc_dirs) {
+        push @etc_dirs, "$dir/vuser";
+    }
 }
 
 use vars qw(@etc_dirs);

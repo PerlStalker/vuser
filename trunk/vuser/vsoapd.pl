@@ -7,7 +7,7 @@ use strict;
 use SOAP::Lite;
 
 # Copyright 2005 Mark Bucciarelli
-# $Id: vsoapd.pl,v 1.5 2005-03-25 20:14:08 perlstalker Exp $
+# $Id: vsoapd.pl,v 1.6 2005-03-25 22:23:33 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
@@ -15,7 +15,7 @@ use FindBin;
 use Config::IniFiles;
 use SOAP::Transport::HTTP;
 
-our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -26,6 +26,9 @@ BEGIN {
 		     '/etc',
 		     "$FindBin::Bin/../etc",
 		     "$FindBin::Bin");
+    foreach my $dir (@etc_dirs) {
+        push @etc_dirs, "$dir/vuser";
+    }
 }
 
 use vars qw(@etc_dirs);
