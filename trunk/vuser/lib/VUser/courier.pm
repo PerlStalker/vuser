@@ -5,11 +5,11 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: courier.pm,v 1.4 2005-01-21 21:32:55 perlstalker Exp $
+# $Id: courier.pm,v 1.5 2005-01-21 21:33:44 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -49,7 +49,7 @@ courier_rc=/usr/local/etc/rc.d/courier.sh
 
 # the path to makehosteddomains.
 # This may also be any command that wraps makehosteddomains.
-makehosteddomains=chroot /netboot/beta /usr/local/sbin/makehosteddomains
+# makehosteddomains=chroot /netboot/beta /usr/local/sbin/makehosteddomains
 makehosteddomains=/usr/sbin/makehosteddomains
 
 # the path to makeacceptmailfor.
@@ -75,8 +75,8 @@ default domain=example.com
 # This may be a valid perl expression.
 
 # PerlStalker's scheme:
-domaindir="/var/mail/virtual/$domain"
-userhomedir="/var/mail/virtual/$domain/".substr($user, 0, 2)."/$user"
+#domaindir="/var/mail/virtual/$domain"
+#userhomedir="/var/mail/virtual/$domain/".substr($user, 0, 2)."/$user"
 
 # stew's scheme:
 domaindir="/home/virtual/$domain"
