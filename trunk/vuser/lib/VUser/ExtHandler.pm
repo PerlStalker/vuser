@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.16 2005-02-14 17:25:50 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.17 2005-02-14 20:46:14 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.16 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.17 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -266,7 +266,7 @@ sub run_tasks
 
     foreach my $priority (@tasks) {
 	foreach my $task (@$priority) {
-	    &$task($cfg, \%opts, $action);
+	    &$task($cfg, \%opts, $action, $self);
 	}
     }
 }
