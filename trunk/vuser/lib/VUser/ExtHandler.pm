@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.5 2005-01-21 20:53:17 stewatvireo Exp $
+# $Id: ExtHandler.pm,v 1.6 2005-01-21 21:07:47 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -108,11 +108,11 @@ sub check_required
     my $self = shift;
     my $keyword = shift;
     my $action = shift;
-    my $cfg = shift;
+    my $opts = shift;
 
     foreach my $option (grep { $self->is_required($keyword, $action, $_); }
 			keys %{$self->{required}{$keyword}{$action}}) {
-	if (not exists($cfg->{$option})) {
+	if (not exists($opts->{$option})) {
 	    return $option;
 	}
     }
@@ -214,6 +214,12 @@ sub run_tasks
     print "Opt defs: @opt_defs\n" if $main::DEBUG >= 1;
     if (@opt_defs) {
 	GetOptions(\%opts, @opt_defs);
+    }
+
+    # Check for required options
+    my $opt = $eh->check_required ($keyword, $action, \%opts);
+    if ($opt) {
+	die "Missing required option '$opt'.\n";
     }
 
     my @tasks = ();
