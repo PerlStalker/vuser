@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.4 2005-02-25 04:29:03 perlstalker Exp $
+# $Id: CORE.pm,v 1.5 2005-02-25 17:28:15 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -74,6 +74,7 @@ sub help
     if ($keyword) {
 	my $descr = $eh->get_description($keyword);
 	print "Run '$FindBin::Script help' to see all available keywords.\n";
+	print "Options marked with '*' are required.\n";
 	print "** $keyword - $descr\n";
 	my @actions = $eh->get_actions($keyword);
 	foreach my $action (@actions) {
@@ -84,7 +85,10 @@ sub help
 	    foreach my $opt (@opts) {
 		$descr = $eh->get_description($keyword, $action, $opt)
 		    || 'No Description';
-		printf ("%18s - %s\n", "--$opt", $descr);
+		printf ("\t%-16s %s - %s\n",
+			"--$opt",
+			($eh->is_required($keyword, $action, $opt))? '*' : ' ',
+			$descr);
 	    }
 	}
     } else {
