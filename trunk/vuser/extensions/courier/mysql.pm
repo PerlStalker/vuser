@@ -1,9 +1,9 @@
-package courier::mysql;
+package VUser::courier::mysql;
 use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: mysql.pm,v 1.2 2004-12-28 17:21:37 perlstalker Exp $
+# $Id: mysql.pm,v 1.3 2004-12-30 22:09:57 perlstalker Exp $
 
 use DBI;
 
