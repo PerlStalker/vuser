@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.10 2004-06-28 17:43:32 perlstalker Exp $
+# $Id: vuser,v 1.11 2004-06-28 17:47:22 perlstalker Exp $
 
 #
 # Configuration
@@ -253,6 +253,8 @@ sub add
     die "No account specified\n" if not $account;
 
     my ($user, $domain) = $account =~ m/^(\S+?)\@(\S+)$/;
+    $user = lc($user) if 0+$cfg{courier}{lc_user};
+
     $domain = 'default' if not $domain;
     $domain = lc($domain);
 
