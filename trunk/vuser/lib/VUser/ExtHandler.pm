@@ -3,14 +3,16 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.19 2005-02-17 03:58:59 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.20 2005-02-17 05:09:42 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.19 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.20 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
 use Getopt::Long;
 use VUser::ExtLib;
+
+use Regexp::Common qw /number/;
 
 sub new
 {
@@ -246,12 +248,74 @@ sub run_tasks
     # otherwise, we'll get the options using GetOptions()
 
     if (%opts) {
+	# We need to do some error checking here on the option type.
+	# Getopt::Long takes care of it in the other case, but we need to
+	# do that ourselves here.
+	foreach my $opt (keys %opts) {
+	    my $type = $self->{keywords}{$keyword}{$action}{options}{$opt};
+
+	    # Giant switch-type block to validate Getopt::Long types with the
+	    # passed in values.
+	    if ($type eq '!') {
+		if ($opts{$opt}) {
+		    $opts{$opt} = 1;
+		} else {
+		    $opts{$opt} = 0;
+		}
+
+		if ($opts{"no$opt"} or $opts{"no-$opt"}) {
+		    $opts{$opt} = 0;
+		}
+	    } elsif ($type eq '+') {
+		# All we can do here is make sure the option is an int.
+		unless ($opts{$opt} =~ $RE{num}{int}) {
+		    die "$opt is not an integer.";
+		}
+	    } elsif ($type =~ /^([=:])([siof])([@%])?$/) {
+		if ($1 eq '=' and not defined $opts{$opt}) {
+		    die "Missing required option: $opt";
+		}
+
+		my $d_type = $2;
+		my $dest_type = $3;
+
+		if ($d_type eq 's') {
+		    # There's nothing to verify here
+		} elsif ($d_type eq 'i' and not $opts{$opt} =~ /$RE{num}{int}/) {
+		    die "$opt is not an integer.";
+		} elsif ($d_type eq 'o'
+			 and not ($opts{$opt} =~ /$RE{num}{int}/
+				  or $opts{$opt} =~ /$RE{num}{oct}/
+				  or $opts{$opt} =~ /$RE{num}{hex}/
+				  )
+			 ) {
+		    die "$opt is not an extended integer.";
+		} elsif ($2 eq 'f' and not $opts{$opt} =~ /$RE{num}{real}/) {
+		    die "$opt is not a real number.";
+		}
+	    } elsif ($type =~ /^:(-?\d+)([@%])?$/) {
+		my $num = $1;
+		if (defined $opts{$opt}) {
+		    die "$opt is not an integer." unless $opts{$opt} =~ /$RE{num}{int}/;
+		} else {
+		    $opts{$opt} = $num;
+		}
+	    } elsif ($type =~ /^:+([@%])?$/) {
+		if (defined $opts{$opt}) {
+		    die "$opt is not an integer." unless $opts{$opt} =~ /$RE{num}{int}/;
+		} else {
+		    $opts{$opt}++;
+		}
+	    }
+	}
     } else {
 	# Prepare options for GetOptions();
 	my @opt_defs = ();
 	
 	foreach my $opt (keys %{$self->{keywords}{$keyword}{$action}{options}}) {
-	    my $def = $opt.$self->{keywords}{$keyword}{$action}{options}{$opt};
+	    my $type = $self->{keywords}{$keyword}{$action}{options}{$opt};
+	    $type = '' unless defined $type;
+	    my $def = $opt.$type;
 	    push @opt_defs, $def;
 	}
 	
