@@ -25,3 +25,7 @@
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
 ALL /usr/bin/perl $CVSROOT/CVSROOT/ciabot_cvs.pl %{,,,s} $USER
+
+# syncmail is in: /cvsroot/sitedocs/CVSROOT/cvstools/syncmail
+#ex: DEFAULT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail %{sVv} projectname-listname@lists.sourceforge.net
+DEFAULT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail %{sVv} vuser-cvs@lists.sourceforge.net
