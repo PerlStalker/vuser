@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.7 2005-03-03 03:55:04 perlstalker Exp $
+# $Id: CORE.pm,v 1.8 2005-03-03 04:25:49 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -159,9 +159,11 @@ sub process_event_dir
 	    die chomp($@)."\n" if $@;
 	} elsif (-f "$dir/$file") {
 	    eval { process_event_file($cfg, $opts, $eh, $dir, $file); };
-	    warn chomp($@)."\n" if $@;
-	    rename "$dir/$file", "$dir/error-$file"
-		or warn "Can't rename $dir/$file to error-$file: $!";
+	    if ($@) {
+		warn chomp($@)."\n";
+		rename "$dir/$file", "$dir/error-$file"
+		    or warn "Can't rename $dir/$file to error-$file: $!";
+	    }
 	} else {
 	    warn "File $dir/$file is not a plain file. Skipping.\n";
 	}
@@ -204,9 +206,14 @@ sub process_event_file
     }
     close FILE;
 
+#    print STDERR "Keyword: $keyword; Action: $action; File: $file\n";
+#    use Data::Dumper; print Dumper \%opts;
+
     # All the data has been read, time to run the task.
     eval { $eh->run_tasks($keyword, $action, $cfg, %opts); };
     die "$file: ".chomp($@)."\n" if $@;
+
+    unlink "$dir/$file";
 }
 
 sub batch_mode
