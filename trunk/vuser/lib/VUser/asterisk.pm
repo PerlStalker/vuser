@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.1 2004-12-30 22:09:56 perlstalker Exp $
+# $Id: asterisk.pm,v 1.2 2005-01-10 22:03:17 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -134,6 +134,7 @@ sub init
     # SIP-del
     $eh->register_action('sip', 'del');
     $eh->register_option('sip', 'del', 'name', '=s');
+    $eh->register_option('sip', 'del', 'context', '=s');
 
     # SIP-mod
     $eh->register_action('sip', 'mod');
@@ -148,6 +149,7 @@ sub init
     $eh->register_option('sip', 'mod', 'restrictcid', '');
     $eh->register_option('sip', 'mod', 'mailbox', '=s');
     $eh->register_option('sip', 'mod', 'newname', '=s');
+    $eh->register_option('sip', 'mod', 'newcontext', '=s');
 
     # IAX
     $eh->register_keyword('iax');
@@ -183,6 +185,8 @@ sub init
     $eh->register_option('ext', 'mod', 'args', '=s');
     $eh->register_option('ext', 'mod', 'descr', '=s');
     $eh->register_option('ext', 'mod', 'flags', '=i');
+    $eh->register_option('ext', 'mod', 'newcontext', '=s');
+    $eh->register_option('ext', 'mod', 'newext', '=s');
 
     # Voice mail
     $eh->register_keyword('vm');
@@ -217,6 +221,98 @@ sub init
     $eh->register_action('asterisk', 'write');   # force a write
     $eh->register_action('asterisk', 'restart'); # force a restart
 }
+
+sub sip_add
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    # It may seem silly to copy all the options from $opts to %user but
+    # this will give me an opportunity to sanitize the values if I choose
+    # and not give more information to the backend than is needed.
+    # I also want to avoid building a dependance on Getopt::Long by
+    # the backends which, really, have no need to even know that we're
+    # using Getopt::Long. In fact, we may not be using Getopt::Long if
+    # I ever get around to building a web version of vuser.
+    my %user = ();
+    for my $item in qw(name username secret context ipaddr port
+		       regseconds callerid restrictcid mailbox) {
+	$user{$item} = $opts->{$item};
+    }
+
+    $user{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
+
+    if ($backend{sip}->sip_exists($user{name}, $user{context})) {
+	die "Can't add SIP user $user{name}@$user{context}: User exists\n";
+    }
+
+    $backend{sip}->sip_add(%user);
+}
+
+sub sip_del
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %user = ();
+    $user{name} = $otps->{name};
+    $user{context} = $opts->{context};
+
+    $user{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
+
+    $backend{sip}->sip_del(%user);
+}
+
+sub sip_mod
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %user = ();
+    for my $item in qw(name username secret context ipaddr port
+		       regseconds callerid restrictcid mailbox
+		       newname newcontext
+		       ) {
+	$user{$item} = $opts->{$item};
+    }
+
+    $user{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
+
+    $backend{sip}->sip_mod(%user);
+}
+
+sub sip_write {}
+
+sub iax_add {}
+sub iax_del {}
+sub iax_mod {}
+sub iax_write {}
+
+sub ext_add
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my %ext = ();
+    for my $item in qw(context extension priority application args descr flags) {
+	$ext{$itme} = $opts->{$item};
+    }
+
+    $ext{context} = ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $ext{context};
+
+    $ext{priority} = 1 unless defined $ext{priority} and $ext{priority} >= 1;
+
+    $backend{ext}->ext_add(%ext);
+}
+
+sub ext_del {}
+sub ext_mod {}
+sub ext_write {}
+
+sub vm_add {}
+sub vm_del {}
+sub vm_mod {}
+sub vm_write {}
 
 1;
 
