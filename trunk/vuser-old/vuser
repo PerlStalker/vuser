@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.17 2004-08-26 20:26:27 stewatvireo Exp $
+# $Id: vuser,v 1.18 2004-10-05 17:51:45 perlstalker Exp $
 
 #
 # Configuration
@@ -433,7 +433,8 @@ sub mod
 		 (getgrnam($cfg{courier}{courier_group}))[2] )
   	    || die "could not create user directory: $nuserdir";    
 
-	system ('mv', "$userdir", "$nuserdir");
+	system ('mv', "$userdir/", "$nuserdir");
+	system ('rm', '-r', "$userdir");
 
 	# We'll need to update the SpamAssassin preferences as well.
 	if ($cfg{spamassassin}{use_sa})
