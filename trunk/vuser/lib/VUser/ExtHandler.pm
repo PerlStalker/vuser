@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.18 2005-02-15 20:56:43 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.19 2005-02-17 03:58:59 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.18 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.19 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -80,7 +80,11 @@ sub register_option
     }
 
     if (exists $self->{keywords}{$keyword}{$action}{options}{$option}) {
-	die "Unable to register option for $keyword|$action. '$option' already exists.\n";
+	# Let's silently ignore duplicate option definitions the way we
+	# do for keywords and actions. This will allow an extension to
+	# register an option to guarantee that it's there rather than having
+	# to rely on another extension to register the option.
+	#die "Unable to register option for $keyword|$action. '$option' already exists.\n";
     } else {
 	$self->{keywords}{$keyword}{$action}{options}{$option} = $type;
 	if ($required) {
