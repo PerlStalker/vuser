@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.17 2005-02-14 20:46:14 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.18 2005-02-15 20:56:43 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.17 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.18 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -221,7 +221,7 @@ sub run_tasks
     my $action = shift;
     my $cfg = shift;
 
-    my %opts = ();
+    my %opts = @_;
 
     print "Keyword: '$keyword'\nAction: '$action'\nARGV: @ARGV\n" if $main::DEBUG >= 1;
 
@@ -238,17 +238,23 @@ sub run_tasks
 	die "Unknown action '$action'\n";
     }
 
-    # Prepare options for GetOptions();
-    my @opt_defs = ();
+    # If opts is not empty, we'll just use the option's we're given
+    # otherwise, we'll get the options using GetOptions()
 
-    foreach my $opt (keys %{$self->{keywords}{$keyword}{$action}{options}}) {
-	my $def = $opt.$self->{keywords}{$keyword}{$action}{options}{$opt};
-	push @opt_defs, $def;
-    }
-
-    print "Opt defs: @opt_defs\n" if $main::DEBUG >= 1;
-    if (@opt_defs) {
-	GetOptions(\%opts, @opt_defs);
+    if (%opts) {
+    } else {
+	# Prepare options for GetOptions();
+	my @opt_defs = ();
+	
+	foreach my $opt (keys %{$self->{keywords}{$keyword}{$action}{options}}) {
+	    my $def = $opt.$self->{keywords}{$keyword}{$action}{options}{$opt};
+	    push @opt_defs, $def;
+	}
+	
+	print "Opt defs: @opt_defs\n" if $main::DEBUG >= 1;
+	if (@opt_defs) {
+	    GetOptions(\%opts, @opt_defs);
+	}
     }
 
     # Check for required options
