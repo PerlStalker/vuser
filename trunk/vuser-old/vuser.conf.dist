@@ -20,7 +20,7 @@ sbin=/usr/sbin
 quota=20000000S
 
 # The location of the files which are copied into a brand new home dir
-skeldir="/usr/local/etc/courier/skel"
+skeldir=/usr/local/etc/courier/skel
 
 #
 # Given $user and $domain, where will the users home directory be located?
