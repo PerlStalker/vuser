@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.7 2005-03-07 20:49:34 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.8 2005-03-08 15:53:11 perlstalker Exp $
 
 sub add_line_to_file
 {
@@ -185,7 +185,7 @@ sub strip_ws
 sub touch
 {
     my $file = shift;
-    my $time = shift;
+    my $time = shift || time();
 
     unless (-e $file) {
 	open (FILE, ">>$file") or die "Unable to open $file: $!\n";
