@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-# $Id: vuser,v 1.15 2004-08-26 20:03:51 perlstalker Exp $
+# $Id: vuser,v 1.16 2004-08-26 20:14:34 stewatvireo Exp $
 
 #
 # Configuration
@@ -254,9 +254,11 @@ sub add
     die "No account specified\n" if not $account;
 
     my ($user, $domain) = $account =~ m/^(\S+?)\@(\S+)$/;
+    die "username must be user\@domain\n" if not $user;
+    die "username must be user\@domain\n" if not $domain;
+
     $user = lc($user) if 0+$cfg{courier}{lc_user};
 
-    $domain = 'default' if not $domain;
     $domain = lc($domain);
 
     # Get other params.
@@ -314,9 +316,11 @@ sub del
     die "No account specified\n" if not $account;
 
     my ($user, $domain) = $account =~ m/^(\S+?)\@(\S+)$/;
+    die "username must be user\@domain\n" if not $user;
+    die "username must be user\@domain\n" if not $domain;
+
     my $userdir = get_home_directory( $user, $domain );
 
-    die "No domain specified\n" if not $domain;
     $domain = lc($domain);
 #     my $XY = substr($user, 0, 2);	# Get the first 2 chars of $user
 
