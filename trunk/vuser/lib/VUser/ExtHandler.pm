@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.12 2005-02-07 16:43:12 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.13 2005-02-07 16:49:21 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.12 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.13 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -149,7 +149,7 @@ sub load_extensions
     my %cfg = @_;
 
     $self->load_extension('VUser::CORE');
-    foreach my $extension (split( / /, $cfg{ vuser }{ extensions } ) )
+    foreach my $extension (split( / /, VUser::ExtLib::strip_ws($cfg{ vuser }{ extensions }) ) )
     {
 	eval { $self->load_extension( "VUser::$extension", %cfg); };
 	warn "Unable to load $extension: $@\n" if $@;
@@ -186,7 +186,7 @@ sub unload_extensions
     my %cfg = @_;
 
     $self->load_extension('VUser::CORE');
-    foreach my $extension (split( / /, $cfg{ vuser }{ extensions } ) )
+    foreach my $extension (split( / /, VUser::ExtLib::strip_ws($cfg{ vuser }{ extensions }) ) )
     {
 	eval { $self->unload_extension( "VUser::$extension", %cfg); };
 	warn "Unable to unload $extension: $@\n" if $@;
