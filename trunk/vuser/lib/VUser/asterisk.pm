@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.11 2005-02-14 16:57:58 perlstalker Exp $
+# $Id: asterisk.pm,v 1.12 2005-02-14 17:24:58 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.11 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.12 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -79,6 +79,14 @@ vm_dbpass=secret
 vm_dbhost=localhost
 vm_dbname=asterisk
 vm_dbport=3306
+
+# The location of the voicemail spool
+vm spool=/var/spool/asterisk/voicemail
+vm sounds=/var/lib/asterisk/sounds
+
+# The user and group that owns the vm spool
+vm user=root
+vm group=root
 
 # The name of the file to write extension data to.
 extensions.conf=extensions.vuser
