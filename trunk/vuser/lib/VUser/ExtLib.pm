@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.4 2005-02-10 16:13:37 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.5 2005-02-11 16:44:17 perlstalker Exp $
 
 sub add_line_to_file
 {
@@ -128,6 +128,27 @@ sub repl_line_in_file
     rename "$file.tmp", $file or die "Can't rename $file.tmp to $file: $!\n";
 }
 
+sub rm_r
+{
+    my $dir = shift;
+
+    opendir (DIR, $dir) or die "Unable to open $dir: $!";
+
+    my @files = grep { ! /^\.\.?$/; } readdir DIR;
+    foreach my $file (@files) {
+	if (-d "$dir/$file") {
+	    eval { rm_r "$dir/$file"; };
+	    die "$@" if $@;
+	} else {
+	    unlink "$dir/$file" or die "Unable to delete $dir/$file: $!";
+	}
+    }
+
+    closedir DIR;
+
+    rmdir $dir or die "Unable to delete dir: $!";
+}
+
 sub run_scripts_in_dir
 {
     my $dir = shift;
@@ -204,6 +225,10 @@ Make a directory and any missing parents. Similar to 'mkdir -p'.
 =head2 repl_line_in_file ($file, $old_line, $new_line)
 
 Replace a given line in a text file with another line.
+
+=head2 rm_r ($dir)
+
+Recursively delete all files in a given directory, including the directory.
 
 =head2 run_scripts_in_dir ($dir[, @args])
 
