@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.1 2004-12-29 20:36:53 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.2 2004-12-30 17:46:12 perlstalker Exp $
 
 sub add_line_to_file
 {
@@ -105,6 +105,24 @@ sub repl_line_in_file
     rename "$file.tmp", $file or die "Can't rename $file.tmp to $file: $!\n";
 }
 
+sub run_scripts_in_dir
+{
+    my $dir = shift;
+    my @args = @_;
+
+    opendir (DIR, $dir) or die "Unable to open directory $dir: $!\n";
+
+    my @scripts = ();
+    # Get all executable files (not directories) in the directory
+    @scripts = grep { not -d "$dir/$_" and -x _ } readdir DIR;
+
+    closedir DIR;
+
+    foreach $script (@scripts) {
+	system ("$dir/$script", @args);
+    }
+}
+
 sub strip_ws
 {
     my $string = shift;
@@ -151,6 +169,11 @@ Make a directory and any missing parents. Similar to 'mkdir -p'.
 =head2 repl_line_in_file ($file, $old_line, $new_line)
 
 Replace a given line in a text file with another line.
+
+=head2 run_scripts_in_dir ($dir[, @args])
+
+Run all executable files in a given dir with the given command line arguments.
+Does not recurse into sub directories.
 
 =head2 strip_ws ($string)
 
