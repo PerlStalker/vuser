@@ -1,11 +1,13 @@
-#! /usr/bin/perl -w
+#! /usr/bin/perl
+use warnings;
 use strict;
 
 #use SOAP::Lite;
 
 # Didn't work when I called a non-existant method.  Not sure why.
 use SOAP::Lite 
-  on_fault => sub { my( $soap, $res ) = @_; die ref $res ? $res->faultdetail : $soap->transport->status, "\n" };
+#    on_fault => sub { die join ' ', @_; };
+    on_fault => sub { my( $soap, $res ) = @_; die ref $res ? $res->faultstring : $soap->transport->status, "\n" };
 
 # Connect to CGI server
 # Doesn't handle errors.  If a fault occurs, it just prints empty string.
@@ -20,11 +22,5 @@ use SOAP::Lite
 print SOAP::Lite
   -> uri( 'http://localhost:8080/VUser/SOAP' )
   -> proxy( 'http://localhost:8080/' )
-  -> hi()
-  -> result;
-
-print SOAP::Lite
-  -> uri( 'http://localhost:8080/VUser/SOAP' )
-  -> proxy( 'http://localhost:8080/' )
-  -> CORE_version()
+  -> do_fault()
   -> result;
