@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: simple.pm,v 1.3 2005-03-03 03:59:55 perlstalker Exp $
+# $Id: simple.pm,v 1.4 2005-03-03 17:57:19 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -72,6 +72,8 @@ sub voip_add
 	$user{$item} = $opts->{$item};
     }
 
+    $user{extension} =~ s/\D//g;
+
     $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
     $user{password} = VUser::ExtLib::generate_password unless $user{password};
     $user{vmpassword} = VUser::ExtLib::generate_password(4, (0..9))
@@ -79,8 +81,6 @@ sub voip_add
     $user{username} = $user{extension} unless $user{username};
     $user{email} = '' unless $user{email};
     $user{name} = '' unless $user{name};
-
-    $user{extension} =~ s/\D//g;
 
     eval {
 	$eh->run_tasks('sip', 'add', $cfg,
@@ -203,6 +203,8 @@ sub voip_mod
 	$user{$item} = $opts->{$item};
     }
 
+    $user{extension} =~ s/\D//g;
+
     $user{context} = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'default context'}) unless $user{context};
     $user{password} = VUser::ExtLib::generate_password unless $user{password};
     $user{vmpassword} = VUser::ExtLib::generate_password(4, (0..9))
@@ -211,7 +213,6 @@ sub voip_mod
     $user{email} = '' unless $user{email};
     $user{name} = '' unless $user{name};
 
-    $user{extension} =~ s/\D//g;
     $user{newextension} =~ s/\D//g if defined $user{newextension};
 
     my ($next, $ncontext) = ($user{name}, $user{context});
