@@ -1,23 +1,35 @@
-This project is a reworking of PerlStalker's excellent vuser script
-which can be found here: http://perlstalker.amigo.net/courier/
+The homepage for vuser is http://sourceforge.net/projects/vuser
 
 The goal of this project is to simplify the system administration tasks
 of maintaining multiple virtual mail domains using the courier-mta mail
 server (http://courier-mta.org) where the account information is stored
 in a mysql database
 
-Documentation for vuser can be viewed by typing pod2text vuser
-
-before vuser will work, you must copy vuser.conf.dist to vuser.conf and
-edit it to match your setup.
+Documentation for vuser can be viewed by typing pod2text vuser,
+included is a manage for vuser named vuser.1. 
 
 WARNING!
 Since this reworking has not been tested much, it should currently be
 considered beta!!
 
+INSTALLATION
+
+The vuser script comes with vuser.conf.dist.  You must edit that file
+to match your system's setup.  The script wiil look for the vuser.conf
+to be located in the one of these directories:
+
+/usr/local/etc/vuser.conf
+/etc/vuser.conf
+
+or these directories relative to the vuser script:
+
+.
+../etc/
+
+
+AUTHORS
+
+Randy Smith <perlstalker@falconsroost.alamosa.co.us>
+Michael O'Connor <stew@vireo.org>
+
 We can usually be found in #courier on irc.freenode.net
-
-perlstalker@falconsroost.alamosa.co.us
-stew@vireo.org
-
-
