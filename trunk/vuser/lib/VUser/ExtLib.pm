@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.9 2005-03-08 17:23:39 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.10 2005-04-07 22:04:06 perlstalker Exp $
 
 sub add_line_to_file
 {
@@ -182,6 +182,7 @@ sub run_scripts_in_dir
 sub strip_ws
 {
     my $string = shift;
+    return $string unless defined $string;
     $string =~ s/^\s*(.*?)\s*$/$1/;
     return $string;
 }
