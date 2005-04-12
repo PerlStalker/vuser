@@ -4,11 +4,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.7 2005-04-12 14:50:30 perlstalker Exp $
+# $Id: SOAP.pm,v 1.8 2005-04-12 14:59:51 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
 our $VERSION = $main::VERSION;
 
 our %cfg;
@@ -34,6 +34,9 @@ sub do_fault
 	->faultstring('Oh! The humanity!');
 }
 
+# This was written as a cheap hack to get data to a soap client I had
+# written that uses vuser to do some local stuff. There should be a nicer
+# way to do this but I haven't taken the time to work one out.
 sub get_data
 {
     my $class = shift;
