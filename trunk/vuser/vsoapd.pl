@@ -7,7 +7,7 @@ use strict;
 use SOAP::Lite;
 
 # Copyright 2005 Mark Bucciarelli
-# $Id: vsoapd.pl,v 1.7 2005-03-28 23:54:04 perlstalker Exp $
+# $Id: vsoapd.pl,v 1.8 2005-04-12 14:50:29 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
@@ -15,8 +15,10 @@ use FindBin;
 use Config::IniFiles;
 use SOAP::Transport::HTTP;
 
-our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
 our $VERSION = '0.1.0';
+
+print "vsoapd $VERSION $REVISION\n";
 
 our $DEBUG = 0;
 
@@ -38,6 +40,7 @@ use vars qw(@etc_dirs);
 use lib (map { "$_/extensions" } @etc_dirs);
 use lib (map { "$_/lib" } @etc_dirs);
 
+use VUser::ExtLib;
 use VUser::ExtHandler;
 use VUser::SOAP;
 
@@ -66,12 +69,15 @@ $VUser::SOAP::eh = $eh;
 # don't die on 'Broken pipe' or Ctrl-C
 #$SIG{PIPE} = $SIG{INT} = 'IGNORE';
 
+my $port = VUser::ExtLib::strip_ws($cfg{vsoapd}{localport});
+
 my $daemon = SOAP::Transport::HTTP::Daemon
   # if you do not specify LocalAddr then you can access it with 
   # any hostname/IP alias, including localhost or 127.0.0.1. 
   # if do you specify LocalAddr in ->new() then you can only access it 
   # from that interface. -- Michael Percy <mpercy@portera.com>
-  -> new (LocalAddr => 'localhost', LocalPort => 8080) 
+#  -> new (LocalAddr => 'localhost', LocalPort => 8080) 
+  -> new (LocalPort => $port) 
   # you may also add other options, like 'Reuse' => 1 and/or 'Listen' => 128
 
   # specify list of objects-by-reference here 

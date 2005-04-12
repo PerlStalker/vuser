@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.25 2005-03-08 15:53:50 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.26 2005-04-12 14:50:30 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.25 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.26 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -79,6 +79,7 @@ sub register_option
     my $type = shift;
     my $required = shift;
     my $descr = shift;
+    my $widget = shift;     # Widget class (Optional)
 
     print STDERR "Reg Opt: $keyword|$action $option $type ", $required?'Req':'',"\n" if $main::DEBUG >= 2;
     unless (exists $self->{keywords}{$keyword}) {

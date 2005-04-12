@@ -20,7 +20,18 @@ use SOAP::Lite
 # Connect to Daemon
 # Doesn't handle errors.  If a fault occurs, it just prints empty string.
 print SOAP::Lite
-  -> uri( 'http://localhost:8080/VUser/SOAP' )
-  -> proxy( 'http://localhost:8080/' )
-  -> do_fault()
+  -> uri( 'http://localhost:8001/VUser/SOAP' )
+  -> proxy( 'http://localhost:8001/' )
+  -> version()
   -> result;
+
+print "\n";
+
+my $data = SOAP::Lite
+  -> uri( 'http://localhost:8001/VUser/SOAP' )
+  -> proxy( 'http://localhost:8001/' )
+  -> get_data('', '', 'VUser::Activation', 'soap_get_cust',
+	      {customerid => '123456'})
+  -> result;
+
+#use Data::Dumper; print Dumper $data;

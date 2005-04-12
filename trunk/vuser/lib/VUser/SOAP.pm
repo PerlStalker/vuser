@@ -4,18 +4,18 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.6 2005-03-25 20:14:29 perlstalker Exp $
+# $Id: SOAP.pm,v 1.7 2005-04-12 14:50:30 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = $main::VERSION;
 
 our %cfg;
 our $eh;
 
 sub version {
-    return $VERSION;
+    return $main::VERSION;
 }
 
 sub hash_test {
@@ -34,19 +34,38 @@ sub do_fault
 	->faultstring('Oh! The humanity!');
 }
 
+sub get_data
+{
+    my $class = shift;
+    my $user = shift; # username for future ACLs
+    my $pass = shift; # username for future ACLs
+    my $pkg = shift;
+    my $func = shift;
+    my $opts = shift;
+
+    # Check ACL here.
+
+    # Should to options checking here like what is done in run_tasks()
+    my $data = $pkg->$func(\%cfg, $opts);
+    #use Data::Dumper; print Dumper $data;
+    return $data;
+}
+
 sub AUTOLOAD
 {
     use vars '$AUTOLOAD';
     my $class = shift;
+    my $user = shift; # User name (For future ACLs)
+    my $pass = shift; # Password  (for Future ACLs)
     my %opts = @_;
 
     my $name = $AUTOLOAD;
     $name =~ s/.*://;
-    print "name: $name\n";
+    #print "name: $name\n";
     if ($name =~ /^([^_]+)_([^_]+)$/) {
 	my $keyword = $1;
 	my $action = $2;
-	print "Key: $keyword Act: $action\n";
+	#print "Key: $keyword Act: $action\n";
 	eval { $eh->run_tasks($keyword, $action, \%cfg, %opts); };
 	if ($@) {
 	    die SOAP::Fault
