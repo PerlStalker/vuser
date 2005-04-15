@@ -4,15 +4,17 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.8 2005-04-12 14:59:51 perlstalker Exp $
+# $Id: SOAP.pm,v 1.9 2005-04-15 19:21:44 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
 our $VERSION = $main::VERSION;
 
 our %cfg;
 our $eh;
+
+use VUser::ACL;
 
 sub version {
     return $main::VERSION;
@@ -52,6 +54,78 @@ sub get_data
     my $data = $pkg->$func(\%cfg, $opts);
     #use Data::Dumper; print Dumper $data;
     return $data;
+}
+
+# Get a list of keywords for a soap client.
+sub get_keywords
+{
+    my $class = shift;
+    my $user = shift; # For ACL
+    my $pass = shift; # For ACL
+
+    my @keywords = ();
+    foreach my $keyword ($eh->get_keywords) {
+	push @keywords, {keyword => $keyword,
+			 description => $eh->get_description($keyword)};
+    }
+    return @keywords;
+}
+
+sub get_actions
+{
+    my $class = shift;
+    my $user = shift; # username for ACL
+    my $pass = shift; # password
+    my $keyword = shift;
+
+    my @actions = ();
+    foreach my $action ($eh->get_actions($keyword)) {
+	push @actions, {action => $action,
+			description => $eh->get_description($keyword, $action)
+			};
+    }
+    return @actions;
+}
+
+sub get_options
+{
+    my $class = shift;
+    my $user = shift;
+    my $pass = shift;
+    my $keyword = shift;
+    my $action = shift;
+
+    my @options = ();
+    foreach my $option ($eh->get_options($keyword, $action)) {
+	push @options, {option => $option,
+			description => $eh->get_description($keyword,
+							    $action,
+							    $option)
+			};
+    }
+    return @options;
+}
+
+sub authenticate
+{
+    my $class = shift;
+    my $user = shift;
+    my $pass = shift;
+
+    return 1;
+}
+
+sub check_acl
+{
+    my $class = shift;
+    my $user = shift;
+    # Need the pass? I don't think so.
+    my $keyword = shift;
+    my $action = shift;
+    my $opt_name = shift;
+    my $opt_value = shift;
+
+    return 1;
 }
 
 sub AUTOLOAD
