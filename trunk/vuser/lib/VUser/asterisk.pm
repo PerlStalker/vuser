@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.21 2005-04-05 20:03:04 perlstalker Exp $
+# $Id: asterisk.pm,v 1.22 2005-05-09 14:38:55 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.21 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.22 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::Extension;
@@ -784,6 +784,7 @@ sub vm_write
 	push @{$vms{$vm->{context}}}, $vm;
     }
 
+    my $etc = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{etc});
     unless (open (CONF, '>'.$cfg->{Extension_asterisk}{etc}.'/'
 		  .$cfg->{Extension_asterisk}{'voicemail.conf'})
 	    ) {
@@ -791,19 +792,41 @@ sub vm_write
 	  .$cfg->{Extension_asterisk}{'voicemail.conf'}.": $!\n";
     }
 
-    print CONF VUser::ExtLib::edit_warning(';');
+    my $template = VUser::ExtLib::strip_ws($cfg->{Extension_asterisk}{'vm_template'});
+
+    my $vm_conf = '';
 
     foreach my $context (keys %vms) {
-	print CONF "[$context]\n";
+	$vm_conf .= "[$context]\n";
 	foreach my $vm (@{$vms{$context}}) {
-	    print CONF $vm->{mailbox}.' => '.$vm->{password};
-	    print CONF ','.$vm->{fullname};
-	    print CONF ','.$vm->{email};
-	    print CONF ','.$vm->{pager};
-	    print CONF ','.$vm->{options} if $vm->{options};
-	    print CONF "\n";
+	    $vm_conf .= $vm->{mailbox}.' => '.$vm->{password};
+	    $vm_conf .= ','.$vm->{fullname};
+	    $vm_conf .= ','.$vm->{email};
+	    $vm_conf .= ','.$vm->{pager};
+	    $vm_conf .= ','.$vm->{options} if $vm->{options};
+	    $vm_conf .= "\n";
 	}
-	print CONF "\n";
+	$vm_conf .= "\n";
+    }
+
+    if ($template) {
+	use Text::Template;
+	my $template = new Text::Template (TYPE => 'FILE',
+					   SOURCE => "$etc/$template"
+					   )
+	    or die "Can't build template: $Text::Template::ERROR";
+	my $vars = {warning => VUser::ExtLib::edit_warning(';'),
+		    voicemails => $vm_conf
+		    };
+	$template->fill_in(OUTPUT => \*CONF,
+			   HASH => $vars,
+			   DELIMITERS => ['<<', '>>']
+			   )
+	    or die "Can't fill out template: $Text::Template::ERROR";
+    } else {
+
+	print CONF VUser::ExtLib::edit_warning(';');
+	print CONF $vm_conf;
     }
 
     close CONF;
