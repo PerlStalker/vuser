@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ACL.pm,v 1.1 2005-04-15 19:21:44 perlstalker Exp $
+# $Id: ACL.pm,v 1.2 2005-05-18 20:16:07 perlstalker Exp $
 
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(ALLOW DENY UNKNOWN);
-our %EXPORT_TAGS = qw(consts => [qw(ALLOW DENY UNKNOWN)]);
+our %EXPORT_TAGS = (consts => [qw(ALLOW DENY UNKNOWN)]);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
 our $ALLOW = 1;
@@ -18,6 +18,8 @@ our $DENY = 0;
 our $UNKNOWN = -1;
 
 my $c_sec = 'ACL'; #conf section
+
+my $acl = undef;
 
 sub revision
 {
@@ -40,6 +42,25 @@ sub init
     my $eh = shift;
     my %cfg = @_;
 
+    if (VUser::ExtLib::check_bool($cfg{$c_sec}{'use internal auth'})) {
+	if (not VUser::ExtLib::strip_ws($cfg{$c_sec}{'auth modules'})) {
+	    die "Internal auth specified but no auth modules defined.";
+	}
+	$eh->register_keyword('auth', 'Manage vuser users');
+
+	# auth-add
+	$eh->register_action('auth', 'add', 'Add a new user');
+	$eh->register_option('auth', 'add', 'user', '=s', 1, 'User name');
+	$eh->register_option('auth', 'add', 'password', '=s', 1, 'Password');
+	$eh->register_option('auth', 'add', 'ip', '=s', 0, 'Restrict to this IP');
+	$eh->register_task('auth', 'add', \&auth_add, 1);
+
+	$eh->register_action('auth', 'show', 'Show users');
+	$eh->register_option('auth', 'show', 'user', '=s', 0, 'User to get');
+	$eh->register_option('auth', 'show', 'module', '=s', 0, 'Check in this module only.');
+	$eh->register_task('auth', 'show', \&auth_show);
+    }
+
     $eh->register_keyword('acl', 'Manage vuser ACLs');
 
     # acl-add
@@ -53,6 +74,9 @@ sub init
     $eh->register_option('acl', 'add', 'operation', '=s', 0);
     $eh->register_option('acl', 'add', 'value', '=s', 0);
     $eh->register_option('acl', 'add', 'permissions', '=s', 1, 'ALLOW or DENY');
+    $eh->register_task('acl', 'add', \&acl_add, 1);
+
+    $acl = new VUser::ACL (\%cfg);
 }
 
 sub unload { return; }
@@ -62,13 +86,20 @@ sub new
     my $class = shift;
     my $cfg = shift;
 
+    return $acl if defined $acl;
+
     my $self = { auth => [],
 		 acl => []
 		 };
     bless $self, $class;
 
     # load Auth modules
+    eval { $self->load_auth_modules($cfg); };
+    die $@ if $@;
+
     # load ACL modules
+    eval { $self->load_acl_modules($cfg); };
+    die $@ if $@;
 
     # After we've loaded the requested modules, we'll set the default
     # to allow or deny. (deny is the default)
@@ -80,8 +111,9 @@ sub new
     } else {
 	$self->register_acl($cfg, \&DENY, -1);
     }
+    $acl = $self;
 
-    return $self;
+    return $acl;
 }
 
 sub ALLOW { return $ALLOW; };
@@ -91,21 +123,27 @@ sub UNKNOWN { return $UNKNOWN; }
 sub register_acl
 {
     my $self = shift;
+    my $cfg = shift;
     my $acl_sub = shift;
-    my $priority = shift;
+    my $priority = shift || 10;
 
-    if (not defined $self->{acl}[$priority]) {
-	$self->{acl}[$priority] = [];
+    my $pri = $priority;
+    if ($priority < 0) {
+	$pri = scalar @{$self->{acl}};
     }
 
-    push @{ $self->{acl}[$priority] }, $acl_sub;
+    if (not defined $self->{acl}[$pri]) {
+	$self->{acl}[$pri] = [];
+    }
+
+    push @{ $self->{acl}[$pri] }, $acl_sub;
 }
 
 sub register_auth
 {
     my $self = shift;
     my $auth_sub = shift;
-    my $priority = shift;
+    my $priority = shift || 10;
 
     if (not defined $self->{auth}[$priority]) {
 	$self->{auth}[$priority] = [];
@@ -126,7 +164,7 @@ sub load_auth_modules
     foreach my $mod (split / /, $mods) {
 	print STDERR "Loading authmod $mod\n" if $main::DEBUG >= 1;
 	eval { $self->load_auth_module( "VUser::Auth::$mod", $cfg); };
-	warn "Unable to load auth module: $@\n";
+	warn "Unable to load auth module ($mod): $@\n" if $@;
     }
 }
 
@@ -214,6 +252,65 @@ sub check_acls
 	return 0;
     }
 }
+
+sub plugin_tasks
+{
+    my ($cfg, $opts, $action, $eh, $sect, $func) = @_;
+
+    my @mods = ();
+    if ($opts->{module}) {
+	@mods = ($opts->{module});
+    } else {
+	my $mods;
+	if ($sect eq 'acl') {
+	    $mods = VUser::ExtLib::strip_ws($cfg->{$c_sec}{'acl modules'});
+	} elsif ($sect eq 'auth') {
+	    $mods = VUser::ExtLib::strip_ws($cfg->{$c_sec}{'auth modules'});
+	}
+	$mods = '' unless $mods;
+	@mods = split / /, $mods;
+    }
+
+    foreach my $mod (@mods) {
+	# is this what I want to call the sub in the modules?
+	no strict 'refs';
+	&{"VUser::"
+	      .($sect eq 'acl'? 'ACL' : 'Auth')
+	      ."::".$mod."::".$func}($cfg, $opts, $action, $eh);
+    }
+}
+
+sub auth_add { plugin_tasks(@_, 'auth', 'auth_add') };
+
+sub auth_show
+{
+    my ($cfg, $opts, $action, $eh) = @_;
+
+#    use Data::Dumper; print Dumper $cfg, $opts, $action, $eh;
+
+    my $mods;
+
+    if ($opts->{module}) {
+	$mods = $opts->{module};
+    } else {
+	$mods = VUser::ExtLib::strip_ws($cfg->{$c_sec}{'auth modules'});
+    }
+
+    my @users = ();
+    foreach my $mod (split / /, $mods) {
+	no strict 'refs';
+	push @users, &{ "VUser::Auth::".$mod."::auth_get" }($cfg, $opts, $action, $eh);
+    }
+
+    foreach my $user (@users) {
+	print join (':', map { defined $_? $_ : '' } ($user->{user},
+						      $user->{password},
+						      $user->{ip}));
+	print "\n";
+    }
+}
+
+sub acl_add { plugin_tasks(@_, 'acl', 'acl_add'); }
 
 1;
 
@@ -308,6 +405,12 @@ the user is denied.
 
 =back
 
+=item auth_add
+
+=item auth_get
+
+Plugins must return an array of hash refs with keys: user, password, ip.
+
 =back
 
 =head2 Access Control
@@ -385,6 +488,14 @@ If no module returns an ALLOW or DENY, then access is denied or allowed
 based on a setting in the config file.
 
 =back
+
+=item acl_add
+
+This is run as a regular task.
+
+A note about the I<user> option: user is the actual user name of the user
+or '#name' for a group. The group '#GLOBAL' is reserved. I<#GLOBAL> allows
+an admin to set permissions for all users.
 
 =back
 

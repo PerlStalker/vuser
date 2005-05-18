@@ -35,3 +35,17 @@ my $data = SOAP::Lite
   -> result;
 
 #use Data::Dumper; print Dumper $data;
+
+my $login = SOAP::Lite
+    -> uri( 'http://localhost:8001/VUser/SOAP' )
+    -> proxy( 'http://localhost:8001/' )
+    -> authenticate('randys', 'foo')
+    -> result;
+
+print "Login: ($login) ";
+if ($login) {
+    print " Successful";
+} else {
+    print " Failed";
+}
+print "\n";

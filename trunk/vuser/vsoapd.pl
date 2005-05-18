@@ -7,7 +7,7 @@ use strict;
 use SOAP::Lite;
 
 # Copyright 2005 Mark Bucciarelli
-# $Id: vsoapd.pl,v 1.8 2005-04-12 14:50:29 perlstalker Exp $
+# $Id: vsoapd.pl,v 1.9 2005-05-18 20:16:07 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
@@ -15,7 +15,7 @@ use FindBin;
 use Config::IniFiles;
 use SOAP::Transport::HTTP;
 
-our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
 our $VERSION = '0.1.0';
 
 print "vsoapd $VERSION $REVISION\n";
@@ -63,8 +63,9 @@ tie %cfg, 'Config::IniFiles', (-file => $config_file);
 my $eh = new VUser::ExtHandler (\%cfg);
 
 # This is really ugly and there should be a better way of doing this.
-%VUser::SOAP::cfg = %cfg;
-$VUser::SOAP::eh = $eh;
+VUser::SOAP::init($eh, %cfg);
+
+$DEBUG = VUser::ExtLib::strip_ws($cfg{'vuser'}{'debug'}) || 0;
 
 # don't die on 'Broken pipe' or Ctrl-C
 #$SIG{PIPE} = $SIG{INT} = 'IGNORE';

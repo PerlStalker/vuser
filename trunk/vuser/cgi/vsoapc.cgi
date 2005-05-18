@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: vsoapc.cgi,v 1.1 2005-04-15 22:15:43 perlstalker Exp $
+# $Id: vsoapc.cgi,v 1.2 2005-05-18 20:16:07 perlstalker Exp $
 
 # Called as:
 #  vsoapc.cgi/keyword/action/
@@ -17,7 +17,7 @@ use FindBin;
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = '0.1.0';
 
 my $title = "vuser $VERSION - $REVISION";
@@ -72,6 +72,8 @@ my $vuser_host = VUser::ExtLib::strip_ws($cfg{'vsoapc.cgi'}{'vsoap host'});
 $vuser_host = 'http://localhost:8080/' unless $vuser_host;
 $vuser_host .= '/' unless $vuser_host =~ m|/$|;
 
+$DEBUG = VUser::ExtLib::strip_ws($cfg{'vuser'}{'debug'}) || 0;
+
 my $q = new CGI;
 
 # Commands:
@@ -90,12 +92,15 @@ my ($keyword, $action, $other) = split '/', $path_info;
 # URL of this script. Suitable for use in <form action="$url">
 my $url = $q->url('-path');
 
+print $q->header;
+
 my $session = $q->param('session');
 my %sess = ();
 if (not defined $session
     or not -e "$session_dir/$session") {
     # No session. User must log in again.
     login_page();
+    print "Log in 1;";
     exit;
 } else {
     if (open (SESS, "$session_dir/$session")) {
@@ -109,27 +114,49 @@ if (not defined $session
     }
 }
 
+print "You are here.";
+
+if (not $keyword) {
+    choose_keyword();
+} elsif (not $action) {
+    #choose_action();
+    huh();
+} else {
+    huh();
+}
+
+sub huh
+{
+    print $q->start_html;
+    print $q->p("How did we get here? Key: $keyword, Act: $action ($path_info)");
+    print $q->end_html;
+}
+
 sub login_page
 {
     my $message = shift || '';
+
+    print "login_page()\n";
     
     my $user;
     if ($cmd eq 'Login') {
 	$user = VUser::ExtLib::strip_ws($q->param('user'));
 	my $pass = $q->param('password'); # password may start/end with ws
+	my $ip = $ENV{REMOTE_ADDR};
 	if ($user and $pass
 	    and SOAP::Lite
-	    -> url($vuser_host.'VUser/SOAP')
+	    -> uri($vuser_host.'VUser/SOAP')
 	    -> proxy($vuser_host)
-	    -> authenticate($user, $pass)
+	    -> authenticate($user, $pass, $ip)
 	    -> result) {
 	    $session = VUser::ExtLib::generate_password(20, 'a' .. 'z',
 							'A' .. 'Z',
 							0 .. 9);
+	    $q->param('session', $session);
 	    if (open (SESS, ">$session_dir/$session")) {
-		print SESS "$ENV{REMOTE_ADDR}\n";
-		print SESS "$user";
-		print SESS "$pass";
+		print SESS "$ip\n";
+		print SESS "$user\n";
+		print SESS "$pass\n";
 		close SESS;
 		return;
 	    } else {
@@ -142,10 +169,10 @@ sub login_page
     # Show the login page
     my $args = {user => $user,
 		title => "Please log in - $title",
-		url => $url
+		url => $url,
+		session => $session
 		};
 
-    print $q->header;
     my $template = Text::Template->new (TYPE => 'FILE',
 					SOURCE => "$template_dir/login.html",
 					DELIMITERS => ['{', '}']
@@ -153,10 +180,33 @@ sub login_page
 	or die "Template error: $Text::Template::ERROR";
     $template->fill_in(OUTPUT => \*STDOUT,
 		       HASH => $args
-		       );
+		       )
+	or die "Template error: $Text::Template::ERROR";
 }
 
-sub choose_keyword {
+sub choose_keyword
+{
+    my $args = {user => $sess{user},
+		title => "Choose keyword - $title",
+		url => $url,
+		session => $session
+		};
+    my @keywords = SOAP::Lite
+	-> uri($vuser_host.'VUser/SOAP')
+	-> proxy($vuser_host)
+	-> get_keywords ($sess{user}, $sess{pass})
+	-> result;
+
+    $args->{keywords} = \@keywords;
+
+    my $template = Text::Template->new (TYPE => 'FILE',
+					SOURCE => "$template_dir/choose.html",
+					DELIMITERS => ['{', '}']
+					)
+	or die "Template error: $Text::Template::ERROR";
+    $template->fill_in(OUTPUT => \*STDOUT,
+		       HASH => $args
+		       );
 }
 
 __END__

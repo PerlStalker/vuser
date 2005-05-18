@@ -3,14 +3,15 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.26 2005-04-12 14:50:30 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.27 2005-05-18 20:16:08 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.26 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.27 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
 use Getopt::Long;
 use VUser::ExtLib;
+use VUser::Meta;
 
 use Regexp::Common qw /number/;
 #use Regexp::Common qw /number RE_ALL/;
@@ -24,6 +25,7 @@ sub new
 
     # {keyword}{action}{tasks}[order][tasks (sub refs)]
     # {keyword}{action}{options}{option} = type
+    # {keyword}{_meta}{option} = VUser::Meta
     my $me = {'keywords' => {},
 	      'required' => {},
 	      'descrs' => {}
