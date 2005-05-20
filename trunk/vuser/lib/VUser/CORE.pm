@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.15 2005-03-29 22:55:41 perlstalker Exp $
+# $Id: CORE.pm,v 1.16 2005-05-20 21:58:21 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.15 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.16 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -114,7 +114,17 @@ sub help
 
 sub man
 {
-    pod2usage('-verbose' => 2);
+    my $cfg = shift;
+    my $opts = shift;
+    my $keyword = shift; # The 'action' for help is the keyword see details of
+    my $eh = shift;
+
+    if ($keyword) {
+	local $ENV{PERL5LIB} .= ':'.join ':',@INC;
+	system('perldoc', 'VUser::'.$keyword);
+    } else {
+        pod2usage('-verbose' => 2);
+    }
 }
 
 sub init
