@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@gmail.com>
-# $Id: Meta.pm,v 1.1 2005-05-18 20:16:08 perlstalker Exp $
+# $Id: Meta.pm,v 1.2 2005-05-25 04:08:27 perlstalker Exp $
 
 sub new
 {
@@ -13,10 +13,12 @@ sub new
     my %args = @_;
 
     my $self = { default => [],      # Default values for this option
+		 type => 'string',   # data type: integer (int), string,
+		                     #   counter, boolean, float
 		 description => '',  # Help description
 		 widget => '',       # Which widget type to use
 		 values => [],       # Possible values for option type widgets
-		 labels => [],       # Lables for the values above
+		 labels => [],       # Labels for the values above
 		 searchable => 0,    # This option is a search key
 		 readonly => 0,      # This option is read only
 		 name => ''          # The internal option name
@@ -66,6 +68,8 @@ sub AUTOLOAD
 	return undef;
     }
 }
+
+sub DESTROY { };
 
 1;
 

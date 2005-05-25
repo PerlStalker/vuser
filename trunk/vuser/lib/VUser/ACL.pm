@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ACL.pm,v 1.2 2005-05-18 20:16:07 perlstalker Exp $
+# $Id: ACL.pm,v 1.3 2005-05-25 04:08:27 perlstalker Exp $
 
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(ALLOW DENY UNKNOWN);
 our %EXPORT_TAGS = (consts => [qw(ALLOW DENY UNKNOWN)]);
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = $main::VERSION;
 
 our $ALLOW = 1;
@@ -449,7 +449,8 @@ The keyword
 
 =item $action
 
-The action the user is trying to run.
+The action the user is trying to run. If action is '_meta', then the option
+is treated as a meta data name.
 
 =item $option
 
@@ -458,7 +459,8 @@ An option to the keyword/action pair.
 =item $value
 
 The value of the option above. Having the value allows us to allow a user
-to see/change/delete/whatever certain values but not others.
+to see/change/delete/whatever certain values but not others. This may be
+a pattern or regex.
 
 For example, one might allow an email user to be able to use vuser to change
 their password or the password of some number of sub accounts. Specifically,

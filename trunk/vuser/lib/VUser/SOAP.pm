@@ -4,11 +4,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.10 2005-05-18 20:16:08 perlstalker Exp $
+# $Id: SOAP.pm,v 1.11 2005-05-25 04:08:27 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.11 $'))[1];
 our $VERSION = $main::VERSION;
 
 our %cfg;
@@ -135,6 +135,25 @@ sub get_options
 			};
     }
     return @options;
+}
+
+sub get_meta
+{
+    my $class = shift;
+    my $user = shift;
+    my $pass = shift;
+    my $ip = shift;
+    my $keyword = shift;
+
+    my @meta = $eh->get_meta($keyword);
+
+    # Get list of approved options
+    my @ok_meta = ();
+    foreach my $meta (@meta) {
+	$acl->check_acls($user, $pass, $ip, $keyword, '_meta', $meta->name);
+    }
+
+    return @ok_meta;
 }
 
 sub authenticate

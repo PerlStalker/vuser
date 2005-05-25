@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.27 2005-05-18 20:16:08 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.28 2005-05-25 04:08:27 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.27 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.28 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -28,7 +28,7 @@ sub new
     # {keyword}{_meta}{option} = VUser::Meta
     my $me = {'keywords' => {},
 	      'required' => {},
-	      'descrs' => {}
+	      'descrs' => {},
 	  };
 
     bless $me, $class;
@@ -72,18 +72,70 @@ sub register_action
     }
 }
 
+#$eh->register_option('key', 'action',
+#                      $option, $type, $required, $descr, $widget
+#			- OR -
+#		      $meta, $required
+#                      );
 sub register_option
 {
     my $self = shift;
     my $keyword = shift;
     my $action = shift;
     my $option = shift;
-    my $type = shift;
-    my $required = shift;
-    my $descr = shift;
-    my $widget = shift;     # Widget class (Optional)
 
-    print STDERR "Reg Opt: $keyword|$action $option $type ", $required?'Req':'',"\n" if $main::DEBUG >= 2;
+    my $meta;
+    my $required = 0;
+
+    if (not ref $option) {
+	# It's not a ref, build a VUser::Meta object
+	my $type = shift;
+	$required = shift;
+	my $descr = shift;
+	my $widget = shift;     # Widget class (Optional)
+
+	if ($self->{$keyword}{'_meta'}{$option}) {
+	    $meta = $self->{$keyword}{'_meta'}{$option};
+	} else {
+
+	    $type = lc($type);
+	    my $d_type = 'string';
+	    if ($type eq '!'
+		or $type eq 'boolean') {
+		$d_type = 'boolean';
+	    } elsif ($type eq '+'
+		     or $type eq 'counter') {
+		$d_type = 'counter';
+	    } elsif ($type =~ /^([=:])([siof])([@%])?$/) {
+		my $gol_type = $2;
+		if ($gol_type eq 's') {
+		    $d_type = 'string';
+		} elsif ($gol_type eq 'i'
+			 or $gol_type eq 'o'
+			 or $gol_type eq 'integer'
+			 ) {
+		    $d_type = 'integer';
+		} elsif ($gol_type eq 'f') {
+		    $d_type = 'float';
+		}
+	    } else {
+		$d_type = 'string';
+	    }
+
+	    $meta = new VUser::Meta(name => $option,
+				    description => $descr,
+				    type => $d_type
+				    );
+	}
+
+    } elsif ($option->isa('VUser::Meta')) {
+	$meta = $option;
+	$required = shift;
+    } else {
+	die "Option was not a VUser::Meta\n";
+    }
+
+    print STDERR "Reg Opt: $keyword|$action ".$meta->name." ".$meta->type." ", $required?'Req':'',"\n" if $main::DEBUG >= 2;
     unless (exists $self->{keywords}{$keyword}) {
 	die "Unable to register option on unknown keyword '$keyword'.\n";
     }
@@ -92,20 +144,51 @@ sub register_option
 	die "Unable to register option on unknown action '$action'.\n";
     }
 
-    if (exists $self->{keywords}{$keyword}{$action}{options}{$option}) {
+#    if (exists $self->{keywords}{$keyword}{$action}{options}{$option}) {
+    if (exists $self->{keywords}{$keyword}{$action}{options}{$meta->name}) {
 	# Let's silently ignore duplicate option definitions the way we
 	# do for keywords and actions. This will allow an extension to
 	# register an option to guarantee that it's there rather than having
 	# to rely on another extension to register the option.
 	#die "Unable to register option for $keyword|$action. '$option' already exists.\n";
     } else {
-	$self->{keywords}{$keyword}{$action}{options}{$option} = $type;
+	$self->{keywords}{$keyword}{$action}{options}{$meta->name} = $meta;
 	if ($required) {
-	    $self->{required}{$keyword}{$action}{$option} = 1;
+	    $self->{required}{$keyword}{$action}{$meta->name} = 1;
 	} else {
-	    $self->{required}{$keyword}{$action}{$option} = 0;
+	    $self->{required}{$keyword}{$action}{$meta->name} = 0;
 	}
-	$self->{descrs}{$keyword}{$action}{$option} = {_descr => $descr};
+	$self->{descrs}{$keyword}{$action}{$meta->name} = {_descr => $meta->description};
+    }
+
+    if (exists $self->{$keyword}{'_meta'}{$meta->name}) {
+	# silently discard dups
+    } else {
+	$self->{$keyword}{'_meta'}{$meta->name} = $meta;
+    }
+}
+
+sub register_meta
+{
+    my $self = shift;
+    my $keyword = shift;
+    
+    my $meta;
+    
+    if (ref $_[0] and $_[0]->isa('VUser::Meta')) {
+	$meta = $_[0];
+    } else {
+	$meta = new VUser::Meta(@_);
+    }
+
+    unless (exists $self->{keywords}{$keyword}) {
+	die "Unable to register option on unknown keyword: '$keyword'.\n";
+    }
+
+    if (defined $self->{$keyword}{'_meta'}{$meta->name}) {
+	# Silently ignore duplicates.
+    } else {
+	$self->{$keyword}{'_meta'}{$meta->name} = $meta;
     }
 }
 
@@ -186,6 +269,28 @@ sub get_options
     my $action = shift;
 
     return sort keys %{ $self->{keywords}{$keyword}{$action}{options}};
+}
+
+# Return unsorted list of VUser::Meta objects;
+sub get_meta
+{
+    my $self = shift;
+    my $keyword = shift;
+    my $option = shift;
+
+    my @meta = ();
+
+    return undef if not defined $self->{$keyword};
+
+    if (defined $option) {
+	push @meta, $self->{$keyword}{'_meta'}{$option};
+    } else {
+	foreach my $opt (keys %{$self->{$keyword}{'_meta'}}) {
+	    push @meta, $self->{$keyword}{'_meta'}{$opt};
+	}
+    }
+
+    return @meta;
 }
 
 sub get_description
@@ -394,9 +499,24 @@ sub run_tasks
 	my @opt_defs = ();
 	
 	foreach my $opt (keys %{$self->{keywords}{$keyword}{$real_action}{options}}) {
-	    my $type = $self->{keywords}{$keyword}{$real_action}{options}{$opt};
-	    $type = '' unless defined $type;
-	    my $def = $opt.$type;
+	    my $gopt_type = '';
+	    #my $type = $self->{keywords}{$keyword}{$real_action}{options}{$opt}a;
+	    #$type = '' unless defined $type;
+
+	    my $type = $self->{keywords}{$keyword}{$real_action}{options}{$opt}->type;
+	    if ($type eq 'string') {
+		$gopt_type = '=s';
+	    } elsif ($type eq 'integer') {
+		$gopt_type = '=i';
+	    } elsif ($type eq 'counter') {
+		$gopt_type = '+';
+	    } elsif ($type eq 'boolean') {
+		$gopt_type = '!';
+	    } elsif ($type eq 'float') {
+		$gopt_type = 'f';
+	    }
+
+	    my $def = $opt.$gopt_type;
 	    push @opt_defs, $def;
 	}
 	
