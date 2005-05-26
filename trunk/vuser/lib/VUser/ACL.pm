@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ACL.pm,v 1.3 2005-05-25 04:08:27 perlstalker Exp $
+# $Id: ACL.pm,v 1.4 2005-05-26 20:37:41 perlstalker Exp $
 
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(ALLOW DENY UNKNOWN);
 our %EXPORT_TAGS = (consts => [qw(ALLOW DENY UNKNOWN)]);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = $main::VERSION;
 
 our $ALLOW = 1;
@@ -242,7 +242,7 @@ sub check_acls
   PRI: foreach my $pri (@{ $self->{acl}}) {
       next unless defined $pri;
       foreach my $mod (@{ $pri }) {
-	  $result = &$mod($cfg, $user, $ip, $keyword, $action, $value);
+	  $result = &$mod($cfg, $user, $ip, $keyword, $action, $option, $value);
 	  last PRI if ($result eq ALLOW() or $result eq DENY());
       }
   }
@@ -450,7 +450,7 @@ The keyword
 =item $action
 
 The action the user is trying to run. If action is '_meta', then the option
-is treated as a meta data name.
+(below) is treated as a meta data name.
 
 =item $option
 
