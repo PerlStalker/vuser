@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.16 2005-05-20 21:58:21 perlstalker Exp $
+# $Id: CORE.pm,v 1.17 2005-05-30 18:47:54 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.16 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.17 $'))[1];
 our $VERSION = $main::VERSION;
 
 use Pod::Usage;
@@ -143,7 +143,7 @@ sub init
 
     # Help
     $eh->register_keyword('help', 'Print help/usage information.');
-    $eh->register_action('help', '*');
+    $eh->register_action('help', '*', 'Get help for specific keyword.');
     $eh->register_task('help', '*', \&help);
 
     # Man
