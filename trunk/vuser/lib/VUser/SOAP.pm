@@ -4,11 +4,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.11 2005-05-25 04:08:27 perlstalker Exp $
+# $Id: SOAP.pm,v 1.12 2005-05-30 21:41:27 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.11 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.12 $'))[1];
 our $VERSION = $main::VERSION;
 
 our %cfg;
@@ -84,6 +84,8 @@ sub get_data2
 }
 
 # Get a list of keywords for a soap client.
+# Gonna have to rewrite this, get_actions and _options to return a simple
+# list of names then use a get_description() sub to get the descriptions.
 sub get_keywords
 {
     my $class = shift;
@@ -99,7 +101,7 @@ sub get_keywords
 	push @keywords, {keyword => $keyword,
 			 description => $eh->get_description($keyword)};
     }
-    return @keywords;
+    return \@keywords;
 }
 
 sub get_actions
@@ -107,6 +109,7 @@ sub get_actions
     my $class = shift;
     my $user = shift; # username for ACL
     my $pass = shift; # password
+    my $ip = shift;
     my $keyword = shift;
 
     my @actions = ();
@@ -115,7 +118,7 @@ sub get_actions
 			description => $eh->get_description($keyword, $action)
 			};
     }
-    return @actions;
+    return \@actions;
 }
 
 sub get_options
@@ -123,6 +126,7 @@ sub get_options
     my $class = shift;
     my $user = shift;
     my $pass = shift;
+    my $ip = shift;
     my $keyword = shift;
     my $action = shift;
 
@@ -131,10 +135,13 @@ sub get_options
 	push @options, {option => $option,
 			description => $eh->get_description($keyword,
 							    $action,
-							    $option)
+							    $option),
+			required => $eh->is_required($keyword,
+						     $action,
+						     $option)
 			};
     }
-    return @options;
+    return \@options;
 }
 
 sub get_meta
@@ -144,16 +151,20 @@ sub get_meta
     my $pass = shift;
     my $ip = shift;
     my $keyword = shift;
+    my $name = shift;
 
-    my @meta = $eh->get_meta($keyword);
+    my @meta = $eh->get_meta($keyword, $name);
 
     # Get list of approved options
     my @ok_meta = ();
     foreach my $meta (@meta) {
-	$acl->check_acls($user, $pass, $ip, $keyword, '_meta', $meta->name);
+	if ($acl->check_acls($user, $pass, $ip, $keyword, '_meta', $meta->name)) {
+	    push @ok_meta, $meta;
+	}
+	
     }
 
-    return @ok_meta;
+    return \@ok_meta;
 }
 
 sub authenticate
@@ -209,23 +220,6 @@ sub check_acl
     return 1;
 }
 
-=pod
-
-{
-    # key is the name of the option to pass to set and what is passed
-    # to the client from the server on get calls.
-    option => { default => [],
-		description => '',
-		widget => 'select', # or text, hidden, etc.
-		values => [], # only for select, radio, checkbox
-		labels => [], # labels for values,
-		index => 0, #/1. If >0, this key is an index value and searchable
-		mode = 'r' # Or 'w'. r => read-only, w => read-write
-	     }
-}
-
-=cut
-
 sub get_meta_data
 {
     my $class = shift;
@@ -241,6 +235,7 @@ sub AUTOLOAD
     my $class = shift;
     my $user = shift; # User name (For future ACLs)
     my $pass = shift; # Password  (for Future ACLs)
+    my $ip = shift;
     my %opts = @_;
 
     my $name = $AUTOLOAD;
@@ -250,6 +245,7 @@ sub AUTOLOAD
 	my $keyword = $1;
 	my $action = $2;
 	#print "Key: $keyword Act: $action\n";
+	# Authenticate here...
 	eval { $eh->run_tasks($keyword, $action, \%cfg, %opts); };
 	if ($@) {
 	    die SOAP::Fault
@@ -259,6 +255,26 @@ sub AUTOLOAD
 	}
     } else {
 	return;
+    }
+}
+
+sub run_tasks
+{
+    my $class = shift;
+    my $user = shift;
+    my $pass = shift;
+    my $ip = shift;
+    my $keyword = shift;
+    my $action = shift;
+    my %opts = @_;
+
+    # Auth here.
+    eval { $eh->run_tasks($keyword, $action, \%cfg, %opts); };
+    if ($@) {
+	die SOAP::Fault
+	    ->faultcode('Server.Custom')
+	    ->faultstring($@)
+	    ;
     }
 }
 
