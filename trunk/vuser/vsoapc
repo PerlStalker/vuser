@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vsoapc,v 1.1 2005-05-30 18:49:17 perlstalker Exp $
+# $Id: vsoapc,v 1.2 2005-05-30 21:40:43 perlstalker Exp $
 
 use Getopt::Long qw(:config require_order);
 use FindBin;
@@ -15,7 +15,7 @@ use SOAP::Lite
 		     die "Error: ", ref $res ? $res->faultstring : $soap->transport->status, "\n"
 		     };
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -37,6 +37,10 @@ use vars qw(@etc_dirs);
 
 use lib (map { "$_/extensions" } @etc_dirs);
 use lib (map { "$_/lib" } @etc_dirs);
+
+# It may be better to figure out a "nice" way to access Meta object data
+# in order to avoid shipping VUser::Meta with the this client.
+use VUser::Meta;
 
 my $config_file;
 for my $etc_dir (@etc_dirs)
@@ -104,7 +108,12 @@ die "Bad user name or password\n" unless $login_ok;
 if ($keyword eq 'help') {
     show_help($action);
 } else {
+    my %opts = create_opts($keyword, $action);
     # Do action
+    SOAP::Lite
+	-> uri ("$host/VUser/SOAP")
+	-> proxy ($host)
+	-> run_tasks($username, $password, $ip, $keyword, $action, %opts);
 }
 
 exit;
@@ -148,6 +157,57 @@ foreach my $key (@$keywords) {
 	    }
 	}
     }
+}
+
+# Create options from meta data and options list.
+sub create_opts
+{
+    my $keyword = shift;
+    my $action = shift;
+
+    my $options = SOAP::Lite
+	-> uri ("$host/VUser/SOAP")
+	-> proxy ($host)
+	-> get_options ($username, $password, $ip, $keyword, $action)
+	-> result;
+
+    # This should be the same (or very similar to) what's done in
+    # VUser::ExtHandler
+    my %opts = ();
+    my @opt_defs = ();
+
+    foreach my $opt (@$options) {
+	my $gopt_type = '';
+
+	my $meta = SOAP::Lite
+	    -> uri ("$host/VUser/SOAP")
+	    -> proxy ($host)
+	    -> get_meta ($username, $password, $ip,
+			 $keyword, $opt->{option})
+	    -> result;
+	$meta = $meta->[0];
+
+	my $type = $meta->type;
+	if ($type eq 'string') {
+	    $gopt_type = '=s';
+	} elsif ($type eq 'integer') {
+	    $gopt_type = '=i';
+	} elsif ($type eq 'counter') {
+	    $gopt_type = '+';
+	} elsif ($type eq 'boolean') {
+	    $gopt_type = '!';
+	} elsif ($type eq 'float') {
+	    $gopt_type = 'f';
+	}
+
+	my $def = $meta->name().$gopt_type;
+	push @opt_defs , $def;
+    }
+
+    if (@opt_defs) {
+	GetOptions(\%opts, @opt_defs);
+    }
+    return %opts;
 }
 
 sub revision
