@@ -7,7 +7,7 @@ use strict;
 use SOAP::Lite;
 
 # Copyright 2005 Mark Bucciarelli
-# $Id: vsoapd.pl,v 1.9 2005-05-18 20:16:07 perlstalker Exp $
+# $Id: vsoapd.pl,v 1.10 2005-05-30 21:22:20 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
@@ -15,7 +15,7 @@ use FindBin;
 use Config::IniFiles;
 use SOAP::Transport::HTTP;
 
-our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
 our $VERSION = '0.1.0';
 
 print "vsoapd $VERSION $REVISION\n";
@@ -66,6 +66,7 @@ my $eh = new VUser::ExtHandler (\%cfg);
 VUser::SOAP::init($eh, %cfg);
 
 $DEBUG = VUser::ExtLib::strip_ws($cfg{'vuser'}{'debug'}) || 0;
+$DEBUG = VUser::ExtLib::check_bool($DEBUG) unless $DEBUG =~ /^\d+$/;
 
 # don't die on 'Broken pipe' or Ctrl-C
 #$SIG{PIPE} = $SIG{INT} = 'IGNORE';
