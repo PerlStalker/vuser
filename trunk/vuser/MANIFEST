@@ -24,6 +24,6 @@ MANIFEST			This list of files
 META.yml
 README
 soapclient.pl
-vsoapc
-vsoapd.pl
-vuser
+bin/vsoapc
+sbin/vsoapd
+sbin/vuser
