@@ -1,13 +1,15 @@
 #!/usr/bin/perl
 
 # Copyright 2005 Randy Smith <perlstalker@gmail.com>
-# $Id: Makefile.PL,v 1.2 2005-06-01 14:42:18 perlstalker Exp $
+# $Id: Makefile.PL,v 1.3 2005-06-01 15:14:14 perlstalker Exp $
 
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
 	      NAME            => 'vuser',
-	      VERSION_FROM    => 'sbin/vuser'
+	      VERSION_FROM    => 'sbin/vuser',
+	      EXE_FILES       => [qw[sbin/vuser sbin/vsoapd sbin/vsoapc]],
+	      INSTALLSCRIPT   => '$(PREFIX)/sbin'
 	      );
 
 __END__
