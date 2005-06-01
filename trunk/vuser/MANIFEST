@@ -1,6 +1,9 @@
 cgi/README
 cgi/vsoapc.cgi
+cgi/templates/choose.html
+cgi/templates/login.html
 COPYING
+INSTALL
 lib/VUser/ACL.pm
 lib/VUser/asterisk.pm
 lib/VUser/asterisk/mysql.pm
