@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
 # Copyright 2005 Randy Smith <perlstalker@gmail.com>
-# $Id: Makefile.PL,v 1.1 2005-05-31 22:42:17 perlstalker Exp $
+# $Id: Makefile.PL,v 1.2 2005-06-01 14:42:18 perlstalker Exp $
 
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
 	      NAME            => 'vuser',
-	      VERSION_FROM    => 'vuser'
+	      VERSION_FROM    => 'sbin/vuser'
 	      );
 
 __END__
