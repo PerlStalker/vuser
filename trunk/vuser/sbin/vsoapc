@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vsoapc,v 1.1 2005-05-31 23:17:52 perlstalker Exp $
+# $Id: vsoapc,v 1.1 2005-06-01 14:57:37 perlstalker Exp $
 
 use Getopt::Long qw(:config require_order);
 use FindBin;
