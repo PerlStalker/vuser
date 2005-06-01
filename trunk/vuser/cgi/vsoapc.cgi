@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: vsoapc.cgi,v 1.2 2005-05-18 20:16:07 perlstalker Exp $
+# $Id: vsoapc.cgi,v 1.3 2005-06-01 23:09:26 perlstalker Exp $
 
 # Called as:
 #  vsoapc.cgi/keyword/action/
@@ -17,7 +17,7 @@ use FindBin;
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = '0.1.0';
 
 my $title = "vuser $VERSION - $REVISION";
@@ -87,7 +87,15 @@ my $cmd = $q->param('cmd') || '';
 my $path_info = $q->path_info();
 # $other should never be defined but I want to be sure that I can easily
 # get $keyword and $action if someone does something stupid.
-my ($keyword, $action, $other) = split '/', $path_info;
+my ($null, $keyword, $action, $other) = split '/', $path_info;
+
+if (not defined $keyword and $q->param('keyword')) {
+    $keyword = $q->param('keyword');
+}
+
+if (not defined $action and $q->param('action')) {
+    $action = $q->param('action');
+}
 
 # URL of this script. Suitable for use in <form action="$url">
 my $url = $q->url('-path');
@@ -114,13 +122,12 @@ if (not defined $session
     }
 }
 
-print "You are here.";
+print "You are here. $keyword - $action ($path_info)";
 
 if (not $keyword) {
     choose_keyword();
 } elsif (not $action) {
-    #choose_action();
-    huh();
+    choose_keyword();
 } else {
     huh();
 }
@@ -191,13 +198,25 @@ sub choose_keyword
 		url => $url,
 		session => $session
 		};
-    my @keywords = SOAP::Lite
-	-> uri($vuser_host.'VUser/SOAP')
-	-> proxy($vuser_host)
-	-> get_keywords ($sess{user}, $sess{pass})
-	-> result;
 
-    $args->{keywords} = \@keywords;
+    if ($keyword) {
+	$args->{keyword} = $keyword;
+	my $actions = SOAP::Lite
+	    -> uri ($vuser_host.'VUser/SOAP')
+	    -> proxy ($vuser_host)
+	    -> get_actions ($sess{user}, $sess{pass}, $sess{ip}, $keyword)
+	    -> result;
+	$args->{actions} = $actions;
+
+    } else {
+	my $keywords = SOAP::Lite
+	    -> uri($vuser_host.'VUser/SOAP')
+	    -> proxy($vuser_host)
+	    -> get_keywords ($sess{user}, $sess{pass})
+	    -> result;
+
+	$args->{keywords} = $keywords;
+    }
 
     my $template = Text::Template->new (TYPE => 'FILE',
 					SOURCE => "$template_dir/choose.html",
