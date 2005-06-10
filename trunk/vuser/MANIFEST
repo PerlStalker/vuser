@@ -18,6 +18,7 @@ lib/VUser/Extension.pm
 lib/VUser/ExtHandler.pm
 lib/VUser/ExtLib.pm
 lib/VUser/Meta.pm
+lib/VUser/ResultSet.pm
 lib/VUser/SOAP.pm
 lib/VUser/spamassassin.pm
 lib/VUser/Test.pm
