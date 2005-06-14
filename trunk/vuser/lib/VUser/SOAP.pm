@@ -4,11 +4,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.12 2005-05-30 21:41:27 perlstalker Exp $
+# $Id: SOAP.pm,v 1.13 2005-06-14 14:06:46 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.12 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.13 $'))[1];
 our $VERSION = $main::VERSION;
 
 our %cfg;
@@ -246,13 +246,15 @@ sub AUTOLOAD
 	my $action = $2;
 	#print "Key: $keyword Act: $action\n";
 	# Authenticate here...
-	eval { $eh->run_tasks($keyword, $action, \%cfg, %opts); };
+	my $rs = [];
+	eval { $rs = $eh->run_tasks($keyword, $action, \%cfg, %opts); };
 	if ($@) {
 	    die SOAP::Fault
 		->faultcode('Server.Custom')
 		->faultstring($@)
 		;
 	}
+	return $rs;
     } else {
 	return;
     }
@@ -269,13 +271,16 @@ sub run_tasks
     my %opts = @_;
 
     # Auth here.
-    eval { $eh->run_tasks($keyword, $action, \%cfg, %opts); };
+    my $rs = [];
+    eval { $rs = $eh->run_tasks($keyword, $action, \%cfg, %opts); };
     if ($@) {
 	die SOAP::Fault
 	    ->faultcode('Server.Custom')
 	    ->faultstring($@)
 	    ;
     }
+
+    return $rs;
 }
 
 1;

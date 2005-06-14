@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.28 2005-05-25 04:08:27 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.29 2005-06-14 14:06:46 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.28 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.29 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -101,6 +101,7 @@ sub register_option
 	    $type = lc($type);
 	    my $d_type = 'string';
 	    if ($type eq '!'
+		or $type eq ''
 		or $type eq 'boolean') {
 		$d_type = 'boolean';
 	    } elsif ($type eq '+'
@@ -387,6 +388,10 @@ sub run_tasks
     my %opts = @_;
 
     print "Keyword: '$keyword'\nAction: '$action'\nARGV: @ARGV\n" if $main::DEBUG >= 1;
+    if ($main::DEBUG >= 1) {
+	print "Options: ";
+	use Data::Dumper; print Dumper \%opts;
+    }
 
     unless (exists $self->{keywords}{$keyword}) {
 	die "Unknown module '$keyword'\n";
@@ -513,7 +518,7 @@ sub run_tasks
 	    } elsif ($type eq 'boolean') {
 		$gopt_type = '!';
 	    } elsif ($type eq 'float') {
-		$gopt_type = 'f';
+		$gopt_type = '=f';
 	    }
 
 	    my $def = $opt.$gopt_type;
@@ -539,11 +544,18 @@ sub run_tasks
 	@tasks = @{$self->{keywords}{$keyword}{$action}{tasks}};
     }
 
+    my @results = ();
     foreach my $priority (@tasks) {
 	foreach my $task (@$priority) {
-	    &$task($cfg, \%opts, $action, $self);
+	    # Return values?
+	    my $rs = &$task($cfg, \%opts, $action, $self);
+	    if (defined $rs and UNIVERSAL::isa($rs, "VUser::ResultSet")) {
+		push @results, $rs;
+	    }
 	}
     }
+
+    return \@results;
 }
 
 sub cleanup

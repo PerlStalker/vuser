@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vsoapc,v 1.2 2005-06-01 21:53:32 perlstalker Exp $
+# $Id: vsoapc,v 1.3 2005-06-14 14:06:46 perlstalker Exp $
 
 use Getopt::Long qw(:config require_order);
 use FindBin;
@@ -15,7 +15,7 @@ use SOAP::Lite
 		     die "Error: ", ref $res ? $res->faultstring : $soap->transport->status, "\n"
 		     };
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -63,13 +63,20 @@ my $username = '';
 my $password = undef;
 my $curses = 0;
 my $ip = '';
+my $version = 0;
 
 GetOptions('username|u=s' => \$username,
 	   'password|p=s' => \$password,
-	   'curses'       => \$curses
+	   'curses'       => \$curses,
+	   'version'      => \$version
 	   );
 
 pod2usage("Missing option --username") unless $username;
+
+if ($version) {
+    print "Version: $VERSION\n";
+    exit;
+}
 
 if (not $password) {
     print "Password: ";
@@ -82,6 +89,8 @@ if (not $password) {
 
 my $keyword = shift @ARGV || 'help';
 my $action = shift @ARGV;
+
+print "Keyword: $keyword Action: $action\n" if $DEBUG >= 1;
 
 # Actions cannot start with -
 if (defined $action
@@ -111,10 +120,11 @@ if ($keyword eq 'help') {
 } else {
     my %opts = create_opts($keyword, $action);
     # Do action
-    SOAP::Lite
+    my $results = SOAP::Lite
 	-> uri ("$host/VUser/SOAP")
 	-> proxy ($host)
-	-> run_tasks($username, $password, $ip, $keyword, $action, %opts);
+	-> run_tasks($username, $password, $ip, $keyword, $action, %opts)
+	-> result;
 }
 
 exit;
@@ -198,7 +208,7 @@ sub create_opts
 	} elsif ($type eq 'boolean') {
 	    $gopt_type = '!';
 	} elsif ($type eq 'float') {
-	    $gopt_type = 'f';
+	    $gopt_type = '=f';
 	}
 
 	my $def = $meta->name().$gopt_type;

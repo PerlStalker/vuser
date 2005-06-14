@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: vsoapc.cgi,v 1.3 2005-06-01 23:09:26 perlstalker Exp $
+# $Id: vsoapc.cgi,v 1.4 2005-06-14 14:06:46 perlstalker Exp $
 
 # Called as:
 #  vsoapc.cgi/keyword/action/
@@ -12,12 +12,12 @@ use strict;
 
 use Config::IniFiles;
 use Text::Template;
-use SOAP::Lite;
+use SOAP::Lite on_fault => \&soap_error;
 use FindBin;
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = '0.1.0';
 
 my $title = "vuser $VERSION - $REVISION";
@@ -45,6 +45,7 @@ use lib (map { "$_/lib" } @etc_dirs);
 
 use VUser::ExtLib;
 use VUser::Widget;
+use VUser::Meta;
 
 my $config_file;
 for my $etc_dir (@etc_dirs)
@@ -100,15 +101,28 @@ if (not defined $action and $q->param('action')) {
 # URL of this script. Suitable for use in <form action="$url">
 my $url = $q->url('-path');
 
-print $q->header;
+#my $session = $q->param('session');
+my $session = $q->cookie(-name => 'session');
+$session = $q->param('session') unless $session;
 
-my $session = $q->param('session');
+if (not $session) {
+    $session = VUser::ExtLib::generate_password(20, 'a' .. 'z',
+						'A' .. 'Z',
+						0 .. 9);
+}
+
+my $ses_cookie = $q->cookie(-name => 'session',
+			    -value => $session,
+			    -expires => '+1h',
+			    );
+
+print $q->header(-cookie => $ses_cookie);
+
 my %sess = ();
 if (not defined $session
     or not -e "$session_dir/$session") {
     # No session. User must log in again.
     login_page();
-    print "Log in 1;";
     exit;
 } else {
     if (open (SESS, "$session_dir/$session")) {
@@ -122,14 +136,16 @@ if (not defined $session
     }
 }
 
-print "You are here. $keyword - $action ($path_info)";
+#print "You are here. $keyword - $action ($path_info)";
 
+# I should simplify this if.
 if (not $keyword) {
     choose_keyword();
 } elsif (not $action) {
     choose_keyword();
 } else {
-    huh();
+    #huh();
+    run_tasks();
 }
 
 sub huh
@@ -143,8 +159,6 @@ sub login_page
 {
     my $message = shift || '';
 
-    print "login_page()\n";
-    
     my $user;
     if ($cmd eq 'Login') {
 	$user = VUser::ExtLib::strip_ws($q->param('user'));
@@ -156,9 +170,9 @@ sub login_page
 	    -> proxy($vuser_host)
 	    -> authenticate($user, $pass, $ip)
 	    -> result) {
-	    $session = VUser::ExtLib::generate_password(20, 'a' .. 'z',
-							'A' .. 'Z',
-							0 .. 9);
+#	    $session = VUser::ExtLib::generate_password(20, 'a' .. 'z',
+#	    						'A' .. 'Z',
+#							0 .. 9);
 	    $q->param('session', $session);
 	    if (open (SESS, ">$session_dir/$session")) {
 		print SESS "$ip\n";
@@ -226,6 +240,88 @@ sub choose_keyword
     $template->fill_in(OUTPUT => \*STDOUT,
 		       HASH => $args
 		       );
+}
+
+sub run_tasks
+{
+    my $options = SOAP::Lite
+	-> uri ($vuser_host.'VUser/SOAP')
+	-> proxy ($vuser_host)
+	-> get_options ($sess{user}, $sess{pass}, $sess{ip},
+			$keyword, $action)
+	-> result;
+
+    my @meta = ();
+    foreach my $opt (@$options) {
+	my $meta = SOAP::Lite
+	    -> uri ($vuser_host.'VUser/SOAP')
+	    -> proxy ($vuser_host)
+	    -> get_meta ($sess{user}, $sess{pass}, $sess{ip},
+			 $keyword, $opt->{option})
+	    -> result;
+	push @meta, $meta->[0] if defined $meta->[0];
+    }
+
+    my $args = {user => $sess{user},
+		title => "$keyword | $action - $title",
+		url => $url,
+		session => $session,
+		keyword => $keyword,
+		action => $action,
+		message => ''
+		};
+
+    $args->{meta} = \@meta;
+
+    if ($q->param('cmd') eq 'do action') {
+	$args->{message} = 'Action successful.';
+	my %opts = ();
+	foreach my $opt (@$options) {
+	    if (defined ($q->param($opt->{option}))) {
+		$opts{$opt->{option}} = $q->param($opt->{option});
+	    }
+	}
+
+	my $rs = SOAP::Lite
+	    -> uri ($vuser_host.'VUser/SOAP')
+	    -> proxy ($vuser_host)
+	    -> run_tasks($sess{user}, $sess{pass}, $sess{ip},
+			 $keyword, $action, %opts)
+	    -> result;
+
+	$args->{rs} = $rs;
+    }
+
+    my $template = Text::Template->new (TYPE => 'FILE',
+					SOURCE => "$template_dir/tasks.html",
+					DELIMITERS => ['{', '}']
+					)
+	or die "Template error: $Text::Template::ERROR";
+    $template->fill_in(OUTPUT => \*STDOUT, HASH => $args);
+}
+
+sub soap_error
+{
+    my ($soap, $res) = @_;
+
+    error_page(ref $res ? $res->faultstring : $soap->transport->status);
+}
+
+sub error_page
+{
+    my $error = shift;
+
+    my $args = {error => $error,
+		title => "Error - $title"
+		};
+
+    my $template = Text::Template->new (TYPE => 'FILE',
+					SOURCE => "$template_dir/error.html",
+					DELIMITER => ['{', '}']
+					)
+	or die "Template error: $Text::Template::ERROR";
+    $template->fill_in(OUTPUT => \*STDOUT, HASH => $args);
+	
 }
 
 __END__

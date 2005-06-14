@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: ResultSet.pm,v 1.1 2005-06-09 22:42:25 perlstalker Exp $
+# $Id: ResultSet.pm,v 1.2 2005-06-14 14:06:46 perlstalker Exp $
 
 use VUser::Meta;
 
@@ -20,6 +20,9 @@ sub new
 		 sort_order => 'asc',
 		 lock_meta => 0
 		 };
+
+    bless $self, $class;
+    return $self;
 }
 
 sub get_metadata
@@ -132,6 +135,7 @@ sub add_data
 	}
 
 	push @{$self->{values}}, $data;
+	$self->{rows}++;
 
     } elsif (ref $data eq 'HASH') {
 	if (keys %$data != @{$self->{meta}}) {
@@ -144,6 +148,7 @@ sub add_data
 	}
 
 	push @{$self->{values}}, $new_data;
+	$self->{rows}++;
     } else {
 	die 'Data is not an array or hash.';
     }
