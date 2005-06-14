@@ -1,6 +1,7 @@
 cgi/README
 cgi/vsoapc.cgi
 cgi/templates/choose.html
+cgi/templates/error.html
 cgi/templates/login.html
 cgi/templates/tasks.html
 COPYING
