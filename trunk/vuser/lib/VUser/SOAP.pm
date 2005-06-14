@@ -4,11 +4,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.13 2005-06-14 14:06:46 perlstalker Exp $
+# $Id: SOAP.pm,v 1.14 2005-06-14 17:01:37 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.13 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.14 $'))[1];
 our $VERSION = $main::VERSION;
 
 our %cfg;
@@ -191,17 +191,17 @@ sub check_acl
     my $action = shift;
     my $opts = shift;
 
-    if (not $acl->auth_user(\%cfg, $user, $pass, $ip) eq ALLOW()) {
+    if (not $acl->auth_user(\%cfg, $user, $pass, $ip)) {
 	die "Bad user name or password.";
     }
 
     # Check ACLs
-    if (not $acl->check_acls(\%cfg, $user, $ip, $keyword) eq ALLOW()) {
+    if (not $acl->check_acls(\%cfg, $user, $ip, $keyword)) {
 	die "Permission denied for $user on $keyword";
     }
 
     if ($action
-	and not $acl->check_acls(\%cfg, $user, $ip, $keyword, $action) eq ALLOW()) {
+	and not $acl->check_acls(\%cfg, $user, $ip, $keyword, $action)) {
 	die "Permission denied for $user on $keyword - $action";
     }
 
@@ -211,7 +211,7 @@ sub check_acl
 				     $user, $ip,
 				     $keyword, $action,
 				     $key, $opts->{$key}
-				     ) eq ALLOW()) {
+				     )) {
 		die "Permission denied for $user on $keyword - $action - $key";
 	    }
 	}
@@ -271,6 +271,13 @@ sub run_tasks
     my %opts = @_;
 
     # Auth here.
+    eval {check_acl($class, $user, $pass, $ip, $keyword, $action, \%opts); };
+    if ($@) {
+	die SOAP::Fault
+	    -> faultcode('Server.Custom')
+	    -> faultstring($@);
+    }
+
     my $rs = [];
     eval { $rs = $eh->run_tasks($keyword, $action, \%cfg, %opts); };
     if ($@) {

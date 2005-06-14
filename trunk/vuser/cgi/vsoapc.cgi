@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: vsoapc.cgi,v 1.4 2005-06-14 14:06:46 perlstalker Exp $
+# $Id: vsoapc.cgi,v 1.5 2005-06-14 17:01:35 perlstalker Exp $
 
 # Called as:
 #  vsoapc.cgi/keyword/action/
@@ -17,7 +17,7 @@ use FindBin;
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = '0.1.0';
 
 my $title = "vuser $VERSION - $REVISION";
@@ -100,6 +100,7 @@ if (not defined $action and $q->param('action')) {
 
 # URL of this script. Suitable for use in <form action="$url">
 my $url = $q->url('-path');
+my $full_url = $q->url('-path' => 1, '-full' => 1);
 
 #my $session = $q->param('session');
 my $session = $q->cookie(-name => 'session');
@@ -122,17 +123,16 @@ my %sess = ();
 if (not defined $session
     or not -e "$session_dir/$session") {
     # No session. User must log in again.
-    login_page();
-    exit;
+    exit unless login_page();
 } else {
     if (open (SESS, "$session_dir/$session")) {
 	$sess{'ip'} = <SESS>;
 	$sess{'user'} = <SESS>;
 	$sess{'pass'} = <SESS>;
 	close SESS;
+	chomp @sess{qw(ip user pass)};
     } else {
-	login_page("Unable to get session data: $!");
-	exit;
+	exit unless login_page("Unable to get session data: $!");
     }
 }
 
@@ -179,7 +179,7 @@ sub login_page
 		print SESS "$user\n";
 		print SESS "$pass\n";
 		close SESS;
-		return;
+		return 1;
 	    } else {
 		$message = 'Unable to write session data: $!';
 	    }
@@ -190,7 +190,7 @@ sub login_page
     # Show the login page
     my $args = {user => $user,
 		title => "Please log in - $title",
-		url => $url,
+		url => $full_url,
 		session => $session
 		};
 
@@ -203,6 +203,7 @@ sub login_page
 		       HASH => $args
 		       )
 	or die "Template error: $Text::Template::ERROR";
+    return 0;
 }
 
 sub choose_keyword
@@ -236,8 +237,7 @@ sub choose_keyword
 					SOURCE => "$template_dir/choose.html",
 					DELIMITERS => ['{', '}']
 					)
-	or die "Template error: $Text::Template::ERROR";
-    $template->fill_in(OUTPUT => \*STDOUT,
+	or die "Template error: $Text::Template::ERROR";    $template->fill_in(OUTPUT => \*STDOUT,
 		       HASH => $args
 		       );
 }
@@ -321,7 +321,7 @@ sub error_page
 					)
 	or die "Template error: $Text::Template::ERROR";
     $template->fill_in(OUTPUT => \*STDOUT, HASH => $args);
-	
+    exit;
 }
 
 __END__
