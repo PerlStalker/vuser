@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.29 2005-06-14 14:06:46 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.30 2005-06-27 20:57:25 stewatvireo Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.29 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.30 $'))[1];
 our $VERSION = $main::VERSION;
 
 use lib qw(..);
@@ -320,6 +320,7 @@ sub load_extensions
     my $exts = $cfg{ vuser }{ extensions };
     $exts = '' unless $exts;
     VUser::ExtLib::strip_ws($exts);
+    print STDERR "extensions: $exts\n" if $main::DEBUG >= 1;
     foreach my $extension (split( / /, $exts))
     {
 	print STDERR "Loading $extension\n" if $main::DEBUG >= 1;

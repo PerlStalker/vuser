@@ -1,21 +1,18 @@
-package VUser::courier::mysql;
+package VUser::email::authlib;
 
 use DBI;
 use warnings;
 use strict;
 
-# Copyright 2004 Mike O'Connor
-# $Id: mysql.pm,v 1.1 2005-01-21 20:53:17 stewatvireo Exp $
-
 sub new
 {
     my $class = shift;
-    my %cfg = @_;
+    my $cfg = shift;
 
-    my $self = { _dbh => undef, _conf =>undef };
+    my $self = { _dbh => undef, _conf => $cfg };
 
     bless $self, $class;
-    $self->init(%cfg);
+    $self->init();
 
     return $self;
 }
@@ -23,10 +20,7 @@ sub new
 sub init
 {
     my $self = shift;
-    my %cfg = @_;
 
-    $self->{ _conf } = $cfg{Extension_courier_mysql};
-    
     my $connStr = "DBI:mysql:";
     $connStr .= $self->cfg( 'database' ) . ":";
     $connStr .= $self->cfg( 'server' ) . ":";
@@ -43,38 +37,6 @@ sub cfg
     return $self->{_conf}{ $option };
 }
 
-# sub config_sample
-# {
-#     my $self = shift;
-#     my $fh;
-
-#     print $fh <<'CONFIG';
-# [Extension_courier_mysql]
-
-# server=localhost
-# username=courier
-# password=secret
-# socket=/var/run/mysqld/mysqld.sock
-# port=3306
-# database=
-# user_table=
-# crypt_pwfield=
-# clear_pwfield=
-# uid_field=
-# gid_field=
-# login_field=
-# home_field=
-# name_field=
-# maildir_field=
-# quota_field=
-# auxoptions_field=
-# alias_field=aliasfor
-
-
-# CONFIG
-# }
-
-# # Returns true if user exists
 sub user_exists
 {
     my $self = shift;
@@ -101,8 +63,8 @@ sub add_user
     my $sql = "INSERT into ".$self->cfg( 'user_table' )." set ";
 
     $sql .= "  ". $self->cfg( 'login_field' ) ." = " . $self->{_dbh}->quote($account);
-    $sql .= ", ". $self->cfg( 'uid_field' ) ." = " . $self->{_dbh}->quote((getpwnam($self->cfg('courier_user')))[2]);
-    $sql .= ", ". $self->cfg( 'gid_field' ) ." = " . $self->{_dbh}->quote((getgrnam($self->cfg('courier_group')))[2]);
+    $sql .= ", ". $self->cfg( 'uid_field' ) ." = " . $self->{_dbh}->quote($self->cfg('daemon_uid'));
+    $sql .= ", ". $self->cfg( 'gid_field' ) ." = " . $self->{_dbh}->quote($self->cfg('daemon_gid'));
     $sql .= ", ". $self->cfg( 'crypt_pwfield' ) ." = " . $self->{_dbh}->quote(crypt($password, $password)) if $self->cfg('CRYPT_PWFIELD');
     $sql .= ", ". $self->cfg( 'clear_pwfield' ) ." = " . $self->{_dbh}->quote($password) if $self->cfg('CLEAR_PWFIELD');
     $sql .= ", ". $self->cfg( 'home_field' ) ." = " . $self->{_dbh}->quote("$userdir");
@@ -128,21 +90,6 @@ sub del_user
 	or die "Can't delete account: ".$self->{_dbh}->errstr()."\n";
 }
 
-# # Add alias to DB
-# sub add_alias
-# {
-# }
-
-# # Modify alias in DB
-# sub mod_alias
-# {
-# }
-
-# # Delete alias from DB
-# sub del_alias
-# {
-# }
-
 #
 # returns a hashref of the data for a particular user
 # 
@@ -152,11 +99,15 @@ sub get_user_info
     my $account = $self->{_dbh}->quote(shift);
     my $user = shift;
 
-    my $sth = $self->{_dbh}->prepare( "select * from ".$self->cfg( 'user_table' ). " where ".$self->cfg( 'login_field' )."=$account;" )
+    my $sql = "select * from ".$self->cfg( 'user_table' ). " where ".$self->cfg( 'login_field' )."=$account;";
+
+    print( "$sql\n" );
+
+    my $sth = $self->{_dbh}->prepare( $sql )
 	or die "Can't select account: ".$self->{_dbh}->errstr()."\n";
 
     $sth->execute() or die "Can't select account: ".$self->{_dbh}->errstr()."\n";
-	
+
     if( my $uservals = $sth->fetchrow_hashref() )
     {
 	$self->get_user_from_row( $uservals, $user )
@@ -183,7 +134,7 @@ sub get_user_by_homedir
 
     
     $sth->execute() or die "Can't select account: ".$self->{_dbh}->errstr()."\n";
-    
+
     if( my $uservals = $sth->fetchrow_hashref() )
     {
 	$self->get_user_from_row( $uservals, $user )
@@ -195,16 +146,16 @@ sub get_user_from_row
     my $self = shift;
     my $row = shift;
     my $user = shift;
-    
+
     $user->{ id } = $row->{ $self->cfg( 'login_field' ) };
-    $user->{ home } = $row->{ $self->cfg( 'login_field' ) };
+    $user->{ home } = $row->{ $self->cfg( 'home_field' ) };
+    $user->{ maildir } = $row->{ $self->cfg( 'maildir_field' ) } if( $self->cfg( 'clear_field' ) );
     $user->{ clear } = $row->{ $self->cfg( 'clear_field' ) } if( $self->cfg( 'clear_field' ) );
     $user->{ crypt } = $row->{ $self->cfg( 'crypt_field' ) } if( $self->cfg( 'crypt_field' ) );
     $user->{ quota } = $row->{ $self->cfg( 'quota_field' ) };
     $user->{ aliasfor } = $row->{ $self->cfg( 'alias_field' ) };
     $user->{ uid } = $row->{ $self->cfg( 'uid_field' ) };
     $user->{ gid } = $row->{ $self->cfg( 'gid_field' ) };
-
 }
 
 
@@ -220,7 +171,7 @@ courier::mysql - MySQL backend for courier extension.
 
 =head1 AUTHOR
 
-Randy Smith <perlstalker@gmail.com>
+Mike O'Connor <stew@vireo.org>
 
 =head1 LICENSE
  

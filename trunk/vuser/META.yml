@@ -2,7 +2,7 @@
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         vuser
 version:      0.1.0
-version_from: vuser
+version_from: sbin/vuser
 installdirs:  site
 requires:
 
