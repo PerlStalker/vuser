@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: ResultSet.pm,v 1.2 2005-06-14 14:06:46 perlstalker Exp $
+# $Id: ResultSet.pm,v 1.3 2005-06-27 17:26:44 perlstalker Exp $
 
 use VUser::Meta;
 
@@ -50,6 +50,7 @@ sub results_hashrefs
 	for (my $i = 0; $i < @{ $self->{meta} }; $i++) {
 	    $hash->{$self->{meta}[$i]->name} = $_->[$i];
 	}
+	$hash;
     } @results;
 }
 

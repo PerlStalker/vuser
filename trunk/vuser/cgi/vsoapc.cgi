@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: vsoapc.cgi,v 1.5 2005-06-14 17:01:35 perlstalker Exp $
+# $Id: vsoapc.cgi,v 1.6 2005-06-27 17:26:31 perlstalker Exp $
 
 # Called as:
 #  vsoapc.cgi/keyword/action/
@@ -17,7 +17,7 @@ use FindBin;
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 
-our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
 our $VERSION = '0.1.0';
 
 my $title = "vuser $VERSION - $REVISION";
@@ -124,6 +124,8 @@ if (not defined $session
     or not -e "$session_dir/$session") {
     # No session. User must log in again.
     exit unless login_page();
+} elsif ($q->param('logout')) {
+    logout();
 } else {
     if (open (SESS, "$session_dir/$session")) {
 	$sess{'ip'} = <SESS>;
@@ -298,6 +300,12 @@ sub run_tasks
 					)
 	or die "Template error: $Text::Template::ERROR";
     $template->fill_in(OUTPUT => \*STDOUT, HASH => $args);
+}
+
+sub logout
+{
+    unlink ("$session_dir/$session") or die "Can't remove session.\n";
+    login_page("You have been logged out.");
 }
 
 sub soap_error
