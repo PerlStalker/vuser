@@ -3,11 +3,11 @@ package VUser::email::postfix::mysql;
 use warnings;
 use strict;
 use Pod::Usage;
-use VUser::Util qw( mkdir_p );
+use VUser::ExtLib qw( mkdir_p );
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::email::authlib;
@@ -30,7 +30,7 @@ sub domain_add
 
     die "unable to make domain directory: $domaindir\n"
 	unless
-	VUser::Util::mkdir_p( $domaindir, 0775, (getpwnam($self->cfg("daemon_uid")))[2], (getpwnam($self->cfg("daemon_gid")))[2]  );
+	mkdir_p( $domaindir, 0775, (getpwnam($self->cfg("daemon_uid")))[2], (getpwnam($self->cfg("daemon_gid")))[2]  );
 
     my $sql = "INSERT INTO ". $self->cfg('transport_table')
 			  . "(". $self->cfg( "domain_field" ) . ", " . $self->cfg( "transport_field" ) . ") VALUES(?,'maildrop')";

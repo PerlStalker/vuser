@@ -5,14 +5,14 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: email.pm,v 1.1 2005-06-27 20:57:32 stewatvireo Exp $
+# $Id: email.pm,v 1.2 2005-06-28 02:48:25 stewatvireo Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
-use VUser::Util qw( mkdir_p );
+use VUser::ExtLib qw( mkdir_p );
 
 use Pod::Usage;
 

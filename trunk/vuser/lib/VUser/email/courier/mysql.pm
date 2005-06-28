@@ -3,11 +3,11 @@ package VUser::email::courier::mysql;
 use warnings;
 use strict;
 use Pod::Usage;
-use VUser::Util qw( mkdir_p );
+use VUser::ExtLib qw( mkdir_p );
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = $main::VERSION;
 
 use VUser::email::authlib;
