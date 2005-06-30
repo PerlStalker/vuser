@@ -5,6 +5,8 @@ version:      0.1.0
 version_from: sbin/vuser
 installdirs:  site
 requires:
+    Config::IniFiles:              0
+    Regexp::Common:                0
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.17
