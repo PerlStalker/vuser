@@ -3,10 +3,10 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: Test.pm,v 1.1 2005-05-25 04:08:27 perlstalker Exp $
+# $Id: Test.pm,v 1.2 2005-07-02 21:04:04 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
-our $VERSION = $main::VERSION;
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $VERSION = "0.1.0";
 
 use vars qw(@ISA);
 use VUser::Extension;

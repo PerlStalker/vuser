@@ -3,12 +3,12 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: asterisk.pm,v 1.22 2005-05-09 14:38:55 perlstalker Exp $
+# $Id: asterisk.pm,v 1.23 2005-07-02 21:04:04 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.22 $'))[1];
-our $VERSION = $main::VERSION;
+our $REVISION = (split (' ', '$Revision: 1.23 $'))[1];
+our $VERSION = "0.1.0";
 
 use VUser::Extension;
 push @ISA, 'VUser::Extension';

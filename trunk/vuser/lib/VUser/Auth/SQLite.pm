@@ -3,10 +3,10 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SQLite.pm,v 1.1 2005-05-26 20:39:01 perlstalker Exp $
+# $Id: SQLite.pm,v 1.2 2005-07-02 21:04:06 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
-our $VERSION = $main::VERSION;
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $VERSION = "0.1.0";
 
 sub revision { return $REVISION; }
 sub version { return $VERSION; }

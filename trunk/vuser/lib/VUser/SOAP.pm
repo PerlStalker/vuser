@@ -4,12 +4,12 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.15 2005-06-27 17:26:46 perlstalker Exp $
+# $Id: SOAP.pm,v 1.16 2005-07-02 21:04:04 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.15 $'))[1];
-our $VERSION = $main::VERSION;
+our $REVISION = (split (' ', '$Revision: 1.16 $'))[1];
+our $VERSION = "0.1.0";
 
 our %cfg;
 our $eh;
@@ -28,7 +28,7 @@ sub init
 }
 
 sub version {
-    return $main::VERSION;
+    return "0.1.0";
 }
 
 sub hash_test {

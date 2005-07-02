@@ -1,13 +1,13 @@
 package VUser::email::driver;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
-# $Id: driver.pm,v 1.1 2005-06-27 20:57:47 stewatvireo Exp $
+# $Id: driver.pm,v 1.2 2005-07-02 21:04:06 perlstalker Exp $
 
 use warnings;
 use strict;
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
-our $VERSION = $main::VERSION;
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $VERSION = "0.1.0";
 
 use Pod::Usage;
 

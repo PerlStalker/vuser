@@ -3,12 +3,12 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: spamassassin.pm,v 1.1 2005-02-17 22:15:53 perlstalker Exp $
+# $Id: spamassassin.pm,v 1.2 2005-07-02 21:04:05 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
-our $VERSION = $main::VERSION;
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $VERSION = "0.1.0";
 
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
