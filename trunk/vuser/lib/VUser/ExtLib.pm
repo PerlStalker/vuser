@@ -3,7 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.10 2005-04-07 22:04:06 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.11 2005-07-02 21:06:17 perlstalker Exp $
+
+our $VERSION = "0.1.0";
+
+sub version { $VERSION };
 
 sub add_line_to_file
 {
