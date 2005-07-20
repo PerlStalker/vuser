@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: spamassassin.pm,v 1.3 2005-07-11 22:46:51 perlstalker Exp $
+# $Id: spamassassin.pm,v 1.4 2005-07-20 20:54:18 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = "0.1.0";
 
 use VUser::Meta;
@@ -237,6 +237,9 @@ sub sa_delall
     my $opts = shift;
 
     my $user = $opts->{username};
+
+    # The email extension uses 'account' instead of 'username'
+    $user = $opts->{account} if not $user;
 
     # Delete the preferences
     if ($dbs{scores}) {
