@@ -86,7 +86,7 @@ sub del_user
     my $self = shift;
     my $account = $self->{_dbh}->quote(shift);
     
-    $self->{_dbh}->do( "DELETE from ".$self->cfg( 'user_table' ). " where ".$self->cfg( 'login_field' )."=$account;" )
+    $self->{_dbh}->do( "DELETE from ".$self->cfg( 'user_table' ). " where ".$self->cfg( 'login_field' )."=$account" )
 	or die "Can't delete account: ".$self->{_dbh}->errstr()."\n";
 }
 
@@ -101,7 +101,7 @@ sub get_user_info
 
     my $sql = "select * from ".$self->cfg( 'user_table' ). " where ".$self->cfg( 'login_field' )."=$account;";
 
-    print( "$sql\n" );
+    print( "$sql\n" ) if $main::debug;
 
     my $sth = $self->{_dbh}->prepare( $sql )
 	or die "Can't select account: ".$self->{_dbh}->errstr()."\n";
@@ -113,6 +113,28 @@ sub get_user_info
 	$self->get_user_from_row( $uservals, $user )
     }
 
+}
+
+sub get_users_for_domain
+{
+    my $self = shift;
+    my $domain = shift;
+
+    my @users = ();
+    my $sql = 'select * from '.$self->cfg('user_table').' where '
+	.$self->cfg('login_field').' like '.$self->{_dbh}->quote("%\@$domain");
+    my $sth = $self->{_dbh}->prepare($sql)
+	or die "Can't get accounts: ".$self->{_dbh}->errstr()."\n";
+    $sth->execute or die "Can't get accounts: ".$sth->errstr()."\n";
+
+    my $row;
+    while (defined ( $row = $sth->fetchrow_hashref )) {
+	my %user;
+	$self->get_user_from_row($row, \%user);
+	push @users, {%user};
+    }
+
+    return @users;
 }
 
 sub get_user_by_homedir

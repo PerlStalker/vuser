@@ -3,9 +3,26 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.11 2005-07-02 21:06:17 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.12 2005-08-26 22:50:00 perlstalker Exp $
 
 our $VERSION = "0.1.0";
+
+use Exporter;
+our @ISA = qw(Exporter);
+
+our @EXPORT = (); # Export nothing by default
+our @EXPORT_OK = qw(add_line_to_file chown_ug check_bool
+		    del_line_from_file edit_warning
+		    generate_password mkdir_p repl_line_in_file
+		    rm_r run_scripts_in_dir strip_ws touch
+		    );
+our %EXPORT_TAGS = (
+		    config => [qw(check_bool strip_ws)],
+		    files => [qw(add_line_to_file chown_ug
+				 del_line_from_file
+				 repl_line_in_file
+				 rm_r touch)]
+		    );
 
 sub version { $VERSION };
 
@@ -147,6 +164,8 @@ sub repl_line_in_file
 sub rm_r
 {
     my $dir = shift;
+
+    die "No directory specified\n" unless $dir;
 
     opendir (DIR, $dir) or die "Unable to open $dir: $!";
 

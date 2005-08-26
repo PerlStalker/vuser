@@ -1,7 +1,7 @@
 package VUser::email::postfix;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
-# $Id: postfix.pm,v 1.2 2005-07-02 21:04:06 perlstalker Exp $
+# $Id: postfix.pm,v 1.3 2005-08-26 22:50:00 perlstalker Exp $
 
 use warnings;
 use strict;
@@ -9,7 +9,7 @@ use Pod::Usage;
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = "0.1.0";
 
 use VUser::email::authlib;
@@ -92,13 +92,30 @@ sub get_user_info
     $self->{_authlib}->get_user_info( $account, $user );
 }
 
+sub get_users_for_domain
+{
+    my $self = shift;
+    my $domain = shift;
+
+    return $self->{_authlib}->get_users_for_domain($domain);
+}
+
 sub domain_add
 {
     my $self = shift;
     my $domain = shift;
     my $domaindir = shift;
     
-    return $self->{_authlib}->domain_add( $domain, $domaindir );
+   return $self->{_authlib}->domain_add( $domain, $domaindir );
+}
+
+sub domain_del
+{
+    my $self = shift;
+    my $domain = shift;
+    my $domaindir = shift;
+
+    return $self->{_authlib}->domain_del( $domain, $domaindir );
 }
 
 sub add_user
@@ -111,4 +128,12 @@ sub add_user
     
 
     $self->{_authlib}->add_user( $account, $password, $userdir, $name );
+}
+
+sub del_user
+{
+    my $self = shift;
+    my $account = shift;
+    
+    $self->{_authlib}->del_user( $account );
 }
