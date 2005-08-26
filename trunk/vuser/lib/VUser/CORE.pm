@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.18 2005-07-02 21:04:04 perlstalker Exp $
+# $Id: CORE.pm,v 1.19 2005-08-26 16:21:26 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.18 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.19 $'))[1];
 our $VERSION = "0.1.0";
 
 use Pod::Usage;
@@ -57,8 +57,8 @@ sub version
     my $cfg = shift;
     my $opts = shift;
 
-    print ("Version: "0.1.0"\n");
-    return "0.1.0";
+    print ("Version: $VERSION\n");
+    return $VERSION;
 }
 
 sub revision
