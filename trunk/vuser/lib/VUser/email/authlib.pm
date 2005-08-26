@@ -65,8 +65,8 @@ sub add_user
     $sql .= "  ". $self->cfg( 'login_field' ) ." = " . $self->{_dbh}->quote($account);
     $sql .= ", ". $self->cfg( 'uid_field' ) ." = " . $self->{_dbh}->quote($self->cfg('daemon_uid'));
     $sql .= ", ". $self->cfg( 'gid_field' ) ." = " . $self->{_dbh}->quote($self->cfg('daemon_gid'));
-    $sql .= ", ". $self->cfg( 'crypt_pwfield' ) ." = " . $self->{_dbh}->quote(crypt($password, $password)) if $self->cfg('CRYPT_PWFIELD');
-    $sql .= ", ". $self->cfg( 'clear_pwfield' ) ." = " . $self->{_dbh}->quote($password) if $self->cfg('CLEAR_PWFIELD');
+    $sql .= ", ". $self->cfg( 'crypt_pwfield' ) ." = " . $self->{_dbh}->quote(crypt($password, $password)) if $self->cfg('crypt_pwfield');
+    $sql .= ", ". $self->cfg( 'clear_pwfield' ) ." = " . $self->{_dbh}->quote($password) if $self->cfg('clear_pwfield');
     $sql .= ", ". $self->cfg( 'home_field' ) ." = " . $self->{_dbh}->quote("$userdir");
     $sql .= ", ". $self->cfg( 'name_field' ) ." = " . $self->{_dbh}->quote($name);
     $sql .= ", ". $self->cfg( 'quota_field' ) ." = " . $self->{_dbh}->quote($self->cfg( 'quota' ));
