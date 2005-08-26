@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ACL.pm,v 1.5 2005-07-02 21:04:04 perlstalker Exp $
+# $Id: ACL.pm,v 1.6 2005-08-26 17:02:09 perlstalker Exp $
 
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(ALLOW DENY UNKNOWN);
 our %EXPORT_TAGS = (consts => [qw(ALLOW DENY UNKNOWN)]);
 
-our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
 our $VERSION = "0.1.0";
 
 our $ALLOW = 1;
@@ -397,7 +397,7 @@ modules handling authentication, auth modules are encouraged to return
 UNKNOWN if the user does not exist, but should return DENY if the user
 exists but the passwords don't match.
 
-=ITEM UNKNOWN
+=item UNKNOWN
 
 I<sub()> was unable to determine if the user should be allowed or not.
 Processing continues. If no I<sub()> returns an ALLOW or DENY response,

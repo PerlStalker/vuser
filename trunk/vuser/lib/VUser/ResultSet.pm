@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: ResultSet.pm,v 1.3 2005-06-27 17:26:44 perlstalker Exp $
+# $Id: ResultSet.pm,v 1.4 2005-08-26 17:02:09 perlstalker Exp $
 
 use VUser::Meta;
 
@@ -276,7 +276,8 @@ result set methods:
 
  order_by($meta->name, asc|des); sets the sort order for results*()
 
-== Accumulator interface (do later)
+=head2 Accumulator interface (do later)
+
  reset(); reset current pointer to the beginning of the list
 
  sort($meta->name, asc|des); sort values by given column. Resets pointer
