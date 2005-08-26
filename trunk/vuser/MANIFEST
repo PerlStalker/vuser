@@ -38,3 +38,4 @@ README
 sbin/vsoapc
 sbin/vsoapd
 sbin/vuser
+vuser.conf.dist
