@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.20 2005-08-26 16:48:43 perlstalker Exp $
+# $Id: CORE.pm,v 1.21 2005-08-26 16:50:17 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.20 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.21 $'))[1];
 our $VERSION = "0.1.0";
 
 use Pod::Usage;
@@ -156,6 +156,8 @@ sub init
     $eh->register_action('version', '');
     $eh->register_task('version', '', \&version);
 }
+
+sub unload { };
 
 1;
 
