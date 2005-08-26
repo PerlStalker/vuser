@@ -13,6 +13,7 @@ lib/VUser/asterisk/simple.pm
 lib/VUser/Auth/SQLite.pm
 lib/VUser/bind.pm
 lib/VUser/bind/namedparser.pm
+lib/VUser/Batch.pm
 lib/VUser/CORE.pm
 lib/VUser/Extension.pm
 lib/VUser/ExtHandler.pm
