@@ -5,11 +5,11 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: email.pm,v 1.4 2005-08-26 22:50:00 perlstalker Exp $
+# $Id: email.pm,v 1.5 2005-08-30 17:17:18 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = "0.1.0";
 
 use VUser::ExtLib qw( mkdir_p rm_r );
@@ -108,6 +108,13 @@ sub init
     $eh->register_option('email', 'add', 'account', '=s', "required" );
     $eh->register_option('email', 'add', 'password', '=s', "required", "Account password" );
     $eh->register_option('email', 'add', 'name', '=s', 0, "Real name" );
+
+    $eh->register_action('email', 'mod', 'Modify an email account');
+    $eh->register_task('email', 'mod', \&email_mod, 0);
+    $eh->register_option('email', 'mod', 'account', '=s', 'required', 'Account name');
+    $eh->register_option('email', 'mod', 'password', '=s', 0, "Account password" );
+    $eh->register_option('email', 'mod', 'name', '=s', 0, "Real name" );
+    $eh->register_option('email', 'mod', 'newaccount', '=s', 0, "New Account name");
 
     $eh->register_action('email', 'del');
     $eh->register_task('email', 'del', \&email_del, 0);
@@ -270,6 +277,47 @@ sub email_add
 		       $opts->{password},
 		       get_home_directory( $cfg, $user, $domain ),
 		       $opts->{name} );
+
+}
+
+sub email_mod
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $account = $opts->{account};
+
+    my $old_user;
+    my $old_domain;
+    split_address( $cfg, $account, \$old_user, \$old_domain);
+
+    die "account must be in form user\@domain" if( !$old_user );
+    die "account must be in form user\@domain" if( !$old_domain );
+
+    if ($opts->{password} or $opts->{name}) {
+	$driver->mod_user($account,
+			  $opts->{password},
+			  $opts->{name});
+    }
+
+    my $new_account = $opts->{newaccount};
+    if ($new_account and $new_account ne $account) {
+	die "Account $new_account exists\n" if $driver->user_exists($new_account);
+	# User is changing the email address for the account.
+	my $new_user;
+	my $new_domain;
+	split_address( $cfg, $new_account, \$new_user, \$new_domain);
+	die "newaccount must be in form user\@domain" if( !$new_user );
+	die "newaccount must be in form user\@domain" if( !$new_domain );
+
+	my $old_userdir = get_home_directory($cfg, $old_user, $old_domain);
+	my $new_userdir = get_home_directory($cfg, $new_user, $new_domain);
+	print "Old: $old_userdir\n";
+	print "New: $new_userdir\n";
+	VUser::ExtLib::mvdir($old_userdir, $new_userdir);
+
+	$driver->rename_user($account, $new_account);
+    }
 
 }
 

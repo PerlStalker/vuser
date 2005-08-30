@@ -1,7 +1,7 @@
 package VUser::email::courier;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
-# $Id: courier.pm,v 1.3 2005-08-26 22:52:46 perlstalker Exp $
+# $Id: courier.pm,v 1.4 2005-08-30 17:17:18 perlstalker Exp $
 
 use warnings;
 use strict;
@@ -9,7 +9,7 @@ use Pod::Usage;
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = "0.1.0";
 
 use VUser::email::authlib;
@@ -129,3 +129,24 @@ sub add_user
 
     $self->{_authlib}->add_user( $account, $password, $userdir, $name );
 }
+
+sub mod_user
+{
+    my $self = shift;
+    my $account = shift;
+    my $password = shift;
+    my $name = shift;
+
+    $self->{_authlib}->mod_user($account, $password, $name);
+}
+
+sub rename_user
+{
+    my $self = shift;
+    my $account = shift;
+    my $new_account = shift;
+
+    $self->{_authlib}->rename_user($account, $new_account);
+}
+
+1;

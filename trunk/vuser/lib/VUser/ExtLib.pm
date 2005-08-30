@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.12 2005-08-26 22:50:00 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.13 2005-08-30 17:17:18 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -21,7 +21,7 @@ our %EXPORT_TAGS = (
 		    files => [qw(add_line_to_file chown_ug
 				 del_line_from_file
 				 repl_line_in_file
-				 rm_r touch)]
+				 rm_r mkdir_p touch)]
 		    );
 
 sub version { $VERSION };
@@ -131,6 +131,21 @@ sub mkdir_p
 	    && mkdir( $dir ) 
 	    && chown( $uid, $gid, $dir );
     }
+}
+
+sub mvdir
+{
+    my ($old_dir, $new_dir, $safe) = @_[0..2];
+
+    use File::Path;
+    die "Directory already exists: $new_dir\n" if ($safe and -e $new_dir);
+
+    eval { mkpath($new_dir); };
+    if ($@) {
+	print "Can't create dir: $new_dir: $@\n";
+    }
+
+    rename( $old_dir, $new_dir) or die "Can't rename $old_dir to $new_dir: $!\n";
 }
 
 sub repl_line_in_file

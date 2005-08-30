@@ -75,10 +75,40 @@ sub add_user
     $self->{_dbh}->do($sql) or die "Can't add account: ".$self->{_dbh}->errstr()."\n";
 }
 
-# # Modify user in the DB
-# sub mod_user
-# {
-# }
+# Modify user in the DB
+sub mod_user
+{
+    my ($self, $account, $password, $name) = @_;
+
+    my $sql = "Update ".$self->cfg('user_table')." set ";
+    my @updates = ();
+    if (defined $password) {
+	push( @updates, $self->cfg( 'crypt_pwfield' ) ." = " . $self->{_dbh}->quote(crypt($password, $password))) if $self->cfg('crypt_pwfield');
+	push( @updates, $self->cfg( 'clear_pwfield' ) ." = " . $self->{_dbh}->quote($password)) if $self->cfg('clear_pwfield');
+    }
+
+    if (defined $name) {
+	push @updates, $self->cfg( 'name_field' ) ." = " . $self->{_dbh}->quote($name);
+    }
+
+    $sql .= join ", ", @updates;
+    $sql .= " where ".$self->cfg('login_field').' = '.$self->{_dbh}->quote($account);
+    print "mod_user: $sql\n" if $main::debug;
+
+    $self->{_dbh}->do($sql) or die "Can't modify account: ".$self->{_dbh}->errstr()."\n";
+}
+
+# Rename a user
+sub rename_user
+{
+    my ($self, $old_acct, $new_acct) = @_;
+
+    my $sql = "Update ".$self->cfg( 'user_table' )." set ";
+    $sql .= $self->cfg( 'login_field' ) ." = " . $self->{_dbh}->quote($new_acct);
+    $sql .= " where ".$self->cfg('login_field')." = ".$self->{_dbh}->quote($old_acct);
+
+    $self->{_dbh}->do($sql) or die "Can't rename account: ".$self->{_dbh}->errstr()."\n";
+}
 
 #Delete user from DB
 sub del_user
@@ -115,6 +145,7 @@ sub get_user_info
 
 }
 
+# Returns all users in a domain.
 sub get_users_for_domain
 {
     my $self = shift;
@@ -171,7 +202,7 @@ sub get_user_from_row
 
     $user->{ id } = $row->{ $self->cfg( 'login_field' ) };
     $user->{ home } = $row->{ $self->cfg( 'home_field' ) };
-    $user->{ maildir } = $row->{ $self->cfg( 'maildir_field' ) } if( $self->cfg( 'clear_field' ) );
+    $user->{ maildir } = $row->{ $self->cfg( 'maildir_field' ) } if( $self->cfg( 'maildir_field' ) );
     $user->{ clear } = $row->{ $self->cfg( 'clear_field' ) } if( $self->cfg( 'clear_field' ) );
     $user->{ crypt } = $row->{ $self->cfg( 'crypt_field' ) } if( $self->cfg( 'crypt_field' ) );
     $user->{ quota } = $row->{ $self->cfg( 'quota_field' ) };
