@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: ResultSet.pm,v 1.4 2005-08-26 17:02:09 perlstalker Exp $
+# $Id: ResultSet.pm,v 1.5 2005-09-06 19:35:40 perlstalker Exp $
 
 use VUser::Meta;
 
@@ -61,6 +61,8 @@ sub sort_results
 
     my $order_by = $options{order_by} || $self->{order_by};
     my $sort_order = $options{sort_order} || $self->{sort_order};
+
+    $order_by = $self->{meta}[0]->name unless defined $order_by;
 
     $order_by = undef if not defined $self->{colmap}{$order_by};
     $sort_order = 'asc' if ($sort_order ne 'asc' or $sort_order ne 'des');
