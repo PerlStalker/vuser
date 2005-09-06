@@ -6,14 +6,18 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.4 2005-09-06 15:43:53 perlstalker Exp $
+# $Id: vuser,v 1.5 2005-09-06 19:37:07 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+use VUser::ResultSet;
+use VUser::Meta;
+use VUser::ExtLib qw(strip_ws check_bool);
+
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = '0.1.0';
 
 our $DEBUG = 0;
@@ -71,9 +75,34 @@ if (defined $action
 $action = '' unless defined $action;
 
 # Ok. Now it's time to do the action.
-
-eval { $eh->run_tasks($keyword, $action, \%cfg); };
+my @rs;
+eval { @rs = $eh->run_tasks($keyword, $action, \%cfg); };
 warn $@ if $@;
+
+# print "RS: "; use Data::Dumper; print Dumper \@rs;
+
+# print "Show rs ($cfg{'vuser'}{'show result set'}) ? ",
+#     (check_bool($cfg{'vuser'}{'show result set'})? "Yes":"No"),
+#     "\n";
+
+if (check_bool($cfg{'vuser'}{'show result set'}) and @rs) {
+    foreach my $rs1 (@rs) {
+	foreach my $rs (@$rs1) {
+	    # print "RS: "; use Data::Dumper; print Dumper $rs;
+	    # print "\$rs is a ", ref $rs, "\n";
+	    my @meta = $rs->get_metadata;
+	    
+	    foreach my $row ($rs->results()) {
+		# print "Value: "; use Data::Dumper; print Dumper $row;
+		for (my $i = 0; $i < @meta; $i++) {
+		    printf("%s: %s\n",
+			   $meta[$i]->name,
+			   $row->[$i]);
+		}
+	    }
+	}
+    }
+}
 
 eval { $eh->cleanup(%cfg); };
 
