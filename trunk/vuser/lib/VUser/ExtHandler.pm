@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.32 2005-09-09 22:53:44 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.33 2005-09-12 17:17:23 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.32 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.33 $'))[1];
 our $VERSION = "0.1.0";
 
 use lib qw(..);
@@ -242,7 +242,14 @@ sub register_task
 	die "Unable to register task on unknown action '$action'.\n";
     }
 
-    $priority = DEFAULT_PRIORITY unless defined $priority; # Default priority is 10.
+    # Default priority is 10.
+    $priority = DEFAULT_PRIORITY unless defined $priority;
+    if ($priority =~ /^[+-]\s*\d+/) {
+	$priority =~ s/\s//g; # remove any excess whitespace
+	$priority = DEFAULT_PRIORITY() + $priority;
+	$priority = 0 if $priority < 0;
+    }
+
     if (defined $self->{keywords}{$keyword}{$action}{tasks}[$priority]) {
 	push @{$self->{keywords}{$keyword}{$action}{tasks}[$priority]}, $handler;
     } else {
@@ -579,6 +586,12 @@ __END__
 ExtHandler - vuser extension handler.
 
 =head1 DESCRIPTION
+
+=head2 register_keyword
+
+=head2 register_action
+
+=head2 register_task
 
 =head1 AUTHOR
 
