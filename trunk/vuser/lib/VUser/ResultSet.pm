@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: ResultSet.pm,v 1.5 2005-09-06 19:35:40 perlstalker Exp $
+# $Id: ResultSet.pm,v 1.6 2005-09-15 17:05:18 perlstalker Exp $
 
 use VUser::Meta;
 
@@ -298,6 +298,11 @@ How to add data to result set?
  add_meta(VUser::Meta)
  add_data([value1, value2, ...])
  add_data({meta1->name => value1, meta2->name => value2, ...})
+
+=head1 BUGS
+
+There are currently no checks to verify that the data added with add_data()
+matches the data type specified with add_meta().
 
 =head1 AUTHOR
 
