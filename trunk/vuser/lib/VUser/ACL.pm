@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ACL.pm,v 1.6 2005-08-26 17:02:09 perlstalker Exp $
+# $Id: ACL.pm,v 1.7 2005-09-19 22:30:14 perlstalker Exp $
 
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(ALLOW DENY UNKNOWN);
 our %EXPORT_TAGS = (consts => [qw(ALLOW DENY UNKNOWN)]);
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = "0.1.0";
 
 our $ALLOW = 1;
@@ -55,10 +55,18 @@ sub init
 	$eh->register_option('auth', 'add', 'ip', '=s', 0, 'Restrict to this IP');
 	$eh->register_task('auth', 'add', \&auth_add, 1);
 
+	# auth-show
 	$eh->register_action('auth', 'show', 'Show users');
 	$eh->register_option('auth', 'show', 'user', '=s', 0, 'User to get');
 	$eh->register_option('auth', 'show', 'module', '=s', 0, 'Check in this module only.');
 	$eh->register_task('auth', 'show', \&auth_show);
+
+	# auth-del
+	$eh->register_action('auth', 'del', 'Delete user');
+	$eh->register_option('auth', 'del', 'user', '=s', 1, 'User to get');
+	$eh->register_option('auth', 'del', 'module', '=s', 0, 'Check in this module only.');
+	$eh->register_task('auth', 'del', \&auth_del);
+
     }
 
     $eh->register_keyword('acl', 'Manage vuser ACLs');
@@ -281,6 +289,7 @@ sub plugin_tasks
 }
 
 sub auth_add { plugin_tasks(@_, 'auth', 'auth_add') };
+sub auth_del { plugin_tasks(@_, 'auth', 'auth_del') };
 
 sub auth_show
 {

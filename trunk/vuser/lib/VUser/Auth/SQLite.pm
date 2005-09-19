@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SQLite.pm,v 1.2 2005-07-02 21:04:06 perlstalker Exp $
+# $Id: SQLite.pm,v 1.3 2005-09-19 22:30:15 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = "0.1.0";
 
 sub revision { return $REVISION; }
@@ -48,8 +48,18 @@ sub auth_add
 
     my $sth = $dbh->prepare($sql) or die "DB Error: ".$dbh->errstr;
     $sth->execute($opts->{'user'},
-		  $opts->{'ip'},
+		  defined $opts->{'ip'} ? $opts->{'ip'} : '',
 		  $opts->{'password'})
+	or die "DB Error: ".$sth->errstr;
+}
+
+sub auth_del
+{
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $sql = "delete from $table where user = ?";
+    my $sth = $dbh->prepare($sql) or die "DB Error: ".$dbh->errstr;
+    $sth->execute($opts->{'user'})
 	or die "DB Error: ".$sth->errstr;
 }
 
