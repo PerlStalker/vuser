@@ -10,7 +10,7 @@ use strict;
 use SOAP::Lite;
 
 # Copyright 2005 Mark Bucciarelli
-# $Id: vsoapd,v 1.6 2005-09-06 15:43:53 perlstalker Exp $
+# $Id: vsoapd,v 1.7 2005-09-19 20:21:08 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long;
@@ -18,10 +18,8 @@ use FindBin;
 use Config::IniFiles;
 use SOAP::Transport::HTTP;
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = '0.1.0';
-
-print "vsoapd $VERSION $REVISION\n";
 
 our $DEBUG = 0;
 
@@ -49,6 +47,16 @@ use VUser::ExtLib;
 use VUser::ExtHandler;
 use VUser::SOAP;
 
+use Config;
+defined $Config{sig_name} || die "No sigs?";
+my (%signo, @signame, $i);
+$i = 0;
+foreach my $name (split(' ', $Config{sig_name})) {
+    $signo{$name} = $i;
+    $signame[$i] = $name;
+    $i++;
+}
+
 my $config_file;
 for my $etc_dir (@etc_dirs)
 {
@@ -67,15 +75,38 @@ tie %cfg, 'Config::IniFiles', (-file => $config_file);
 
 $DEBUG = VUser::ExtLib::strip_ws($cfg{'vuser'}{'debug'}) || 0;
 $DEBUG = VUser::ExtLib::check_bool($DEBUG) unless $DEBUG =~ /^\d+$/;
+my $debug = $DEBUG;
+
+print "vsoapd $VERSION $REVISION\n" if $debug;
 
 my $pid_file = VUser::ExtLib::strip_ws($cfg{vsoapd}{'pid file'});
 $pid_file = '/var/run/vsoapd.pid' unless $pid_file;
 
+#$SIG{INT} = sub { unlink $pid; exit 0; };
+
+my $cmd = shift;
+if (not defined $cmd or $cmd eq 'start') {
+} elsif ($cmd eq 'stop') {
+    my $old_pid = get_old_pid($pid_file);
+    print "Sending signal $signo{INT} to pid $old_pid\n" if $debug;
+    kill $signo{INT}, $old_pid;
+    unlink $pid_file;
+    exit;
+} elsif ($cmd eq 'restart') {
+    my $old_pid = get_old_pid($pid_file);
+    kill $signo{INT}, $old_pid;
+} else {
+    die "Unknown command $cmd\n";
+}
+
 # We will be the child after daemonize() is called.
 my $pid = daemonize();
-open PID, ">$pid_file" or die "Can't write to PID file: $!\n";
-print PID $pid;
-close PID;
+if ($pid != 0) {
+    open PID, ">$pid_file" or die "Can't write to PID file: $!\n";
+    print PID $pid;
+    close PID;
+    exit;
+}
 
 my $eh = new VUser::ExtHandler (\%cfg);
 
@@ -86,6 +117,7 @@ VUser::SOAP::init($eh, %cfg);
 #$SIG{PIPE} = $SIG{INT} = 'IGNORE';
 
 my $port = VUser::ExtLib::strip_ws($cfg{vsoapd}{localport});
+$port = 8000 unless defined $port;
 
 my $daemon = SOAP::Transport::HTTP::Daemon
   # if you do not specify LocalAddr then you can access it with 
@@ -107,9 +139,10 @@ my $daemon = SOAP::Transport::HTTP::Daemon
   # enable compression support
   -> options({compress_threshold => 10000})
 ;
-print "Contact to SOAP server at ", $daemon->url, "\n";
+print "Contact to vsoapd server at ", $daemon->url, "\n" if $debug;
 $daemon->handle;
 
+unlink $pid_file or warn "Unable to remove $pid_file: $!\n";
 eval { $eh->cleanup(%cfg); };
 
 sub daemonize
@@ -120,7 +153,7 @@ sub daemonize
 
     if ($pid = fork) {
 	$SIG{CHLD} = "INGORE";
-	exit;
+	# exit;
     } elsif ($pid == 0) {
     } else {
 	die "Unable to daemonize: $!";
@@ -128,3 +161,55 @@ sub daemonize
 
     return $pid;
 }
+
+sub get_old_pid
+{
+    my $file = shift;
+    my $pid = undef;
+    open (PID, $file) or die "Unable to get pid. vsoapd not running? $!\n";
+    $pid  = <PID>;
+    close PID;
+    return $pid;
+}
+
+__END__
+
+=head1 NAME
+
+vsoapd - vuser SOAP daemon.
+
+=head1 SYNOPSIS
+
+vsoapd [start|restart|stop]
+
+=head1 OPTIONS
+
+=head1 DESCRIPTION
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+=head1 AUTHOR
+
+Randy Smith <perlstalker@gmail.com>
+
+=head1 LICENSE
+ 
+ This file is part of vuser.
+ 
+ vuser is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ vuser is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with vuser; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+=cut
