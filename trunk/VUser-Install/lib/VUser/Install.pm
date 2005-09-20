@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Install.pm,v 1.1 2005-09-16 21:08:03 perlstalker Exp $
+# $Id: Install.pm,v 1.2 2005-09-20 22:51:36 perlstalker Exp $
 
 use vars ('@ISA');
 
@@ -13,7 +13,7 @@ use VUser::ResultSet;
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = '0.1.0';
 
 my $c_sec = 'Extension_Install';
@@ -78,7 +78,7 @@ sub init
     # used to force a diskless install when a disk is required. I say
     # 'almost' because certain things, e.g. /etc/fstab, expect to be mounting
     # those disks.
-    $eh->register_option('install', 'diskless', 'local-scripts', '', 'req',
+    $eh->register_option('install', 'diskless', 'local-scripts', '', 0,
 			 'Run local commands');
     $eh->register_task('install', 'diskless', \&install_diskless);
 
@@ -134,9 +134,20 @@ sub init
     $eh->register_action('update', 'dhcp', 'Update dhcp configuration');
     $eh->register_task('update', 'dhcp', \&update_dhcp);
 
-    # Optionally update dhcp on a install diskless.
+    # uninstall
+    $eh->register_keyword('uninstall', 'Uninstall management');
+
+    # uninstall-diskless
+    $eh->register_action('uninstall', 'diskless', 'Remove a node from diskless setup');
+    $eh->register_option('uninstall', 'diskless', $meta{'ip'}, 'req');
+    $eh->register_task('uninstall', 'diskless', \&uninstall_diskless);
+
+    # uninstall-standalone?
+
+    # Optionally update dhcp on a install (or uninstall) diskless.
     if (check_bool($cfg{$c_sec}{'auto-update dhcp'})) {
 	$eh->register_task('install', 'diskless', \&update_dhcp, '+ 1');
+	$eh->register_task('uninstall', 'diskless', \&update_dhcp, '+ 1');
     }
 }
 
@@ -181,8 +192,8 @@ sub install_diskless
 	#die "$diskless/$service/$ip already exists\n";
     }
     
-    run_dangerous("mkdir '$diskless/$service'");
-    run_dangerous("mkdir '$diskless/$service/ip'");
+    System("mkdir", "$diskless/$service");
+    System("mkdir", "$diskless/$service/$ip");
 
     # TODO: This should be more configurable
     my @dirs = qw(home dev proc tmp mnt mnt/.initd root
@@ -191,7 +202,8 @@ sub install_diskless
 		  usr opt mfs
 		  );
     foreach my $dir (@dirs) {
-	run_dangerous("mkdir '$diskless/$service/$ip/$dir'");
+	#run_dangerous("mkdir '$diskless/$service/$ip/$dir'");
+	System('mkdir', "$diskless/$service/$ip/$dir");
     }
     System('chmod', 'a+w', "$diskless/$service/$ip/tmp'");
     # Make console device
@@ -287,6 +299,10 @@ sub install_diskinfo
     my ($cfg, $opts, $action, $eh) = @_;
 
     my $rs = VUser::ResultSet->new();
+    $rs->add_meta(VUser::Meta->new('name' => 'disk',
+				   'type' => 'string',
+				   'description' => 'Disk name')
+		  );
     $rs->add_meta(VUser::Meta->new('name' => 'partinfo',
 				   'type' => 'string',
 				   'description' => 'Partion Info')
@@ -302,7 +318,8 @@ sub install_diskinfo
 
     my %disks = get_disk_config($cfg, $opts);
     foreach my $disk (sort keys %disks) {
-	$rs->add_data([$disks{$disk}{'part'},
+	$rs->add_data([$disk,
+		       $disks{$disk}{'part'},
 		       $disks{$disk}{'fs'},
 		       $disks{$disk}{'mount'},
 		       ]);
@@ -606,7 +623,7 @@ sub get_disk_config
     foreach my $disk (sort grep { /^disk\d+/ } keys %{ $lcfg{$opts->{'service'}} }) {
 	my ($part, $fs, $mount) = split ('\|', $lcfg{$opts->{'service'}}{$disk});
 
-	$mount =~ s!/$!! if defined $mount and $mount nq '/';
+	$mount =~ s!/$!! if defined $mount and $mount ne '/';
 
 	$disks{$disk} = {'part' => $part,
 			 'fs' => $fs,
@@ -975,6 +992,28 @@ The path to the prototype root (from Extension_Install::prototype dir
 and --service; e.g /prototypes/service)
 
 =back
+
+=head1 ADDING USERS
+
+If you use F<install-local>, you will need to create users to allow
+it to connect. These users will are user by vuser's SOAP daemon F<vsoapd>
+to allow access.
+
+1) Enable the I<ACL> extension in F<vuser.conf>:
+
+ extensions = Install ACL
+ 
+ [ACL]
+ use internal auth=yes
+ auth modules=SQLite
+ # ALLOW or DENY
+ acl default=ALLOW
+ 
+ [ACL SQLite]
+ file=/etc/vuser/install/acl.db
+
+B<Note:> This setup requires that DBD::SQLite be installed on the master
+server, i.e. the box running F<vsoapd>.
 
 =head1 AUTHOR
 

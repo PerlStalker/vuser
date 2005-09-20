@@ -5,10 +5,13 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: install-local,v 1.1 2005-09-16 21:08:03 perlstalker Exp $
+# $Id: install-local,v 1.2 2005-09-20 22:51:36 perlstalker Exp $
 
 use Getopt::Long;
-use SOAP::Lite; # To talk to vuser
+use SOAP::Lite # To talk to vuser
+    on_fault => sub { my ($soap, $res) = @_;
+		      die "Error: ", (ref $res ? $res->faultstring : $soap->transport->status), "\n";
+		  };
 
 use VUser::ResultSet;
 use VUser::Meta;
@@ -27,28 +30,27 @@ my $password = undef;
 my $diskless = 0;
 my $standalone = 0;
 my $retries = 3; # Number of time to re-fetch tarballs if the MD5 sum fails
-my $debug = 0;
 my $verbose = 0;
 my $mount = '/mnt/root';
 my $nfs_server = '192.168.1.120';
-my $diskless_root => '/diskless';
+my $diskless_root = '/diskless';
 
-GetOptions('service=s' => \$service,
-	   'ip=s' => \$ip,
-	   'host=s' => \$host,
-	   'mac=s' => \$mac,
-	   'disk=s' => \$disk,
-	   'kernel=s' => \$kernel,
-	   'interactive' => \$inter,
-	   'debug|d' => \$debug,
-	   'vuser=s' => \$vuser,
-	   'username=s' => \$user,
-	   'password=s' => \$password,
-	   'diskless' => \$diskless,
-	   'standalone' => \$standalone,
-	   'debug' => \$debug,
-	   'nfs-server=s' => \$nfs_server,
-	   'diskless-root=s' => \$diskless
+GetOptions('service=s'       => \$service,
+	   'ip=s'            => \$ip,
+	   'host=s'          => \$host,
+	   'mac=s'           => \$mac,
+	   'disk=s'          => \$disk,
+	   'kernel=s'        => \$kernel,
+	   'interactive'     => \$inter,
+	   'debug|d'         => \$debug,
+	   'vuser=s'         => \$vuser,
+	   'username=s'      => \$user,
+	   'password=s'      => \$password,
+	   'diskless'        => \$diskless,
+	   'standalone'      => \$standalone,
+	   'nfs-server=s'    => \$nfs_server,
+	   'diskless-root=s' => \$diskless,
+	   'verbose|v'       => \$verbose
 	   );
 
 # Default to diskless install if neither option is checked
@@ -62,29 +64,12 @@ $vuser_uri .= '/VUser/SOAP';
 
 my $continue = 0;
 
-    my $disk_req_rs = SOAP::Lite
-        -> uri( $vuser_uri)
-        -> proxy( $vuser )
-        -> install_diskrequired($username, $password, undef,
-				(service => $service)
-				)
-	->result;
-
-    my $disk_req = 0;
-    foreach my $rs (@$disk_req_rs) {
-	my @results = $rs->results_hashrefs;
-	foreach my $res (@results) {
-	    if ($res->{'diskrequired'}){ 
-		$disk_req = 1;
-		last;
-	    }
-	}
-    }
+my $disk_req = 0;
 
 while (not $continue) {
 
     if ($inter or not defined $service) {
-	$service = prompt('Service [%s]:', $service);
+	$service = prompt('Service [%s]:', $service, \&service_help);
     }
 
     if ($inter or not defined $ip) {
@@ -99,44 +84,65 @@ while (not $continue) {
 	if (not defined $mac
 	    and open (IFCONFIG, "ifconfig|")) {
 	    while (<IFCONFIG>) {
-		if (/HWAddr (..:..:..:..:..:..)/) {
+		if (/HWaddr (..:..:..:..:..:..)/i) {
 		    $mac = $1;
 		    last;
 		}
 	    }
 	    close IFCONFIG;
 	} else {
-	    warn "Can't detect MAC address\n";
+	    #warn "Can't detect MAC address\n";
 	}
-	$mac = prompt('MAC Address [%s]:', $mac, undef, \&validate_mac);
+	$mac = prompt('MAC Address [%s]:', $mac, \&mac_help, \&validate_mac);
     }
 
-    if ($inter or not defined $disk
-	$disk_req # and disk is required (from vuser)
+    my $disk_req_rs = SOAP::Lite
+	-> uri( $vuser_uri)
+	-> proxy( $vuser )
+	-> install_diskrequired($user, $password, undef,
+				(service => $service)
+				)
+	->result;
+
+    foreach my $rs (@$disk_req_rs) {
+	my @results = $rs->results_hashrefs;
+	foreach my $res (@results) {
+	    if ($res->{'diskrequired'}){ 
+		$disk_req = 1;
+		last;
+	    }
+	}
+    }
+
+    if ($inter or (not defined $disk
+		   and $disk_req) # and disk is required (from vuser)
 	) {
 	$disk = prompt("This service requires a local disk.\nDisk to Partition [%s]:", $disk, \&help_disk, \&validate_disk);
     }
 
-    $disk =~ s!^/dev/!!; # Clean off /dev/ just in case the user puts it on.
+    # Clean off /dev/ just in case the user puts it on.
+    $disk =~ s!^/dev/!! if defined $disk;
 
-    if ($inter or not defined $disk) {
-	$kernel = prompt('Kernel', defined $kernel? $kernel : 'bzImage');
+    if ($inter or not defined $kernel) {
+	$kernel = prompt('Kernel [%s]: ', defined $kernel? $kernel : 'bzImage');
     }
 
     # At this point we have all we need to proceed.
     # Print a warning and ask for confirmation.
-    print "Please confirm these settings before proceeding.\n";
-    print "Service: %20s\n", $service;
-    print "IP: %15s Hostname: %s\n", $ip, $host;
-    print "MAC: %17s\n", $mac;
-    print "Kernel: %s\n", $kernel;
-    if ($disk_req # require disk) {
-	print "Disk: %s\n", $disk;
-	print "**** WARNING! **** ";
-	print "All contents on this disk will be lost.\n";
+    print  "Please confirm these settings before proceeding.\n";
+    printf "Service : %s\n", $service;
+    printf "IP      : %s\n", $ip;
+    printf "Hostname: %s\n", $host;
+    printf "MAC     : %17s\n", $mac;
+    printf "Kernel  : %s\n", $kernel;
+    if ($disk_req) { # require disk
+	printf "Disk    : %s\n", $disk;
+	print  "**** WARNING! **** ";
+	print  "All contents on this disk will be lost.\n";
     }
-    my $proceed = prompt("Do you wish to proceed?", 'N');
-    $continue = 1 if ($proceed eq 'y' or $proceed eq 'Y');
+    my $proceed = prompt("Are these settings correct? (y/N)", 'N');
+    $continue = 1 if ($proceed =~ /^y(es)?/i);
+    $inter = 1;
 }
 
 # We have finished getting the install info from the user.
@@ -147,27 +153,43 @@ my %disks = ();
 if ($disk_req) { # disk required
     print "Partitioning disk\n";
     #vuser->get info for sfdsik
+
+    my $fs_rs = SOAP::Lite
+        -> uri( $vuser_uri)
+        -> proxy( $vuser )
+        -> install_diskinfo($user, $password, undef,
+                            (service => $service)
+                            )
+        -> result;
+
     my $disk_id = 1;
-    foreach my $rset (@$part_rs) {
-	foreach my $res ($rset->results_hashref) {
-	    $disks{$disk.$disk_id} = ('part' => $res->{partinfo},
+    my $sfdisk_in = '';
+    foreach my $rset (@$fs_rs) {
+	foreach my $res ($rset->results_hashrefs) {
+	    #use Data::Dumper; print Dumper $res;
+	    $disks{$disk.$disk_id} = {'part' => $res->{partinfo},
 				      'fs' => $res->{fsinfo},
 				      'mount' => $res->{mountinfo}
-				      );
+				      };
+	    #print $res->{'disk'}, " $disk$disk_id ",$res->{'partinfo'}, "\n";
+	    $sfdisk_in .= $res->{partinfo}."\n";
 	    $disk_id++;
 	}
     }
 
-    my $sfdisk_in = '';
-    foreach my $disk (sort keys %disks) {
-	$sfdisk_in .= $disks{$disk}{'partinfo'};."\n"
-    }
+    # use Data::Dumper; print Dumper \%disks;
+
+#     $sfdisk_in = '';
+#     foreach my $d (sort keys %disks) {
+#  	print "$d => ", $disks{$d}{'part'}, "\n";
+#  	$sfdisk_in .= $disks{$d}{'part'}."\n";
+#      }
 
     if ($debug) {
 	print "Debug mode: Not running sfdisk /dev/$disk\n";
-	print "sfdisk < $sfdisk_in\n";
+	print "sfdisk -uM < $sfdisk_in\n";
     } else {
-	open (SFDISK, "|sfdisk /dev/$disk") or die "Cannot partition disk: $!\n"; 
+	open (SFDISK, "|sfdisk -uM /dev/$disk") or die "Cannot partition disk: $!\n"; 
 	print SFDISK "$sfdisk_in"; # print out partion info from vuser
 	close SFDISK;
     }
@@ -175,37 +197,25 @@ if ($disk_req) { # disk required
 
     print "Making file systems\n";
 
-    my $fs_rs = SOAP::Lite
-        -> uri( $vuser_uri)
-        -> proxy( $vuser )
-        -> install_diskinfo($username, $password, undef,
-                            (service => $service)
-                            )
-        -> result;
-
-    foreach my $d (sort keys $disks) {
+    foreach my $d (sort keys %disks) {
 	my @cmd = ();
 
-	if ($disks{$d} eq 'swap') {
+	if ($disks{$d}{'fs'} eq 'swap') {
 	    @cmd = ('mkswap', "/dev/$d");
-	} elsif ($disks{$d} eq 'reiser') {
-	    @cmd = ('mkreiserfs', "/dev/$d");
-	} elsif ($disks{$d} eq 'ext2') {
+	} elsif ($disks{$d}{'fs'} eq 'reiserfs') {
+	    @cmd = ('mkreiserfs', '-q', "/dev/$d");
+	} elsif ($disks{$d}{'fs'} eq 'ext2') {
 	    @cmd = ('mke2fs', "/dev/$d");
-	} elsif ($disks{$d} eq 'ext3') {
+	} elsif ($disks{$d}{'fs'} eq 'ext3') {
 	    @cmd = ('mke2fs', '-j', "/dev/$d");
-	} elsif ($disks{$d} eq 'xfs') {
+	} elsif ($disks{$d}{'fs'} eq 'xfs') {
 	    @cmd = ('mkfs.xfs', "/dev/$d");
-	} elsif ($disks{$d} eq 'jfs') {
+	} elsif ($disks{$d}{'fs'} eq 'jfs') {
 	    @cmd = ('mkfs.jfs', "/dev/$d");
 	}
 
-	print "$disk{$d} => $d\n"
-	if ($debug) {
-	    print "Debug mode: @cmd\n";
-	} else {
-	    System (@cmd);
-	}
+	print "$disks{$d}{'fs'} => $d\n";
+	System (@cmd);
     }
 }
 
@@ -215,7 +225,7 @@ if ($diskless) {
     SOAP::Lite
 	-> uri( $vuser_uri)
 	-> proxy( $vuser )
-	-> install_diskless($username, $password, undef,
+	-> install_diskless($user, $password, undef,
 			    (service => $service,
 			     ip => $ip,
 			     mac => $mac,
@@ -228,40 +238,42 @@ if ($diskless) {
       # Run scripts to setup local dirs, etc. if the service requires disks.
       if ($disk_req) {
 	  # Mount disks
-	  mkdir $mount if (not -d '/mnt/root');
+	  mkdir $mount if (not -d $mount);
 	  # This ugly sort is here to make sure that the mount points are
 	  # created in the right order.
 	  my @sorted_mounts = 
 	      sort {
-		  $cnt_a =()= $disks{$a}{'mount'} =~ m!/!;
-		  $cnt_b =()= $disks{$b}{'mount'} =~ m!/!;
+		  my $cnt_a =()= $disks{$a}{'mount'} =~ m!/!;
+		  my $cnt_b =()= $disks{$b}{'mount'} =~ m!/!;
 		  if ($cnt_a != $cnt_b) {
 		      return $cnt_a <=> $cnt_b;
 		  }
 		  return -1 if ($disks{$a}{'mount'} eq '/');
 		  return 1 if ($disks{$b}{'mount'} eq '/');
 		  return $disks{$a}{'mount'} cmp $disks{$b}{'mount'};
-	      } keys %disks
+	      } keys %disks;
 
-	  foreach my $disk (@sorted_mounts) {
+	  foreach my $d (@sorted_mounts) {
 	      # Create the mount point
-	      System('mkdir', '-p', $mount.$disks{$disk}{'mount'});
+	      System('mkdir', '-p', $mount.$disks{$d}{'mount'});
 	      # Mount the disk
-	      System('mount', "/dev/$disk", $mount.$disks{$disk}{'mount'});
+	      System('mount', "/dev/$disk", $mount.$disks{$d}{'mount'});
 	  }
 
 	  local_init();
 
-	  foreach my $disk (reverse @sorted_mounts) {
-	      System('umount', $mount.$disks{$disk}{'mount'});
+	  foreach my $d (reverse @sorted_mounts) {
+	      System('umount', $mount.$disks{$d}{'mount'});
 	  }
+
+	  System('rm', '-r', $mount);
       }
 
 } elsif ($standalone) {
     SOAP::Lite
 	-> uri( $vuser_uri)
 	-> proxy( $vuser )
-	-> install_standalone($username, $password, undef,
+	-> install_standalone($user, $password, undef,
 			      (service => $service,
 			       ip => $ip,
 			       mac => $mac,
@@ -271,13 +283,13 @@ if ($diskless) {
 			       )
 			      );
 
-      mkdir $mount if (not -d '/mnt/root');
+      mkdir $mount if (not -d $mount);
 
       # download tarball and unpack
       my $rs = SOAP::Lite
 	  -> uri( $vuser_uri)
 	  -> proxy( $vuser )
-	  -> install_tarball($username, $password, undef,
+	  -> install_tarball($user, $password, undef,
 			     (service => $service,
 			      ip => $ip,
 			      )
@@ -328,7 +340,7 @@ print "Configuring master.\n";
 SOAP::Lite
     -> uri( $vuser_uri)
     -> proxy( $vuser )
-    -> update_dhcp($username, $password, undef, ());
+    -> update_dhcp($user, $password, undef, ());
 
 print "Done.\n";
                   
@@ -340,7 +352,7 @@ sub prompt
     my $validate_sub = shift;
 
   SERVICE:
-    printf("%s ", $message, defined $default? $default : '');
+    printf("$message ", defined $default? $default : '');
     my $value = <STDIN>;
     chomp $value;
     if ($value eq '?') {
@@ -369,7 +381,7 @@ sub no_help
 sub help_disk
 {
     opendir (DEV, "/dev/") or die "Cannot read /dev/\n";
-    my @devs = grep { /^[sh]d[a..z]^/ } readdir DEV;
+    my @devs = grep { /^[sh]d[a-z]$/ } readdir DEV;
     closedir DEV;
 
     print "Known devices: ", join (", ", sort @devs), "\n";
@@ -378,11 +390,11 @@ sub help_disk
 sub validate_mac
 {
     my $mac = shift;
-    my $hex = '[0..9a..fA..F]';
-    my $pattern = join ':', ($hex)x6
+    my $hex =  qr"(?:\d|[abcdef]|[ABCDEF]){2}";
+    my $pattern = join ':', ($hex)x6;
     return 1 if $mac =~ /^$pattern$/o;
     
-    print "Invalid MAC address. Must match $pattern\n";
+    print "Invalid MAC address. Must match ", join ":", ("[0..9a..fA..F]{2}")x6, "\n";
     return 0;
 }
 
@@ -448,12 +460,15 @@ sub local_init
     my $oldwd = cwd();
     chdir $mount;
 
+    sleep 5;
+
     opendir (SCRIPTS, "/mnt/init") or die "Cannot find init scripts: $!\n";
-    my @scripts = grep { /\.(?pl|sh)$/ } readdir SCRIPTS;
+    my @scripts = grep { /\.(?:pl|sh)$/ } readdir SCRIPTS;
     closedir SCRIPTS;
 
     print "Running scripts in /mnt/init\n";
     foreach my $script (@scripts) {
+	# print "$script\n";
 	if (-x "/mnt/init/$script") {
 	    System("/mnt/init/$script", $mount, $service,
 		   $host, $ip, $nfs_server);
@@ -462,6 +477,43 @@ sub local_init
 
     # cd `pwd`
     chdir $oldwd;
+    System('umount', "/mnt/init");
+}
+
+sub service_help
+{
+    my $rs = SOAP::Lite
+	-> uri( $vuser_uri)
+	-> proxy( $vuser )
+	-> install_services($user, $password, undef, ( ) )
+	-> result;
+
+    print "Services:";
+    foreach my $rset (@$rs) {
+# 	foreach my $res ($rset->results_hashrefs) {
+# 	    print " ", $res->{'service'};
+# 	}
+	print join (', ', sort map { $_->{'service'}; } $rset->results_hashrefs);
+    }
+    print "\n";
+
+}
+
+sub mac_help
+{
+    if (open (IFCONFIG, "ifconfig|")) {
+	print "MACs: \n";
+	while (<IFCONFIG>) {
+	    if (/^(\S+)\s.*HWaddr (..:..:..:..:..:..)/i) {
+		my $iface = $1;
+		my $mac = $2;
+		print "  $iface\t$mac\n";
+	    }
+	}
+	close IFCONFIG;
+    } else {
+	print "Unable to read MACs: $!\n";
+    }
 }
 
 __END__
