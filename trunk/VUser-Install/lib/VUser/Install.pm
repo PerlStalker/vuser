@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Install.pm,v 1.2 2005-09-20 22:51:36 perlstalker Exp $
+# $Id: Install.pm,v 1.3 2005-09-28 17:21:12 perlstalker Exp $
 
 use vars ('@ISA');
 
@@ -13,7 +13,7 @@ use VUser::ResultSet;
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = '0.1.0';
 
 my $c_sec = 'Extension_Install';
@@ -174,6 +174,8 @@ sub install_diskless
     if (not -e "$diskless/$service" or not -d "$diskless/$service") {
 	die "$diskless/$service does not exist or is not a directory\n";
     }
+
+    my $disk = $opts->{'disk'} || '';
     
     # Add the new server to the config file that we'll use to write
     # dhcp.conf.
@@ -205,7 +207,7 @@ sub install_diskless
 	#run_dangerous("mkdir '$diskless/$service/$ip/$dir'");
 	System('mkdir', "$diskless/$service/$ip/$dir");
     }
-    System('chmod', 'a+w', "$diskless/$service/$ip/tmp'");
+    System('chmod', '777', "$diskless/$service/$ip/tmp'");
     # Make console device
     # WARNING: Linux-centric
     System('mknod', "$diskless/$service/$ip/dev/console", "c", "5", "1");
@@ -251,7 +253,15 @@ sub install_diskless
 	    chdir ("$diskless/$service/init");
 	    foreach my $script (sort @scripts) {
 		if (-x "$diskless/$service/init/$script") {
-		    System ("$diskless/$service/init/$script $diskless/$service/$ip $service $host $ip $nfs_server $prototypes/$service");
+		    System ("$diskless/$service/init/$script",
+			    "$diskless/$service/$ip",
+			    $service,
+			    $host,
+			    $ip,
+			    $nfs_server,
+			    "$prototypes/$service",
+			    $disk
+			    );
 		}
 	    }
 	    chdir($cwd);
@@ -271,7 +281,14 @@ sub install_diskless
 	    chdir ("$diskless/$service/init");
 	    foreach my $script (sort @scripts) {
 		if (-x "$diskless/$service/init/$script") {
-		    System ("$diskless/$service/init/$script $diskless/$service/$ip $service $host $ip $nfs_server $prototypes/$service");
+		    System ("$diskless/$service/init/$script",
+			    "$diskless/$service/$ip",
+			    $service,
+			    $host,
+			    $ip,
+			    $nfs_server,
+			    "$prototypes/$service",
+			    $disk);
 		}
 	    }
 	    chdir($cwd);
