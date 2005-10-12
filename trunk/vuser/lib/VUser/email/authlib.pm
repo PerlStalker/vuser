@@ -203,8 +203,8 @@ sub get_user_from_row
     $user->{ id } = $row->{ $self->cfg( 'login_field' ) };
     $user->{ home } = $row->{ $self->cfg( 'home_field' ) };
     $user->{ maildir } = $row->{ $self->cfg( 'maildir_field' ) } if( $self->cfg( 'maildir_field' ) );
-    $user->{ clear } = $row->{ $self->cfg( 'clear_field' ) } if( $self->cfg( 'clear_field' ) );
-    $user->{ crypt } = $row->{ $self->cfg( 'crypt_field' ) } if( $self->cfg( 'crypt_field' ) );
+    $user->{ clear } = $row->{ $self->cfg( 'clear_field' ) } if( $self->cfg( 'clear_pwfield' ) );
+    $user->{ crypt } = $row->{ $self->cfg( 'crypt_field' ) } if( $self->cfg( 'crypt_pwfield' ) );
     $user->{ quota } = $row->{ $self->cfg( 'quota_field' ) };
     $user->{ aliasfor } = $row->{ $self->cfg( 'alias_field' ) };
     $user->{ uid } = $row->{ $self->cfg( 'uid_field' ) };
