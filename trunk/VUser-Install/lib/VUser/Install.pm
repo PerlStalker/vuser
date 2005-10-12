@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Install.pm,v 1.3 2005-09-28 17:21:12 perlstalker Exp $
+# $Id: Install.pm,v 1.4 2005-10-12 16:00:37 perlstalker Exp $
 
 use vars ('@ISA');
 
@@ -13,7 +13,7 @@ use VUser::ResultSet;
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = '0.1.0';
 
 my $c_sec = 'Extension_Install';
@@ -134,6 +134,17 @@ sub init
     $eh->register_action('update', 'dhcp', 'Update dhcp configuration');
     $eh->register_task('update', 'dhcp', \&update_dhcp);
 
+    # upgrade
+    $eh->register_keyword('upgrade', 'Upgrade systems');
+
+    # upgrade-diskless
+    $eh->register_action('upgrade', 'diskless', 'Upgrade diskless installs');
+    $eh->register_option('upgrade', 'diskless', $meta{'service'});
+    $eh->register_option('upgrade', 'diskless', $meta{'ip'});
+    $eh->register_option('upgrade', 'diskless', 'local-scripts', '', 0,
+			 'Run local commands');
+    $eh->register_task('upgrade', 'diskless', \&upgrade_diskless);
+
     # uninstall
     $eh->register_keyword('uninstall', 'Uninstall management');
 
@@ -205,7 +216,9 @@ sub install_diskless
 		  );
     foreach my $dir (@dirs) {
 	#run_dangerous("mkdir '$diskless/$service/$ip/$dir'");
-	System('mkdir', "$diskless/$service/$ip/$dir");
+	if (not -e "$diskless/$service/$ip/$dir") {
+	    System('mkdir', "$diskless/$service/$ip/$dir");
+	}
     }
     System('chmod', '777', "$diskless/$service/$ip/tmp'");
     # Make console device
@@ -522,6 +535,82 @@ sub update_dhcp
     }
 }
 
+sub upgrade_diskless
+{
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $service = $opts->{'service'};
+    my $ip = $opts->{'ip'};
+
+    if (not defined $ip and not defined $service) {
+	die "At least one of 'ip' or 'service' must be used.\n";
+    }
+
+    my $data_dir = strip_ws($cfg->{$c_sec}{'config dir'});
+    my $file = "$data_dir/servers.dat";
+
+    my %servers = read_server_info($file);
+
+    my %to_upgrade = ();
+    if (defined $service) {
+	foreach my $ip (keys %servers) {
+	    if ($servers{$ip}{'service'} eq $service) {
+		$to_upgrade{$ip} = $servers{$ip};
+	    }
+	}
+    } else {
+	%to_upgrade = %servers;
+    }
+
+    my @keys;
+    if ($ip) {
+	@keys = ($ip);
+    } else {
+	@keys = keys %to_upgrade;
+    }
+
+    foreach my $host (@keys) {
+	my %inst_opts = ();
+	$inst_opts{'service'} = $to_upgrade{$host}{'service'};
+	$inst_opts{'ip'} = $to_upgrade{$host}{'ip'};
+	$inst_opts{'mac'} = $to_upgrade{$host}{'mac'};
+	$inst_opts{'hostname'} = $to_upgrade{$host}{'hostname'};
+	$inst_opts{'disk'} = $to_upgrade{$host}{'disk'} if $to_upgrade{$host}{'disk'};
+	$inst_opts{'kernel'} = $to_upgrade{$host}{'kernel'};
+	$inst_opts{'local-scripts'} = $opts->{'local-scripts'};
+	$eh->run_tasks('install', 'diskless', $cfg, %inst_opts);
+    }
+}
+
+sub uninstall_diskless
+{
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $ip = $opts->{'ip'};
+
+    my $diskless = strip_ws($cfg->{$c_sec}{'diskless dir'});
+
+    my $data_dir = strip_ws($cfg->{$c_sec}{'config dir'});
+    my $file = "$data_dir/servers.dat";
+
+    my %servers = read_server_info($file);
+
+     if (not exists $servers{$ip}) {
+ 	warn "Unknown server: $ip\n";
+ 	return;
+     }
+
+    my $service = $servers{$ip}{'service'};
+
+    del_server_info($file, $ip);
+
+    if (-d "$diskless/$service/$ip") {
+	System('rm', '-r', "$diskless/$service/$ip");
+    } else {
+	warn "Unable to delete server directory: $diskless/$service/$ip doesn't exist\n";
+    }
+}
+
 # Return a list of services names for use in various places
 sub get_services
 {
@@ -630,7 +719,7 @@ sub del_server_info
     my ($file, $ip) = @_;
     my %servers = read_server_info($file);
     delete $servers{$ip};
-    write_server_info($file. %servers);
+    write_server_info($file, %servers);
 }
 
 sub get_disk_config

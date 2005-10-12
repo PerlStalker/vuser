@@ -5,7 +5,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: install-local,v 1.2 2005-09-20 22:51:36 perlstalker Exp $
+# $Id: install-local,v 1.3 2005-10-12 16:00:37 perlstalker Exp $
 
 use Getopt::Long;
 use SOAP::Lite # To talk to vuser
@@ -254,15 +254,17 @@ if ($diskless) {
 	      } keys %disks;
 
 	  foreach my $d (@sorted_mounts) {
+	      next if $disks{$d}{'fs'} eq 'swap'; # Skip swap partitions
 	      # Create the mount point
 	      System('mkdir', '-p', $mount.$disks{$d}{'mount'});
 	      # Mount the disk
-	      System('mount', "/dev/$disk", $mount.$disks{$d}{'mount'});
+	      System('mount', "-t", $disks{$d}{'fs'}, "/dev/$d", $mount.$disks{$d}{'mount'});
 	  }
 
 	  local_init();
 
 	  foreach my $d (reverse @sorted_mounts) {
+	      next if $disks{$d}{'fs'} eq 'swap'; # Skip swap partitions
 	      System('umount', $mount.$disks{$d}{'mount'});
 	  }
 
@@ -455,10 +457,10 @@ sub local_init
 
     System('mount', "$nfs_server:$diskless_root/$service/init/local", "/mnt/init");
 
-    # cd $mount
+    # cd /mnt/init
     use Cwd;
     my $oldwd = cwd();
-    chdir $mount;
+    chdir "/mnt/init";
 
     sleep 5;
 
@@ -467,7 +469,7 @@ sub local_init
     closedir SCRIPTS;
 
     print "Running scripts in /mnt/init\n";
-    foreach my $script (@scripts) {
+    foreach my $script (sort @scripts) {
 	# print "$script\n";
 	if (-x "/mnt/init/$script") {
 	    System("/mnt/init/$script", $mount, $service,
@@ -524,7 +526,7 @@ install-local - Local install script for VUser::Install script.
 
 =head1 AUTHOR
 
-Randy Smith <perlstalker@gmail.com>
+Randy Smith <perlstalker@vuser.org>
 
 =head1 LICENSE
  
