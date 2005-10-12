@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Install.pm,v 1.4 2005-10-12 16:00:37 perlstalker Exp $
+# $Id: Install.pm,v 1.5 2005-10-12 20:51:56 perlstalker Exp $
 
 use vars ('@ISA');
 
@@ -13,7 +13,7 @@ use VUser::ResultSet;
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = '0.1.0';
 
 my $c_sec = 'Extension_Install';
@@ -220,7 +220,7 @@ sub install_diskless
 	    System('mkdir', "$diskless/$service/$ip/$dir");
 	}
     }
-    System('chmod', '777', "$diskless/$service/$ip/tmp'");
+    System('chmod', '777', "$diskless/$service/$ip/tmp");
     # Make console device
     # WARNING: Linux-centric
     System('mknod', "$diskless/$service/$ip/dev/console", "c", "5", "1");
