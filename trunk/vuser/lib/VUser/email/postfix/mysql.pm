@@ -7,7 +7,7 @@ use VUser::ExtLib qw( mkdir_p rm_r );
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = "0.1.0";
 
 use VUser::email::authlib;
@@ -38,6 +38,30 @@ sub domain_add
 
     my $sth = $self->{_dbh}->prepare($sql) or die "Can't insert domain: ".$self->{_dbh}->errstr()."\n";
     $sth->execute( $domain ) or die "Can't insert domain: ".$sth->errstr()."\n";
+}
+
+sub list_domains
+{
+    my $self = shift;
+
+    my $sql = sprintf("SELECT %s from %s",
+		      $self->cfg('domain_field'),
+		      $self->cfg('transport_table')
+		      );
+
+    my @domains = ();
+
+    my $sth = $self->{_dbh}->prepare( $sql )
+	or die "Can't select account: ".$self->{_dbh}->errstr()."\n";
+
+    $sth->execute() or die "Can't select account: ".$self->{_dbh}->errstr()."\n";
+
+    my $res;
+    while (defined ($res = $sth->fetchrow_hashref)) {
+	push @domains, $res->{$self->cfg('domain_field')};
+    }
+
+    return @domains;
 }
 
 sub domain_exists
