@@ -10,10 +10,10 @@ requires:
     SOAP::Lite:                    0
     Socket:                        0
     Text::Template:                0
-    VUser::Extension:              0
-    VUser::ExtLib:                 0
-    VUser::Meta:                   0
-    VUser::ResultSet:              0
+    VUser::Extension:              0.2.0
+    VUser::ExtLib:                 0.2.0
+    VUser::Meta:                   0.2.0
+    VUser::ResultSet:              0.2.0
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.17
