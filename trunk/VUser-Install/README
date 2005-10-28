@@ -1,0 +1,5 @@
+VUser-Install is an extension to vuser that will manage diskless Linux
+installs from a local tree. See perldoc lib/VUser/Install.pm (or
+perldoc VUser::Install after installation) for the documentation.
+
+Note: The install-local script requires you run vsoapd on the master server.
