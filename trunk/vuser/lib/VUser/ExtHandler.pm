@@ -3,10 +3,10 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.33 2005-09-12 17:17:23 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.34 2005-10-28 04:27:29 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.33 $'))[1];
-our $VERSION = "0.1.0";
+our $REVISION = (split (' ', '$Revision: 1.34 $'))[1];
+our $VERSION = "0.2.0";
 
 use lib qw(..);
 use Getopt::Long;

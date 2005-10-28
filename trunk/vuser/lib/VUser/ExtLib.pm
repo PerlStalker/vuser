@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.13 2005-08-30 17:17:18 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.14 2005-10-28 04:27:29 perlstalker Exp $
 
-our $VERSION = "0.1.0";
+our $VERSION = "0.2.0";
 
 use Exporter;
 our @ISA = qw(Exporter);
