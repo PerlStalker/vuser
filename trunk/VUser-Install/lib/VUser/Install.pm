@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Install.pm,v 1.6 2005-10-13 17:04:38 perlstalker Exp $
+# $Id: Install.pm,v 1.7 2005-11-03 21:22:33 perlstalker Exp $
 
 use vars ('@ISA');
 
@@ -13,7 +13,7 @@ use VUser::ResultSet;
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = '0.1.0';
 
 my $c_sec = 'Extension_Install';
@@ -212,7 +212,7 @@ sub install_diskless
     my @dirs = qw(home dev proc tmp mnt mnt/.initd root
 		  var var/lib var/empty var/lock var/log var/log/news 
 		  var/run var/spool
-		  usr opt mfs
+		  usr opt mfs sys
 		  );
     foreach my $dir (@dirs) {
 	#run_dangerous("mkdir '$diskless/$service/$ip/$dir'");
