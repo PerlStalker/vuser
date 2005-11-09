@@ -6,10 +6,10 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.8 2005-11-09 20:25:02 stewatvireo Exp $
+# $Id: vuser,v 1.9 2005-11-09 20:49:12 stewatvireo Exp $
 
 use Pod::Usage;
-use Getopt::Long;
+use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
@@ -17,7 +17,7 @@ use VUser::ResultSet;
 use VUser::Meta;
 use VUser::ExtLib qw(strip_ws check_bool);
 
-our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
 our $VERSION = "0.2.0";
 
 our $DEBUG = 0;
