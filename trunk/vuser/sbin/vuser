@@ -6,7 +6,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.7 2005-10-28 04:27:32 perlstalker Exp $
+# $Id: vuser,v 1.8 2005-11-09 20:25:02 stewatvireo Exp $
 
 use Pod::Usage;
 use Getopt::Long;
@@ -17,7 +17,7 @@ use VUser::ResultSet;
 use VUser::Meta;
 use VUser::ExtLib qw(strip_ws check_bool);
 
-our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
 our $VERSION = "0.2.0";
 
 our $DEBUG = 0;
@@ -45,11 +45,20 @@ use lib (map { "$_/lib" } @etc_dirs);
 use VUser::ExtHandler;
 
 my $config_file;
-for my $etc_dir (@etc_dirs)
+my $result = GetOptions( "config=s" => \$config_file );                                                                                               
+
+if( defined $config_file )
 {
-    if (-e "$etc_dir/vuser.conf") {
-	$config_file = "$etc_dir/vuser.conf";
-	last;
+    die "FATAL: config fiile: $config_file not found" unless( -e $config_file );
+}
+else
+{
+    for my $etc_dir (@etc_dirs)
+    {
+	if (-e "$etc_dir/vuser.conf") {
+	    $config_file = "$etc_dir/vuser.conf";
+	    last;
+	}
     }
 }
 
