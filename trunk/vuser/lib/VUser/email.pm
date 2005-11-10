@@ -5,11 +5,11 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: email.pm,v 1.6 2005-10-28 04:27:29 perlstalker Exp $
+# $Id: email.pm,v 1.7 2005-11-10 16:38:05 stewatvireo Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = "0.2.0";
 
 use VUser::ExtLib qw( mkdir_p rm_r );
@@ -134,6 +134,15 @@ sub init
 
     $eh->register_action('email', 'listdomains');
     $eh->register_task('email', 'listdomains', \&list_domains, 0);
+
+    $eh->register_action('email', 'getquota');
+    $eh->register_task('email', 'getquota', \&get_quota, 0 );
+    $eh->register_option( 'email', 'getquota', 'account', '=s', 'required', 'Account name');
+
+    $eh->register_action('email', 'setquota');
+    $eh->register_task('email', 'setquota', \&set_quota, 0);
+    $eh->register_option( 'email', 'setquota', 'account', '=s', 'required', 'Account name');
+    $eh->register_option( 'email', 'setquota', 'quota', '=i', 'required', 'Quota');
 }
 
 sub get_home_directory
@@ -149,6 +158,14 @@ sub get_domain_directory
     my $cfg = shift;
     my $domain = shift;
     return eval( $cfg->{Extension_email}{domaindir} );
+}
+sub get_quotafile
+{
+    my $cfg = shift;
+    my $user = shift;
+    my $domain = shift;
+
+    return get_home_directory( $cfg, $user, $domain )."/Maildir/maildirsize";
 }
 
 sub split_address
@@ -376,6 +393,65 @@ sub generate_password
     }
     return $password;
 }
+
+sub get_quota
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $account = $opts->{account};
+    my $user;
+    my $domain;
+    
+    split_address( $cfg, $account, \$user, \$domain );
+    
+    die "account must be in form user\@domain" if( !$user );
+    die "account must be in form user\@domain" if( !$domain );
+
+    my $quotafile = get_quotafile( $cfg, $user, $domain );
+
+    my $size=0;
+    my $count=0;
+    my $result=0;
+
+    if( open( MAILDIRSIZE, "< $quotafile" ) )
+    {
+	<MAILDIRSIZE>;
+	while( <MAILDIRSIZE> )
+	{       
+	    ($size, $count) = split;
+	    $result += $size;                       
+	}
+    } 
+    else
+    {
+	die "unable to open maildirsize file: $quotafile";
+    }
+    
+    print $result."\n";
+}
+    
+sub set_quota
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $account = $opts->{account};
+    my $quota = $opts->{quota};
+    my $user;
+    my $domain;
+    
+    split_address( $cfg, $account, \$user, \$domain );
+    
+    die "account must be in form user\@domain" if( !$user );
+    die "account must be in form user\@domain" if( !$domain );
+
+    my $quotafile = get_quotafile( $cfg, $user, $domain );
+    
+    unlink $quotafile if -e $quotafile;
+    $driver->set_quota( $account, $quota );
+}
+    
 
 sub unload { }
 

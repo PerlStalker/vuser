@@ -2,8 +2,9 @@ package VUser::ExtLib;
 use warnings;
 use strict;
 
+
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.14 2005-10-28 04:27:29 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.15 2005-11-10 16:38:05 stewatvireo Exp $
 
 our $VERSION = "0.2.0";
 

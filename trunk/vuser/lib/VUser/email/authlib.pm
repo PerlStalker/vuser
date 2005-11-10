@@ -211,6 +211,21 @@ sub get_user_from_row
     $user->{ gid } = $row->{ $self->cfg( 'gid_field' ) };
 }
 
+sub set_quota
+{
+    my $self = shift;
+    my $account = $self->{_dbh}->quote(shift);
+    my $quota = shift; 
+    $quota = $self->{_dbh}->quote( $quota."S" );
+
+    my $sth = $self->{_dbh}->prepare( "update ".$self->cfg( 'user_table' ). " set "
+				      . $self->cfg( 'quota_field' )."=? where "
+				      . $self->cfg( 'login_field' )."=?" )
+
+	or die "Can't update quota: ".$self->{_dbh}->errstr()."\n";
+    
+    $sth->execute( $quota, $account ) or die "Can't update quota: ".$self->{_dbh}->errstr()."\n";
+}
 
 1;
 
