@@ -214,9 +214,9 @@ sub get_user_from_row
 sub set_quota
 {
     my $self = shift;
-    my $account = $self->{_dbh}->quote(shift);
+    my $account = shift;
     my $quota = shift; 
-    $quota = $self->{_dbh}->quote( $quota."S" );
+    $quota = $quota."S";
 
     my $sth = $self->{_dbh}->prepare( "update ".$self->cfg( 'user_table' ). " set "
 				      . $self->cfg( 'quota_field' )."=? where "
