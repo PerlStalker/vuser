@@ -3,10 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Syslog.pm,v 1.1 2005-11-17 00:04:35 perlstalker Exp $
+# $Id: Syslog.pm,v 1.2 2005-11-17 23:36:06 perlstalker Exp $
 
 our $VERSION = "0.2.0";
 
+use VUser::ExtLib qw(strip_ws);
 use VUser::Log qw(:levels);
 our @ISA = qw(VUser::Log);
 
@@ -14,14 +15,14 @@ use Sys::Syslog qw(:DEFAULT);
 
 my $c_sec = 'Log Syslog';
 
-my %prior_map = (LOG_EMERG => 'emerg',
-		 LOG_ALERT => 'alert',
-		 LOG_CRIT  => 'crit',
-		 LOG_ERR   => 'err',
-		 LOG_WARN  => 'warn',
-		 LOG_NOTICE => 'notice',
-		 LOG_INFO  => 'info',
-		 LOG_DEBUG => 'debug');
+my %prior_map = (LOG_EMERG() => 'emerg',
+		 LOG_ALERT() => 'alert',
+		 LOG_CRIT()  => 'crit',
+		 LOG_ERR()   => 'err',
+		 LOG_WARN()  => 'warn',
+		 LOG_NOTICE() => 'notice',
+		 LOG_INFO()  => 'info',
+		 LOG_DEBUG() => 'debug');
 
 sub init
 {
@@ -35,8 +36,6 @@ sub init
     $self->add_member('opts', $opts);
 
     openlog ($self->ident, $self->opts, $self->facility);
-
-    setlogmask(join('|', @proir_map{$self->level .. LOG_EMRGE}));
 }
 
 sub log
@@ -63,7 +62,9 @@ sub log
 
     @args = @_;
 
-    syslog ($prior_map{$priority}, $pattern, @args);
+    if ($priority >= $self->level) {
+	syslog ($prior_map{$priority}, $pattern, @args);
+    }
 }
 
 sub version { return $VERSION; }
@@ -72,7 +73,7 @@ sub DESTROY { closelog(); }
 
 1;
 
-_END_
+__END__
 
 =head1 NAME
 

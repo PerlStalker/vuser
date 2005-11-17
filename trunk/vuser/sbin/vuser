@@ -6,18 +6,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.10 2005-11-17 16:08:35 perlstalker Exp $
+# $Id: vuser,v 1.11 2005-11-17 23:36:06 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-use VUser::ResultSet;
-use VUser::Meta;
-use VUser::ExtLib qw(strip_ws check_bool);
-
-our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.11 $'))[1];
 our $VERSION = "0.2.0";
 
 our $DEBUG = 0;
@@ -43,6 +39,10 @@ use lib (map { "$_/extensions" } @etc_dirs);
 use lib (map { "$_/lib" } @etc_dirs);
 
 use VUser::ExtHandler;
+use VUser::ResultSet;
+use VUser::Meta;
+use VUser::ExtLib qw(strip_ws check_bool);
+use VUser::Log qw(:levels);
 
 my $config_file;
 my $result = GetOptions( "config=s" => \$config_file );
@@ -71,7 +71,10 @@ tie %cfg, 'Config::IniFiles', (-file => $config_file);
 
 $DEBUG = check_bool $cfg{'vuser'}{'debug'};
 
+our $log = VUser::Log->new(\%cfg, 'vuser');
 my $eh = new VUser::ExtHandler (\%cfg);
+
+$log->log(LOG_DEBUG, "Config loaded from $config_file");
 
 my $keyword = shift @ARGV || 'help';
 my $action = shift @ARGV;
@@ -86,6 +89,7 @@ if (defined $action
 $action = '' unless defined $action;
 
 # Ok. Now it's time to do the action.
+$log->log(LOG_NOTICE, "Running %s %s", $keyword, $action);
 my @rs;
 eval { @rs = $eh->run_tasks($keyword, $action, \%cfg); };
 warn $@ if $@;

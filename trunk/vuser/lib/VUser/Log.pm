@@ -3,8 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Log.pm,v 1.1 2005-11-17 00:04:35 perlstalker Exp $
+# $Id: Log.pm,v 1.2 2005-11-17 23:36:06 perlstalker Exp $
 
+use VUser::ExtLib qw(strip_ws);
 our $VERSION = "0.2.0";
 
 use Exporter;
@@ -18,7 +19,7 @@ our %EXPORT_TAGS = (
 				  LOG_WARN LOG_NOTICE LOG_INFO LOG_DEBUG)]
 		    );
 
-sub LOG_EMRGE  { 8 }
+sub LOG_EMERG  { 8 }
 sub LOG_ALERT  { 7 }
 sub LOG_CRIT   { 6 }
 sub LOG_ERR    { 5 }
@@ -40,11 +41,14 @@ sub new
 		'level' => LOG_NOTICE
 		};
 
-    if ($cfg->{'vuser'}{'log type'} eq 'Syslog') {
-	require VUser::Log::Syslog;
-	$self = VUser::Log::Syslog->new($cfg);
-    } else {
+    my $log_type = strip_ws($cfg->{'vuser'}{'log type'});
+    if ($log_type eq 'stderr') {
 	bless $self, $class;
+    } else {
+	# Try to load a previously unknown log module.
+	eval "require VUser::Log::$log_type;";
+	die "Unable to load logging module $log_type: $@\n" if $@;
+	bless $self, "VUser::Log::$log_type";
     }
 
     my $level = lc(strip_ws($cfg->{'vuser'}{'log level'}));
