@@ -6,7 +6,7 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.9 2005-11-09 20:49:12 stewatvireo Exp $
+# $Id: vuser,v 1.10 2005-11-17 16:08:35 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
@@ -17,7 +17,7 @@ use VUser::ResultSet;
 use VUser::Meta;
 use VUser::ExtLib qw(strip_ws check_bool);
 
-our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.10 $'))[1];
 our $VERSION = "0.2.0";
 
 our $DEBUG = 0;
@@ -45,11 +45,11 @@ use lib (map { "$_/lib" } @etc_dirs);
 use VUser::ExtHandler;
 
 my $config_file;
-my $result = GetOptions( "config=s" => \$config_file );                                                                                               
+my $result = GetOptions( "config=s" => \$config_file );
 
 if( defined $config_file )
 {
-    die "FATAL: config fiile: $config_file not found" unless( -e $config_file );
+    die "FATAL: config file: $config_file not found" unless( -e $config_file );
 }
 else
 {
@@ -132,9 +132,11 @@ vuser - Virtual user management utility
 
 =head1 SYNOPSIS
 
-vuser module action [options]
+vuser [--config=/path/to/vuser.conf] module action [options]
 
 =head1 OPTIONS
+
+See 'vuser help module' for a list of actions and options.
 
 =head1 DESCRIPTION
 

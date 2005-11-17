@@ -10,15 +10,15 @@ use strict;
 use SOAP::Lite;
 
 # Copyright 2005 Mark Bucciarelli
-# $Id: vsoapd,v 1.8 2005-10-28 04:27:32 perlstalker Exp $
+# $Id: vsoapd,v 1.9 2005-11-17 16:08:35 perlstalker Exp $
 
 use Pod::Usage;
-use Getopt::Long;
+use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 use SOAP::Transport::HTTP;
 
-our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
 our $VERSION = "0.2.0";
 
 our $DEBUG = 0;
@@ -58,11 +58,20 @@ foreach my $name (split(' ', $Config{sig_name})) {
 }
 
 my $config_file;
-for my $etc_dir (@etc_dirs)
+my $result = GetOptions( "config=s" => \$config_file );
+
+if( defined $config_file )
 {
-    if (-e "$etc_dir/vuser.conf") {
-	$config_file = "$etc_dir/vuser.conf";
-	last;
+    die "FATAL: config file: $config_file not found" unless( -e $config_file );
+}
+else
+{
+    for my $etc_dir (@etc_dirs)
+    {
+	if (-e "$etc_dir/vuser.conf") {
+	    $config_file = "$etc_dir/vuser.conf";
+	    last;
+	}
     }
 }
 
@@ -180,7 +189,7 @@ vsoapd - vuser SOAP daemon.
 
 =head1 SYNOPSIS
 
-vsoapd [start|restart|stop]
+vsoapd [--config=/path/to/vuser.conf] [start|restart|stop]
 
 =head1 OPTIONS
 
