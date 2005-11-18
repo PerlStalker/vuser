@@ -6,14 +6,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.11 2005-11-17 23:36:06 perlstalker Exp $
+# $Id: vuser,v 1.12 2005-11-18 21:18:22 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.11 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.12 $'))[1];
 our $VERSION = "0.2.0";
 
 our $DEBUG = 0;
@@ -112,7 +112,7 @@ if (check_bool($cfg{'vuser'}{'show result set'}) and @rs) {
 		for (my $i = 0; $i < @meta; $i++) {
 		    printf("%s: %s\n",
 			   $meta[$i]->name,
-			   $row->[$i]);
+			   defined $row->[$i]? $row->[$i] : 'undef');
 		}
 	    }
 	}
