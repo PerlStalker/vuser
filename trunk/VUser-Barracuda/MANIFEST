@@ -1,0 +1,6 @@
+COPYING
+INSTALL
+Makefile.PL
+README
+lib/VUser/Barracuda.pm
+META.yml                                 Module meta-data (added by MakeMaker)

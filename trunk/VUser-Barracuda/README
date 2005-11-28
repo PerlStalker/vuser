@@ -1,0 +1,17 @@
+$Id: README,v 1.1 2005-11-28 21:18:39 perlstalker Exp $
+
+VUser-Barracuda is an extension to vuser to mange the Barracuda Spam Firewall
+from Barracuda Networks. This extension works through the API documented at
+http://www.barracudanetworks.com/ns/downloads/barracuda_API_v3.pdf.
+
+TODO
+
+The following is a list of things that need to be done.
+
+* Add support for adding users
+* Fix list_users and list for config_get.cgi
+* Generalize XML parsing. This would probably help fix list_users and list.
+
+AUTHOR
+
+Randy Smith <perlstalker@vuser.org>
