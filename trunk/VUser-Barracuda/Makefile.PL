@@ -1,19 +1,19 @@
 #!/usr/bin/perl
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Makefile.PL,v 1.1 2005-11-28 21:18:39 perlstalker Exp $
+# $Id: Makefile.PL,v 1.2 2005-11-29 16:57:41 perlstalker Exp $
 
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
 	      NAME            => 'VUser-Barracuda',
 	      VERSION_FROM    => 'lib/VUser/Barracuda.pm',
-	      INSTALLSCRIPT   => '$(PREFIX)/sbin',
+#	      INSTALLSCRIPT   => '$(PREFIX)/sbin',
 	      PREREQ_PM       => {'Config::IniFiles' => 0,
-				  'VUser::ExtLib'    => 0.2.0,
-				  'VUser::Meta'      => 0.2.0,
-				  'VUser::ResultSet' => 0.2.0,
-				  'VUser::Extension' => 0.2.0,
+				  'VUser::ExtLib'    => '0.2.0',
+				  'VUser::Meta'      => '0.2.0',
+				  'VUser::ResultSet' => '0.2.0',
+				  'VUser::Extension' => '0.2.0',
 				  'XML::Parser'      => 0,
 				  'LWP::Simple'      => 0
 				  }
