@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Syslog.pm,v 1.2 2005-11-17 23:36:06 perlstalker Exp $
+# $Id: Syslog.pm,v 1.3 2005-11-29 20:45:07 perlstalker Exp $
 
 our $VERSION = "0.2.0";
 
@@ -38,33 +38,12 @@ sub init
     openlog ($self->ident, $self->opts, $self->facility);
 }
 
-sub log
+sub write_msg
 {
     my $self = shift;
+    my ($level, $msg) = @_;
 
-    my $priority = LOG_NOTICE;
-    my $pattern = '%s';
-    my @args = ();
-    
-    if (scalar @_ == 0) {
-	warn "No log message";
-	return;
-    } elsif (scalar @_ == 1) {
-    } elsif (scalar @_ == 2) {
-	$priority = shift;
-    } else {
-	$priority = shift;
-	$pattern = shift;
-    }
-
-    # Remove trailing newline from pattern. We'll add that later.
-    $pattern =~ s/(\\n|\n)$//;
-
-    @args = @_;
-
-    if ($priority >= $self->level) {
-	syslog ($prior_map{$priority}, $pattern, @args);
-    }
+    syslog ($prior_map{$level}, '%s', $msg);
 }
 
 sub version { return $VERSION; }

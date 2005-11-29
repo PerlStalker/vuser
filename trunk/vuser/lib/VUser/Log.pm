@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Log.pm,v 1.2 2005-11-17 23:36:06 perlstalker Exp $
+# $Id: Log.pm,v 1.3 2005-11-29 20:45:07 perlstalker Exp $
 
 use VUser::ExtLib qw(strip_ws);
 our $VERSION = "0.2.0";
@@ -99,9 +99,17 @@ sub log
     @args = @_;
 
     if ($priority >= $self->level) {
-	print STDERR sprintf ('%s: %s: ', $self->ident, $levels[$priority]);
-	print STDERR sprintf ($pattern."\n", @args);
+	$self->write_msg($priority, sprintf($pattern, @args));
     }
+}
+
+sub write_msg
+{
+    my $self = shift;
+    my ($level, $msg) = @_;
+
+    print STDERR sprintf ('%s: %s: ', $self->ident, $levels[$level]);
+    print STDERR ($msg, "\n");
 }
 
 sub add_member
@@ -153,6 +161,56 @@ VUser::Log - Logging support for vuser
 
 =head1 DESCRIPTION
 
+Generic logging module for vuser.
+
+=head2 Logging
+
+When you decided that it's time to log some info you call the VUser::Log
+object's log() method. log() can be called in one of three ways.
+
+=over 4
+
+=item 1
+
+ $log->log($level, $pattern, @args);
+
+$level is the log level to use. You can import the LOG_* constants into
+your namespace with C<use VUser::Log qw(:levels);>.
+
+$pattern is a formatting pattern as used by printf().
+
+@args are the value for any placeholders in $pattern.
+
+=item 2
+
+ $log->log($level, $message);
+
+You can omit the pattern and simply pass a text string to log.
+
+=item 3
+
+ $log->log($message);
+
+You can even omit the log level and the message will be logged with a level
+of LOG_NOTICE.
+
+=back
+
+=head2 Use in Extensions
+
+Extensions do not need to create a new VUser::Log object. You can simply
+use $main::log or do something like this:
+
+ my $log;
+ sub init
+ {
+     ...
+     $log = $main::log;
+     ...
+ }
+
+After that, you can use $log anywhere in your extension.
+
 =head1 CONFIGURATION
 
  [vuser]
@@ -161,6 +219,28 @@ VUser::Log - Logging support for vuser
  log level = notice
 
 B<Note:> Each log module will have it's own configuration.
+
+=head1 LOGGING MODULES
+
+VUser::Log uses subclasses to do the actual logging.
+
+=head2 REQUIRED METHODS
+
+Subclasses of VUser::Log must override, at least, these methods.
+
+=over 4
+
+=item init
+
+Any module specific initialization should be done here. init() takes only
+one argument, a reference to the config hash created by Config::IniFiles.
+
+=item write_msg
+
+This method will do the actual writting of the log messages. It takes two
+parameters, the log level and the message.
+
+=back
 
 =head1 AUTHORS
 
