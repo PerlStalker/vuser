@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.34 2005-10-28 04:27:29 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.35 2005-11-29 20:57:37 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.34 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.35 $'))[1];
 our $VERSION = "0.2.0";
 
 use lib qw(..);
@@ -262,6 +262,18 @@ sub get_keywords
     my $self = shift;
 
     return sort keys %{ $self->{keywords}};
+}
+
+sub is_keyword
+{
+    my $self = shift;
+    my $keyword = shift;
+
+    if (defined $self->{keywords}{$keyword}) {
+	return 1;
+    } else {
+	return 0;
+    }
 }
 
 sub get_actions
