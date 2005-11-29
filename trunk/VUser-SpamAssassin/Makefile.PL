@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Makefile.PL,v 1.1 2005-11-29 16:28:03 perlstalker Exp $
+# $Id: Makefile.PL,v 1.2 2005-11-29 16:52:13 perlstalker Exp $
 
 use ExtUtils::MakeMaker;
 
@@ -10,10 +10,10 @@ WriteMakefile(
 	      VERSION_FROM    => 'lib/VUser/SpamAssassin.pm',
 #	      INSTALLSCRIPT   => '$(PREFIX)/sbin',
 	      PREREQ_PM       => {'Config::IniFiles' => 0,
-				  'VUser::ExtLib'    => 0.2.0,
-				  'VUser::Meta'      => 0.2.0,
-				  'VUser::ResultSet' => 0.2.0,
-				  'VUser::Extension' => 0.2.0,
+				  'VUser::ExtLib'    => '0.2.0',
+				  'VUser::Meta'      => '0.2.0',
+				  'VUser::ResultSet' => '0.2.0',
+				  'VUser::Extension' => '0.2.0',
 				  'DBI'              => 0
 				  }
 	      );

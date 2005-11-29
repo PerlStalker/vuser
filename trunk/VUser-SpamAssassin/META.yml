@@ -11,5 +11,6 @@ requires:
     VUser::ExtLib:                 0.2.0
     VUser::Meta:                   0.2.0
     VUser::ResultSet:              0.2.0
+
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.17
