@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: Prefs.pm,v 1.1 2005-11-29 21:02:52 perlstalker Exp $
+# $Id: Prefs.pm,v 1.2 2005-12-01 18:53:23 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = "0.1.0";
 
 use VUser::Meta;
@@ -196,9 +196,36 @@ It is assumed that this module will be used primarily when using a database
 to store SquirrelMail settings. File based configuration is not supported
 at this time but will probably be added at some point in the future.
 
+=head1 CONFIGURATION
+
+ [vuser]
+ extensions = SquirrelMail::Prefs
+
+ [Extension SquirrelMail::Prefs]
+ # Can be mysql, pgsql, none
+ db type = mysql
+ 
+ # Host where the DB is
+ db host = localhost
+ 
+ # The name of the squirrelmail database
+ db name = squirrelmail
+ 
+ # The name of the preferences table
+ prefs table = userprefs
+ 
+ # Username and password for the database.
+ # Note: This user required select, insert, update and delete perms on the
+ # SquirrelMail userprefs table.
+ db user = squirrelmail
+ db password = secret
+ 
+ # Location of SquirrelMail data files
+ data dir = /usr/local/squirrelmail/data
+
 =head1 AUTHOR
 
-Randy Smith <perlstalker@gmail.com>
+Randy Smith <perlstalker@vuser.org>
 
 =head1 LICENSE
  
