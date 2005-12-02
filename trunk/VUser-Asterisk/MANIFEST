@@ -1,0 +1,9 @@
+COPYING
+INSTALL
+Makefile.PL
+MANIFEST
+META.yml
+README
+lib/VUser/Asterisk.pm
+lib/VUser/Asterisk/mysql.pm
+lib/VUser/Asterisk/Simple.pm
