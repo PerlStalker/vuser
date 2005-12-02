@@ -7,9 +7,6 @@ cgi/templates/tasks.html
 COPYING
 INSTALL
 lib/VUser/ACL.pm
-lib/VUser/asterisk.pm
-lib/VUser/asterisk/mysql.pm
-lib/VUser/asterisk/simple.pm
 lib/VUser/Auth/SQLite.pm
 lib/VUser/bind.pm
 lib/VUser/bind/namedparser.pm
@@ -18,10 +15,11 @@ lib/VUser/CORE.pm
 lib/VUser/Extension.pm
 lib/VUser/ExtHandler.pm
 lib/VUser/ExtLib.pm
+lib/VUser/Log.pm
+lib/VUser/Log/Syslog.pm
 lib/VUser/Meta.pm
 lib/VUser/ResultSet.pm
 lib/VUser/SOAP.pm
-lib/VUser/spamassassin.pm
 lib/VUser/Test.pm
 lib/VUser/Widget.pm
 lib/VUser/email.pm
