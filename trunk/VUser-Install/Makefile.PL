@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Copyright 2005 Randy Smith <perlstalker@gmail.com>
-# $Id: Makefile.PL,v 1.2 2005-10-28 04:35:31 perlstalker Exp $
+# $Id: Makefile.PL,v 1.3 2005-12-02 20:27:44 perlstalker Exp $
 
 use ExtUtils::MakeMaker;
 
@@ -11,10 +11,10 @@ WriteMakefile(
 	      EXE_FILES       => [qw[sbin/install-local]],
 	      INSTALLSCRIPT   => '$(PREFIX)/sbin',
 	      PREREQ_PM       => {'Config::IniFiles' => 0,
-				  'VUser::ExtLib'    => 0.2.0,
-				  'VUser::Meta'      => 0.2.0,
-				  'VUser::ResultSet' => 0.2.0,
-				  'VUser::Extension' => 0.2.0,
+				  'VUser::ExtLib'    => '0.2.0',
+				  'VUser::Meta'      => '0.2.0',
+				  'VUser::ResultSet' => '0.2.0',
+				  'VUser::Extension' => '0.2.0',
 				  'Socket'           => 0,
 				  'Cwd'              => 0,
 				  'Text::Template'   => 0,
