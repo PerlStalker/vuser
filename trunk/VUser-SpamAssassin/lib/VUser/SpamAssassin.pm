@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: SpamAssassin.pm,v 1.1 2005-11-29 16:28:03 perlstalker Exp $
+# $Id: SpamAssassin.pm,v 1.2 2005-12-05 23:58:54 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = "0.2.1";
 
 use VUser::Meta;
@@ -117,7 +117,7 @@ sub init
     }
 
     # SA
-    $eh->register_keyword('sa');
+    $eh->register_keyword('sa', 'Manage SpamAssassin settings');
     
     # SA-delall: Delete all options for a user.
     $eh->register_action('sa', 'delall');
