@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: SpamAssassin.pm,v 1.3 2005-12-06 16:28:27 perlstalker Exp $
+# $Id: SpamAssassin.pm,v 1.4 2005-12-06 17:52:33 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = "0.2.1";
 
 use VUser::Meta;
@@ -121,7 +121,7 @@ sub init
     
     # SA-delall: Delete all options for a user.
     $eh->register_action('sa', 'delall');
-    $eh->register_option('sa','delall', $meta{'username'}, 1);
+    $eh->register_option('sa', 'delall', $meta{'username'}, 1);
     $eh->register_task('sa', 'delall', \&sa_delall);
 
     # SA-add: add an option for a user.
@@ -141,11 +141,11 @@ sub init
 					  type => 'boolean',
 					  description => 'Delete the option')
 			 );
-    $eh->register_option('sa', 'mod', \&sa_mod);
+    $eh->register_task('sa', 'mod', \&sa_mod);
 
     # SA-mod: delete an option for a user.
     $eh->register_action('sa', 'del');
-    $eh->register_option('sa',' del', $meta{'username'}, 1);
+    $eh->register_option('sa', 'del', $meta{'username'}, 1);
     $eh->register_option('sa', 'del', $meta{'option'}, 1);
     $eh->register_task('sa', 'del', \&sa_del);
 
