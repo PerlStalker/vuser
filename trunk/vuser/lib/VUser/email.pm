@@ -5,11 +5,11 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: email.pm,v 1.7 2005-11-10 16:38:05 stewatvireo Exp $
+# $Id: email.pm,v 1.8 2005-12-06 17:56:48 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
 our $VERSION = "0.2.0";
 
 use VUser::ExtLib qw( mkdir_p rm_r );
@@ -102,8 +102,8 @@ sub init
     $eh->register_task('config', 'sample', \&config_sample);
 
 #     email
-    $eh->register_keyword('email');
-    $eh->register_action('email', 'add');
+    $eh->register_keyword('email', 'Manage email accounts');
+    $eh->register_action('email', 'add', 'Add email account');
     $eh->register_task('email', 'add', \&email_add, 0);
     $eh->register_option('email', 'add', 'account', '=s', "required" );
     $eh->register_option('email', 'add', 'password', '=s', "required", "Account password" );
@@ -116,30 +116,30 @@ sub init
     $eh->register_option('email', 'mod', 'name', '=s', 0, "Real name" );
     $eh->register_option('email', 'mod', 'newaccount', '=s', 0, "New Account name");
 
-    $eh->register_action('email', 'del');
+    $eh->register_action('email', 'del', 'Delete email account');
     $eh->register_task('email', 'del', \&email_del, 0);
     $eh->register_option('email', 'del', 'account', '=s', "required" );
     
-    $eh->register_action('email', 'info');
+    $eh->register_action('email', 'info', 'Get account information');
     $eh->register_task('email', 'info', \&email_info, 0);
     $eh->register_option('email', 'info', 'account', '=s', "required" );
 
-    $eh->register_action('email', 'adddomain');
+    $eh->register_action('email', 'adddomain', 'Add a domain');
     $eh->register_task('email', 'adddomain', \&domain_add, 0);
     $eh->register_option( 'email', 'adddomain', 'domain', '=s', 'required' );
 
-    $eh->register_action('email', 'deldomain');
+    $eh->register_action('email', 'deldomain', 'Delete a domain');
     $eh->register_task('email', 'deldomain', \&domain_del, 0);
     $eh->register_option( 'email', 'deldomain', 'domain', '=s', 'required' );
 
-    $eh->register_action('email', 'listdomains');
+    $eh->register_action('email', 'listdomains', 'List domains on the server (not implemented)');
     $eh->register_task('email', 'listdomains', \&list_domains, 0);
 
-    $eh->register_action('email', 'getquota');
+    $eh->register_action('email', 'getquota', 'Get the account\'s quota');
     $eh->register_task('email', 'getquota', \&get_quota, 0 );
     $eh->register_option( 'email', 'getquota', 'account', '=s', 'required', 'Account name');
 
-    $eh->register_action('email', 'setquota');
+    $eh->register_action('email', 'setquota', 'Set the account\'s quota');
     $eh->register_task('email', 'setquota', \&set_quota, 0);
     $eh->register_option( 'email', 'setquota', 'account', '=s', 'required', 'Account name');
     $eh->register_option( 'email', 'setquota', 'quota', '=i', 'required', 'Quota');
