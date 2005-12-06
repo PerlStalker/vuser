@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: Prefs.pm,v 1.3 2005-12-06 20:39:25 perlstalker Exp $
+# $Id: Prefs.pm,v 1.4 2005-12-06 23:44:20 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
 our $VERSION = "0.1.1";
 
 use VUser::Meta;
@@ -91,7 +91,7 @@ sub init
 	    $dsn .= "$db_name";
 	}
 	my $user = VUser::ExtLib::strip_ws($cfg{$csec}{'db user'});
-	my $pass = VUser::ExtLib::strip_ws($cfg{$csec}{'db pass'});
+	my $pass = VUser::ExtLib::strip_ws($cfg{$csec}{'db password'});
 	$dbh = DBI->connect ($dsn, $user, $pass,
 			     { RaiseError => 1, AutoCommit => 0})
 	    or die "Database error: ".DBI->errstr;
@@ -171,7 +171,50 @@ sub smprefs_mod
     return undef;
 }
 
-sub smprefs_show{}
+sub smprefs_show
+{
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $user = $opts->{username} if defined $opts->{username};
+    my $option = $opts->{option} if defined $opts->{option};
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($meta{'username'});
+    $rs->add_meta($meta{'option'});
+    $rs->add_meta($meta{'value'});
+
+    if (defined $dbh) {
+	my $table = VUser::ExtLib::strip_ws($cfg->{$csec}{'prefs table'});
+	my $sql = "select user,prefkey, prefval from $table";
+
+	my @params = ();
+	if (defined $user and defined $option) {
+	    $sql .= " where user = ? and prefkey = ?";
+	    @params = ($user, $option);
+	} elsif (not defined $option) {
+	    $sql .= " where user = ?";
+	    @params = ($user);
+	} elsif (not defined $user) {
+	    $sql .= " where prefkey = ?";
+	    @params = ($option);
+	}
+
+	my $sth = $dbh->prepare($sql)
+	    or die "Database error: ".$dbh->errstr."\n";
+	$sth->execute(@params)
+	    or die "Database error: ".$sth->errstr."\n";
+
+	my @res;
+	while (@res = $sth->fetchrow_array) {
+	    $rs->add_data([@res]);
+	}
+    } else {
+	# File based...
+    }
+
+    return $rs;
+}
+
 sub smprefs_del{}
 
 sub smprefs_delall
@@ -189,9 +232,7 @@ sub smprefs_delall
 	my $sql = "delete from $table where user = ?";
 	my $sth = $dbh->prepare($sql)
 	    or die "Database error: ".$dbh->errstr."\n";
-	$sth->execute($opts->{username},
-		      $opts->{option},
-		      $opts->{value})
+	$sth->execute($opts->{username})
 	    or die "Database error: ".$sth->errstr."\n";
     } else {
 	# File-based here
