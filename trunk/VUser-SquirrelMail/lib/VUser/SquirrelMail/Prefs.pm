@@ -3,12 +3,12 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: Prefs.pm,v 1.2 2005-12-01 18:53:23 perlstalker Exp $
+# $Id: Prefs.pm,v 1.3 2005-12-06 20:39:25 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
-our $VERSION = "0.1.0";
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
+our $VERSION = "0.1.1";
 
 use VUser::Meta;
 use VUser::ResultSet;
@@ -17,7 +17,7 @@ push @ISA, 'VUser::Extension';
 
 my $csec = 'Extension SquirrelMail::Prefs'; # config section
 
-my $db = undef;
+my $dbh = undef;
 
 my %meta = ('username' => VUser::Meta->new(name => 'username',
 					   type => 'string',
@@ -88,7 +88,7 @@ sub init
 	    $dsn .= ";host=$db_host" if $db_host;
 	} else {
 	    # Semi-reasonable default if we don't know what the DB is.
-	    $dns .= "$db_name";
+	    $dsn .= "$db_name";
 	}
 	my $user = VUser::ExtLib::strip_ws($cfg{$csec}{'db user'});
 	my $pass = VUser::ExtLib::strip_ws($cfg{$csec}{'db pass'});
@@ -127,7 +127,7 @@ sub init
 
     # delall: Delete all options
     $eh->register_action('smprefs', 'delall', 'Delete all options for a user');
-    $sh->register_option('smprefs', 'delall', $meta{'username'}, 1);
+    $eh->register_option('smprefs', 'delall', $meta{'username'}, 1);
     $eh->register_task('smprefs', 'delall', \&smprefs_delall);
 
     # Email
@@ -137,6 +137,8 @@ sub init
     $eh->register_task('email', 'del', \&smprefs_delall);
 }
 
+sub unload {}
+
 sub smprefs_add
 {
     my ($cfg, $opts, $action, $eh) = @_;
@@ -144,11 +146,11 @@ sub smprefs_add
     if (defined $dbh) {
 	my $table = VUser::ExtLib::strip_ws($cfg->{$csec}{'prefs table'});
 	my $sql = "Insert into $table set user = ?, prefkey = ?, prefval = ?";
-	my $sth = $dbs{scores}->prepare($sql)
+	my $sth = $dbh->prepare($sql)
 	    or die "Database error: ".$dbh->errstr."\n";
 	$sth->execute($opts->{username},
 		      $opts->{option},
-		      $opts->{value});
+		      $opts->{value})
 	    or die "Database error: ".$sth->errstr."\n";
     } else {
 	# File-based here
@@ -181,7 +183,22 @@ sub smprefs_delall
 
     # The email extension uses 'account' instead of 'username'
     $user = $opts->{account} if not $user;
+
+    if (defined $dbh) {
+	my $table = VUser::ExtLib::strip_ws($cfg->{$csec}{'prefs table'});
+	my $sql = "delete from $table where user = ?";
+	my $sth = $dbh->prepare($sql)
+	    or die "Database error: ".$dbh->errstr."\n";
+	$sth->execute($opts->{username},
+		      $opts->{option},
+		      $opts->{value})
+	    or die "Database error: ".$sth->errstr."\n";
+    } else {
+	# File-based here
+    }
+    return undef;
 }
+
 1;
 
 __END__
