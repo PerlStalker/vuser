@@ -1,7 +1,7 @@
 package VUser::email::postfix;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
-# $Id: postfix.pm,v 1.6 2005-11-10 16:38:05 stewatvireo Exp $
+# $Id: postfix.pm,v 1.7 2005-12-06 17:00:45 perlstalker Exp $
 
 use warnings;
 use strict;
@@ -9,7 +9,7 @@ use Pod::Usage;
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = "0.2.0";
 
 use VUser::email::authlib;
@@ -160,7 +160,7 @@ sub rename_user
 sub set_quota
 {
     my $self = shift;
-    my $account = shift
+    my $account = shift;
     my $quota = shift; 
 
     $self->{_authlib}->set_quota($account, $quota);
