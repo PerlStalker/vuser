@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.35 2005-11-29 20:57:37 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.36 2005-12-06 17:53:18 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.35 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.36 $'))[1];
 our $VERSION = "0.2.0";
 
 use lib qw(..);
@@ -96,6 +96,8 @@ sub register_option
 	my $descr = shift;
 	my $widget = shift;     # Widget class (Optional)
 
+	print STDERR "Reg option for $keyword|$action: $option\n" if $main::DEBUG;
+
 	if ($self->{$keyword}{'_meta'}{$option}) {
 	    $meta = $self->{$keyword}{'_meta'}{$option};
 	} else {
@@ -131,11 +133,14 @@ sub register_option
 				    );
 	}
 
-    } elsif ($option->isa('VUser::Meta')) {
+    } elsif (UNIVERSAL::isa($option, 'VUser::Meta')) {
 	$meta = $option;
 	$required = shift;
     } else {
-	die "Option was not a VUser::Meta\n";
+	if ($main::DEBUG) {
+	    use Data::Dumper; print Dumper $option;
+	}
+	die "Option on $keyword|$action was not a VUser::Meta\n";
     }
 
     print STDERR "Reg Opt: $keyword|$action ".$meta->name." ".$meta->type." ", $required?'Req':'',"\n" if $main::DEBUG >= 2;

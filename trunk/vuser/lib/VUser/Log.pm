@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Log.pm,v 1.3 2005-11-29 20:45:07 perlstalker Exp $
+# $Id: Log.pm,v 1.4 2005-12-06 17:53:18 perlstalker Exp $
 
 use VUser::ExtLib qw(strip_ws);
 our $VERSION = "0.2.0";
@@ -42,7 +42,9 @@ sub new
 		};
 
     my $log_type = strip_ws($cfg->{'vuser'}{'log type'});
-    if ($log_type eq 'stderr') {
+    if (not defined $log_type
+	or $log_type eq 'stderr'
+	or $log_type eq '') {
 	bless $self, $class;
     } else {
 	# Try to load a previously unknown log module.
