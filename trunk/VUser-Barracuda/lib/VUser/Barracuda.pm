@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Barracuda.pm,v 1.1 2005-11-28 21:18:39 perlstalker Exp $
+# $Id: Barracuda.pm,v 1.2 2005-12-08 18:26:54 perlstalker Exp $
 
 use vars ('@ISA');
 
@@ -14,7 +14,7 @@ use VUser::ResultSet;
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = '0.1.0';
 
 use LWP::Simple;
@@ -330,7 +330,7 @@ sub do_command
     # Strip off the leading '&' I just added.
     # Ok, this is probably stupid and could be handled better in the
     # loop above. Oh, well.
-    $query = substr $query, 1;
+    $query = substr ($query, 1) if $query;
 
     my $parser = new XML::Parser(Style => 'Tree');
 
@@ -343,11 +343,11 @@ sub do_command
 	my $xml = get($clean_host.'/'.$uri.'?'.$query);
 	my $tree = $parser->parse($xml);
 
-	#use Data::Dumper; print Dumper $tree;
+	# use Data::Dumper; print Dumper $tree;
 
 	# Now it's time to rip the data out of the tree.
 	# Check for errors
-	if ($tree->[1][1] eq 'Error') {
+	if ($tree->[1][3] eq 'Error') {
 	    my $code = 200;
 	    my $string;
 	    my $branch = $tree->[1][4];
@@ -359,8 +359,10 @@ sub do_command
 		}
 	    }
 	    # Do something with the error code and string.
-	    $log->log(LOG_NOTICE, "Error doing %s on %s: %d %s",
-		      $cmd, $host, $code, $string);
+	    my $error = sprintf("Error doing %s on %s: %d %s",
+				$cmd, $host, $code, $string);
+	    $log->log(LOG_NOTICE, $error);
+	    die "$error\n";
 	} else  {
 	    #use Data::Dumper; print Dumper $tree;
 	    my @results = parse_tree($tree->[1]);
@@ -423,6 +425,24 @@ XML::Parser
 =head1 DESCRIPTION
 
 Manage users and domains on a Barracuda Spam Firewall.
+
+=head1 CONFIGURATION
+
+ [vuser]
+ extensions = Barracuda
+
+ [Extension_Barracuda]
+ # Space separated list of barracuda's to manage
+ hosts = http://your-fish.com:8000/
+
+ # Turn these on if you want vuser to manage users and domains
+ # on the barracuda hosts when users and domains are managed.
+ # (This is handled through the 'email' keyword.)
+ manage users = yes
+ manage domains = yes
+
+ # Reload the barracuda(s) automatically on changes. 
+ auto-reload = yes
 
 =head1 DEVELOPMENT NOTES
 
