@@ -25,6 +25,14 @@
 # can be useful for creating a module that consists of many directories
 # spread out over the entire source repository.
 
-vuser-ng -a vuser
+vuser vuser
+vuser-ng vuser
+vuser-old vuser-old
 VUser-Install VUser-Install
-VUser::Install -a VUser-Install
+VUser-Asterisk VUser-Asterisk
+VUser-Barracuda VUser-Barracuda
+VUser-Bind VUser-Bind
+VUser-Email VUser-Email
+VUser-Install VUser-Install
+VUser-SpamAssassin VUser-SpamAssassin
+VUser-SquirrelMail VUser-SquirrelMail
