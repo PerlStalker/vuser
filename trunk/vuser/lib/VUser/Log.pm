@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Log.pm,v 1.4 2005-12-06 17:53:18 perlstalker Exp $
+# $Id: Log.pm,v 1.5 2005-12-13 23:02:07 perlstalker Exp $
 
 use VUser::ExtLib qw(strip_ws);
 our $VERSION = "0.2.0";
@@ -36,12 +36,13 @@ sub new
     my $class = shift;
     my $cfg = shift;
     my $ident = shift;
+    my $config_sec = shift || 'vuser';
 
     my $self = {'ident' => 'vuser',
 		'level' => LOG_NOTICE
 		};
 
-    my $log_type = strip_ws($cfg->{'vuser'}{'log type'});
+    my $log_type = strip_ws($cfg->{$config_sec}{'log type'});
     if (not defined $log_type
 	or $log_type eq 'stderr'
 	or $log_type eq '') {
@@ -53,7 +54,7 @@ sub new
 	bless $self, "VUser::Log::$log_type";
     }
 
-    my $level = lc(strip_ws($cfg->{'vuser'}{'log level'}));
+    my $level = lc(strip_ws($cfg->{$config_sec}{'log level'}));
     if    ($level eq 'emerg') { $self->level(LOG_EMERG); }
     elsif ($level eq 'alert') { $self->level(LOG_ALERT); }
     elsif ($level eq 'crit')  { $self->level(LOG_CRIT); }
