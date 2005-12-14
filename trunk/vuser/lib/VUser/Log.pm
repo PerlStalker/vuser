@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Log.pm,v 1.5 2005-12-13 23:02:07 perlstalker Exp $
+# $Id: Log.pm,v 1.6 2005-12-14 16:29:53 perlstalker Exp $
 
 use VUser::ExtLib qw(strip_ws);
 our $VERSION = "0.2.0";
@@ -12,17 +12,19 @@ use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = ();
 our @EXPORT_OK = qw(LOG_EMERG LOG_ALERT LOG_CRIT LOG_ERR LOG_WARN
-		    LOG_NOTICE LOG_INFO LOG_DEBUG
+		    LOG_NOTICE LOG_INFO LOG_DEBUG LOG_ERROR
 		    );
 our %EXPORT_TAGS = (
 		    levels => [qw(LOG_EMERG LOG_ALERT LOG_CRIT LOG_ERR
-				  LOG_WARN LOG_NOTICE LOG_INFO LOG_DEBUG)]
+				  LOG_WARN LOG_NOTICE LOG_INFO LOG_DEBUG
+				  LOG_ERROR)]
 		    );
 
 sub LOG_EMERG  { 8 }
 sub LOG_ALERT  { 7 }
 sub LOG_CRIT   { 6 }
 sub LOG_ERR    { 5 }
+sub LOG_ERROR  { 5 }
 sub LOG_WARN   { 4 }
 sub LOG_NOTICE { 3 }
 sub LOG_INFO   { 2 }
@@ -166,6 +168,29 @@ VUser::Log - Logging support for vuser
 
 Generic logging module for vuser.
 
+=head2 Creating a New VUser::Log
+
+ $log = VUser::Log->new($cfg, $ident);
+ $log = VUser::Log->new($cfg, $ident, $section);
+
+=over 4
+
+=item $cfg
+
+A reference to a tied Config::IniFiles hash.
+
+=item $ident
+
+The identifier for this log object. This will be used to tag each log line
+as being from this object. This is similar to how syslog behaves.
+
+=item $section
+
+This tells VUser::Log which section of the configuration (represented by
+I<$cfg>) to look for settings in. If not specified, I<vuser> will be used.
+
+=back
+
 =head2 Logging
 
 When you decided that it's time to log some info you call the VUser::Log
@@ -198,6 +223,15 @@ You can even omit the log level and the message will be logged with a level
 of LOG_NOTICE.
 
 =back
+
+=head2 Log Levels
+
+The levels are, in increasing order of importance: I<DEBUG>, I<INFO>,
+I<NOTICE>, I<WARN>, I<ERROR>, I<CRIT>, I<ALERT>, I<EMERG>. I<ERR> is
+provided as a synonym for I<ERROR>.
+
+You can import the LOG_* constants for use where ever log levels are
+needed by using C<use VUser::Log qw(:levels)>.
 
 =head2 Use in Extensions
 
