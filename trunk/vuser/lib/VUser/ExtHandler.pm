@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.36 2005-12-06 17:53:18 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.37 2005-12-14 18:25:25 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.36 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.37 $'))[1];
 our $VERSION = "0.2.0";
 
 use lib qw(..);
@@ -18,12 +18,28 @@ use Regexp::Common qw /number/;
 
 sub DEFAULT_PRIORITY { 10; }
 
+my $log;
+
 sub new
 {
 
     my $self = shift;
     my $class = ref($self) || $self;
     my $cfg = shift;
+    $log = shift;
+
+    if (not defined $log
+	and defined $main::log
+	and UNIVERSAL::isa($main::log, 'VUser::Log')
+	) {
+	$log = $main::log;
+    } elsif (defined $log
+	     and UNIVERSAL::isa($log, 'VUser::Log')
+	     ) {
+	# noop
+    } else {
+	$log = VUser::Log->new($cfg, 'vuser/eh');
+    }
 
     # {keyword}{action}{tasks}[order][tasks (sub refs)]
     # {keyword}{action}{options}{option} = type
