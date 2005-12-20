@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Log.pm,v 1.6 2005-12-14 16:29:53 perlstalker Exp $
+# $Id: Log.pm,v 1.7 2005-12-20 23:55:53 perlstalker Exp $
 
 use VUser::ExtLib qw(strip_ws);
 our $VERSION = "0.2.0";
@@ -104,7 +104,9 @@ sub log
     @args = @_;
 
     if ($priority >= $self->level) {
-	$self->write_msg($priority, sprintf($pattern, @args));
+	my $msg = sprintf($pattern, @args);
+	chomp $msg;
+	$self->write_msg($priority, $msg);
     }
 }
 
