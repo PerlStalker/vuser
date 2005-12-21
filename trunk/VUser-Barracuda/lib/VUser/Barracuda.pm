@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Barracuda.pm,v 1.2 2005-12-08 18:26:54 perlstalker Exp $
+# $Id: Barracuda.pm,v 1.3 2005-12-21 22:10:44 perlstalker Exp $
 
 use vars ('@ISA');
 
@@ -14,7 +14,7 @@ use VUser::ResultSet;
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
 our $VERSION = '0.1.0';
 
 use LWP::Simple;
@@ -313,6 +313,8 @@ sub email_deldomain
     };
     die $@ if $@;
 }
+
+sub list_domains {}
 
 sub do_command
 {
