@@ -4,7 +4,7 @@ use strict;
 
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.16 2005-12-22 20:52:28 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.17 2005-12-29 00:04:24 perlstalker Exp $
 
 our $VERSION = "0.2.0";
 
@@ -23,7 +23,7 @@ our %EXPORT_TAGS = (
 		    files => [qw(add_line_to_file chown_ug
 				 del_line_from_file
 				 repl_line_in_file
-				 rm_r mkdir_p touch)]
+				 rm_r mkdir_p touch)],
 		    ssh => [qw(get_file_scp send_file_scp run_cmd_ssh)]
 		    );
 
