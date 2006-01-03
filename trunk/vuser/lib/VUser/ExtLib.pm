@@ -4,7 +4,7 @@ use strict;
 
 
 # Copyright 2004 Randy Smith
-# $Id: ExtLib.pm,v 1.17 2005-12-29 00:04:24 perlstalker Exp $
+# $Id: ExtLib.pm,v 1.18 2006-01-03 21:55:31 perlstalker Exp $
 
 our $VERSION = "0.2.0";
 
@@ -244,6 +244,11 @@ sub get_file_scp
 {
     my ($user, $host, $key, $remote_file, $local_file, @opts) = @_;
 
+    my $exists = run_cmd_ssh ($user, $host, $key, "test -e $remote_file");
+    if ($exists != 0) {
+        run_cmd_ssh ($user, $host, $key, "touch $remote_file");
+    }
+
     my $rc = system ('scp', '-q', '-i', $key, @opts,
 		     sprintf ('%s@%s:%s', $user, $host, $remote_file),
 		     $local_file);
@@ -251,7 +256,7 @@ sub get_file_scp
 	die "Unable to run 'scp': $!";
     }
     $rc >>= 8;
-    if ($rc >= 0) {
+    if ($rc > 0) {
 	die "Error getting file. scp returned $rc\n";
     }
 
@@ -270,7 +275,7 @@ sub send_file_scp
 	die "Unable to run 'scp': $!";
     }
     $rc >>= 8;
-    if ($rc >= 0) {
+    if ($rc > 0) {
 	die "Error putting file. scp returned $rc\n";
     }
 
