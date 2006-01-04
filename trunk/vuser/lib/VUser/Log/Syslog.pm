@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Syslog.pm,v 1.3 2005-11-29 20:45:07 perlstalker Exp $
+# $Id: Syslog.pm,v 1.4 2006-01-04 21:57:49 perlstalker Exp $
 
-our $VERSION = "0.2.0";
+our $VERSION = "0.3.0";
 
 use VUser::ExtLib qw(strip_ws);
 use VUser::Log qw(:levels);

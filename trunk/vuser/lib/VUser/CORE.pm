@@ -3,12 +3,12 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: CORE.pm,v 1.23 2005-11-29 20:57:37 perlstalker Exp $
+# $Id: CORE.pm,v 1.24 2006-01-04 21:57:48 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.23 $'))[1];
-our $VERSION = "0.2.0";
+our $REVISION = (split (' ', '$Revision: 1.24 $'))[1];
+our $VERSION = "0.3.0";
 
 use Pod::Usage;
 

@@ -3,10 +3,10 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Log.pm,v 1.7 2005-12-20 23:55:53 perlstalker Exp $
+# $Id: Log.pm,v 1.8 2006-01-04 21:57:48 perlstalker Exp $
 
 use VUser::ExtLib qw(strip_ws);
-our $VERSION = "0.2.0";
+our $VERSION = "0.3.0";
 
 use Exporter;
 our @ISA = qw(Exporter);

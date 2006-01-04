@@ -1,7 +1,7 @@
 package VUser::email::postfix;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
-# $Id: postfix.pm,v 1.7 2005-12-06 17:00:45 perlstalker Exp $
+# $Id: postfix.pm,v 1.8 2006-01-04 21:57:49 perlstalker Exp $
 
 use warnings;
 use strict;
@@ -9,8 +9,8 @@ use Pod::Usage;
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
-our $VERSION = "0.2.0";
+our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
+our $VERSION = "0.3.0";
 
 use VUser::email::authlib;
 use VUser::email::driver;

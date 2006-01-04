@@ -4,12 +4,12 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: SOAP.pm,v 1.18 2005-11-17 23:36:06 perlstalker Exp $
+# $Id: SOAP.pm,v 1.19 2006-01-04 21:57:48 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.18 $'))[1];
-our $VERSION = "0.2.0";
+our $REVISION = (split (' ', '$Revision: 1.19 $'))[1];
+our $VERSION = "0.3.0";
 
 our %cfg;
 our $eh;

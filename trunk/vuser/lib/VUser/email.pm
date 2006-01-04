@@ -5,12 +5,12 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2004 Randy Smith
-# $Id: email.pm,v 1.8 2005-12-06 17:56:48 perlstalker Exp $
+# $Id: email.pm,v 1.9 2006-01-04 21:57:48 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.8 $'))[1];
-our $VERSION = "0.2.0";
+our $REVISION = (split (' ', '$Revision: 1.9 $'))[1];
+our $VERSION = "0.3.0";
 
 use VUser::ExtLib qw( mkdir_p rm_r );
 

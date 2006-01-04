@@ -7,8 +7,8 @@ use VUser::ExtLib qw( mkdir_p rm_r );
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
-our $VERSION = "0.2.0";
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
+our $VERSION = "0.3.0";
 
 use VUser::email::authlib;
 push @ISA, 'VUser::email::authlib';

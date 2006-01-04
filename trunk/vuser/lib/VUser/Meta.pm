@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@gmail.com>
-# $Id: Meta.pm,v 1.4 2005-11-29 22:00:28 perlstalker Exp $
+# $Id: Meta.pm,v 1.5 2006-01-04 21:57:48 perlstalker Exp $
 
-our $VERSION = "0.2.0";
+our $VERSION = "0.3.0";
 
 sub new
 {

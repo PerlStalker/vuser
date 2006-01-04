@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: ResultSet.pm,v 1.7 2005-11-29 22:00:29 perlstalker Exp $
+# $Id: ResultSet.pm,v 1.8 2006-01-04 21:57:48 perlstalker Exp $
 
 use VUser::Meta;
 
-our $VERSION = "0.2.0";
+our $VERSION = "0.3.0";
 
 sub new
 {
