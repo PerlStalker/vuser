@@ -1,0 +1,174 @@
+#!/usr/bin/perl
+
+eval 'exec /usr/bin/perl  -S $0 ${1+"$@"}'
+    if 0; # not running under some shell
+use warnings;
+use strict;
+
+# Copyright 2004 Randy Smith
+# $Id: vuser,v 1.14 2006-01-04 21:57:49 perlstalker Exp $
+
+use Pod::Usage;
+use Getopt::Long qw(:config require_order);
+use FindBin;
+use Config::IniFiles;
+
+our $REVISION = (split (' ', '$Revision: 1.14 $'))[1];
+our $VERSION = "0.3.0";
+
+our $DEBUG = 0;
+
+BEGIN {
+
+    our @etc_dirs = ('/usr/local/etc',
+		     '/usr/local/etc/vuser',
+		     '/etc',
+		     '/etc/vuser',
+		     "$FindBin::Bin/../etc",
+		     "$FindBin::Bin",
+		     "$FindBin::Bin/..",
+                     "$FindBin::Bin/vuser",
+                     "$FindBin::Bin/../vuser",
+                     "$FindBin::Bin/../etc/vuser"
+                     );
+}
+
+use vars qw(@etc_dirs);
+
+use lib (map { "$_/extensions" } @etc_dirs);
+use lib (map { "$_/lib" } @etc_dirs);
+
+use VUser::ExtHandler;
+use VUser::ResultSet;
+use VUser::Meta;
+use VUser::ExtLib qw(strip_ws check_bool);
+use VUser::Log qw(:levels);
+
+my $config_file;
+my $result = GetOptions( "config=s" => \$config_file );
+
+if( defined $config_file )
+{
+    die "FATAL: config file: $config_file not found" unless( -e $config_file );
+}
+else
+{
+    for my $etc_dir (@etc_dirs)
+    {
+	if (-e "$etc_dir/vuser.conf") {
+	    $config_file = "$etc_dir/vuser.conf";
+	    last;
+	}
+    }
+}
+
+if (not defined $config_file) {
+    die "Unable to find a vuser.conf file in ".join (", ", @etc_dirs).".\n";
+}
+
+my %cfg;
+tie %cfg, 'Config::IniFiles', (-file => $config_file);
+
+$DEBUG = check_bool $cfg{'vuser'}{'debug'};
+
+our $log = VUser::Log->new(\%cfg, 'vuser');
+my $eh = new VUser::ExtHandler (\%cfg);
+
+$log->log(LOG_DEBUG, "Config loaded from $config_file");
+
+my $keyword = shift @ARGV || 'help';
+my $action = shift @ARGV;
+
+# Actions cannot start with -
+if (defined $action
+    and $action =~ /^-/) {
+    unshift @ARGV, $action;
+    $action = '';
+}
+
+$action = '' unless defined $action;
+
+# Ok. Now it's time to do the action.
+$log->log(LOG_NOTICE, "Running %s %s", $keyword, $action);
+my @rs;
+eval { @rs = $eh->run_tasks($keyword, $action, \%cfg); };
+warn $@ if $@;
+
+# print "RS: "; use Data::Dumper; print Dumper \@rs;
+
+# print "Show rs ($cfg{'vuser'}{'show result set'}) ? ",
+#     (check_bool($cfg{'vuser'}{'show result set'})? "Yes":"No"),
+#     "\n";
+
+if (check_bool($cfg{'vuser'}{'show result set'}) and @rs) {
+    foreach my $rs1 (@rs) {
+	foreach my $rs (@$rs1) {
+	    # print "RS: "; use Data::Dumper; print Dumper $rs;
+	    # print "\$rs is a ", ref $rs, "\n";
+	    my @meta = $rs->get_metadata;
+	    
+	    foreach my $row ($rs->results()) {
+		# print "Value: "; use Data::Dumper; print Dumper $row;
+		for (my $i = 0; $i < @meta; $i++) {
+		    printf("%s: %s\n",
+			   $meta[$i]->name,
+			   defined $row->[$i]? $row->[$i] : 'undef');
+		}
+		print "\n";
+	    }
+	}
+    }
+}
+
+eval { $eh->cleanup(%cfg); };
+
+exit;
+
+sub revision
+{
+    print $REVISION;
+}
+
+__END__
+
+=head1 NAME
+
+vuser - Virtual user management utility
+
+=head1 SYNOPSIS
+
+vuser [--config=/path/to/vuser.conf] module action [options]
+
+=head1 OPTIONS
+
+See 'vuser help module' for a list of actions and options.
+
+=head1 DESCRIPTION
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+=head1 AUTHOR
+
+Randy Smith <perlstalker@gmail.com>
+
+=head1 LICENSE
+ 
+ This file is part of vuser.
+ 
+ vuser is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ vuser is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with vuser; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+=cut
