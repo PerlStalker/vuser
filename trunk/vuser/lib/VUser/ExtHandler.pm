@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.40 2005-12-29 21:09:38 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.41 2006-01-04 18:43:20 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.40 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.41 $'))[1];
 our $VERSION = "0.2.1";
 
 use lib qw(..);
@@ -508,7 +508,7 @@ sub run_tasks
 			  $keyword, $real_action, $opt, $type, $d_type);
 		$log->log(LOG_DEBUG, "Req: %s Def: %s",
 			  $self->is_required($keyword, $real_action, $opt)? 'Yes':'No',
-			  defined $opts{$opt}?"Yes ($opts{$opt})":'No';
+			  defined $opts{$opt}?"Yes ($opts{$opt})":'No'
 			  );
 
 		if ($d_type eq 's') {
