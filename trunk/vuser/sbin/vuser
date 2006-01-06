@@ -6,14 +6,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.15 2006-01-06 21:21:30 perlstalker Exp $
+# $Id: vuser,v 1.16 2006-01-06 23:54:53 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.15 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.16 $'))[1];
 our $VERSION = "0.3.0";
 
 our $DEBUG = 0;
@@ -46,7 +46,10 @@ use VUser::ExtLib qw(strip_ws check_bool);
 use VUser::Log qw(:levels);
 
 my $config_file;
-my $result = GetOptions( "config=s" => \$config_file );
+my $format;
+my $result = GetOptions( "config=s" => \$config_file,
+			 "format=s" => \$format
+			 );
 
 if( defined $config_file )
 {
@@ -102,6 +105,7 @@ warn $@ if $@;
 #     "\n";
 
 if (check_bool($cfg{'vuser'}{'show result set'}) and @rs) {
+    $cfg{'vuser'}{'display format'} = $format if defined $format;
     my $display = VUser::ResultSet::Display->new(\%cfg);
     $display->display(@rs);
 }
