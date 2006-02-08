@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: iptables.pm,v 1.2 2006-02-08 21:15:36 perlstalker Exp $
+# $Id: iptables.pm,v 1.3 2006-02-08 21:34:42 perlstalker Exp $
 
 use File::Temp;
 use File::Copy;
@@ -49,10 +49,10 @@ sub init
 	    $hosts{$host}{$key} = $tmp if $tmp;
 	}
 
-	if (not $hosts{$host}{file}) {
-	    $log->log(LOG_NOTICE, "No file specified for $host. Skipping.");
-	    delete $hosts{$host};
-	}
+	#if (not $hosts{$host}{file}) {
+	#    $log->log(LOG_NOTICE, "No file specified for $host. Skipping.");
+	#    delete $hosts{$host};
+	#}
     }
 
     foreach my $action ('block', 'unblock', 'allow', 'unallow') {
