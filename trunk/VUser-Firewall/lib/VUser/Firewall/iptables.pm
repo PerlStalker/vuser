@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: iptables.pm,v 1.1 2006-01-04 18:45:40 perlstalker Exp $
+# $Id: iptables.pm,v 1.2 2006-02-08 21:15:36 perlstalker Exp $
 
 use File::Temp;
 use File::Copy;
@@ -103,36 +103,48 @@ sub fw_blockallow
     foreach my $host (keys %hosts) {
 	$log->log(LOG_NOTICE, "Updating firewall on %s", $host);
     
-	my $file = $hosts{$host}->{file};
-	$file =~ s!/?([^/]+)$!$1!; # Rip the path off the file name
+	if ($hosts{$host}->{file}) {
+	    my $file = $hosts{$host}->{file};
+	    $file =~ s!/?([^/]+)$!$1!; # Rip the path off the file name
 
-	my $local_file = File::Temp::tempnam('/tmp', 'VUser-Firewall-iptables-');
-	$log->log(LOG_DEBUG, "Tmp file is %s", $local_file);
-	if ($hosts{$host}->{host}) {
-	    get_file_scp($hosts{$host}->{user},
-			 $hosts{$host}->{host},
-			 $hosts{$host}->{'ssh key'},
-			 $hosts{$host}->{file},
-			 $local_file);
+	    my $local_file = File::Temp::tempnam('/tmp', 'VUser-Firewall-iptables-');
+	    $log->log(LOG_DEBUG, "Tmp file is %s", $local_file);
+
+	    if ($hosts{$host}->{host}) {
+		get_file_scp($hosts{$host}->{user},
+			     $hosts{$host}->{host},
+			     $hosts{$host}->{'ssh key'},
+			     $hosts{$host}->{file},
+			     $local_file);
+	    } else {
+		copy($hosts{$host}->{file}, $local_file);
+		touch($local_file) unless (-e $local_file);
+	    }
+
+	    add_line_to_file($local_file, $cmd);
+
+	    if ($hosts{$host}->{user}) {
+		send_file_scp($hosts{$host}->{user},
+			      $hosts{$host}->{host},
+			      $hosts{$host}->{'ssh key'},
+			      $local_file,
+			      $hosts{$host}->{file}
+			      );
+	    } else {
+		copy($local_file, $hosts{$host}->{file});
+	    }
+	    unlink $local_file;
 	} else {
-	    copy($hosts{$host}->{file}, $local_file);
-	    touch($local_file) unless (-e $local_file);
+	    # Just run the command instead of writing to a file.
+	    if ($hosts{$host}->{host}) {
+		run_cmd_ssh($hosts{$host}->{user},
+			    $hosts{$host}->{host},
+			    $hosts{$host}->{'ssh key'},
+			    $cmd);
+	    } else {
+		system($cmd)
+	    }
 	}
-
-	add_line_to_file($local_file, $cmd);
-
-	if ($hosts{$host}->{user}) {
-	    send_file_scp($hosts{$host}->{user},
-			  $hosts{$host}->{host},
-			  $hosts{$host}->{'ssh key'},
-			  $local_file,
-			  $hosts{$host}->{file}
-			  );
-	} else {
-	    copy($local_file, $hosts{$host}->{file});
-	}
-
-	unlink $local_file;
     }
 }
 
@@ -150,185 +162,265 @@ sub fw_unblockallow
 
     foreach my $host (keys %hosts) {
 	$log->log(LOG_NOTICE, "Updating firewall on %s", $host);
+
+    	if ($hosts{$host}->{file}) {
+	    my $file = $hosts{$host}->{file};
+	    $file =~ s!/?([^/]+)$!$1!; # Rip the path off the file name
+
+	    my $local_file = File::Temp::tempnam('/tmp', 'VUser-Firewall-iptables-');
+
+	    if ($hosts{$host}->{host}) {
+		get_file_scp($hosts{$host}->{user},
+			     $hosts{$host}->{host},
+			     $hosts{$host}->{'ssh key'},
+			     $hosts{$host}->{file},
+			     $local_file);
+	    } else {
+		copy($hosts{$host}{file}, $local_file);
+	    }
+	    
+	    # Pull the rule(s) out of the file
+	    open ORIG, $local_file or die "Can't open $local_file: $!\n";
+	    open NEW, ">$local_file.new" or die "Can't open $local_file.new: $!\n";
+	    
+	    while (my $line = <ORIG>) {
+		chomp $line;
+		
+		my $match = 0;
+		my $test = 0;
+		if ($opts->{source}) {
+		    $test++;
+		    $log->log(LOG_DEBUG, "Testing source ($test)");
+		    if ($line =~ m{\s(?:-s|--source)        # source flag
+				       [ =]?\s*             # spaces or =
+				       \Q$opts->{source}\E  # The addr to match
+				       (?:\s|$ )            # end of pattern
+				   }x
+			) {
+			$match++;
+			$log->log(LOG_DEBUG, "Rule matches source %d/%d",
+				  $match, $test);
+		    }
+		}
+
+		if ($opts->{destination}) {
+		    $test++;
+		    $log->log(LOG_DEBUG, "Testing dest");
+		    if ($line =~ m{\s(?:-d|-destination)    # dst flag
+				       [ =]?\s*             # spaces or =
+				       \Q$opts->{source}\E  # The addr to match
+				       (?:\s|$ )            # end of pattern
+				   }x
+			) {
+			$match++;
+			$log->log(LOG_DEBUG, "Rule matches dest %d/%d",
+				  $match, $test);
+		    }
+		}
+		
+		if ($opts->{sport}) {
+		    $test++;
+		    $log->log(LOG_DEBUG, "Testing sport");
+		    if ($line =~ m{\s(?:--sport|--source-port)
+				       [ =]?\s*             # spaces or =
+				       \Q$opts->{sport}\E   # The addr to match
+				       (?:\s|$ )            # end of pattern
+				   }x
+			) {
+			$match++;
+			$log->log(LOG_DEBUG, "Rule matches sport %d/%d",
+				  $match, $test);
+		    }
+		}
+		
+		if ($opts->{dport}) {
+		    $test++;
+		    $log->log(LOG_DEBUG, "Testing dport");
+		    if ($line =~ m{\s(?:--dport|--destination-port)
+				       [ =]?\s*             # spaces or =
+				       \Q$opts->{dport}\E   # The addr to match
+				       (?:\s|$ )            # end of pattern
+				   }x
+			) {
+			$match++;
+			$log->log(LOG_DEBUG, "Rule matches dport %d/%d",
+				  $match, $test);
+		    }
+		}
+		
+		if ($opts->{protocol}) {
+		    $test++;
+		    $log->log(LOG_DEBUG, "Testing protocol");
+		    if ($line =~ m{\s(?:-p|--protocol)      # source flag
+				       [ =]?\s*             # spaces or =
+				       \Q$opts->{protocol}\E# The proto to match
+				       (?:\s|$ )            # end of pattern
+				   }x
+			) {
+			$match++;
+			$log->log(LOG_DEBUG, "Rule matches protocol %d/%d",
+				  $match, $test);
+		    }
+		}
+		
+		if ($action eq 'block'
+		    or $action eq 'unblock'
+		    ) {
+		    $test++;
+		    $log->log(LOG_DEBUG, "Testing REJECT");
+		    if ($line =~ m{\s(?:-j|--jump)
+				       [ =]?\s*             # spaces or =
+				       REJECT               # The rule to match
+				       (?:\s|$ )            # end of pattern
+				   }x
+			) {
+			$match++;
+			$log->log(LOG_DEBUG, "Rule matches REJECT %d/%d",
+				  $match, $test);
+		    }
+		}
+		
+		if ($action eq 'accept'
+		    or $action eq 'unaccept'
+		    ) {
+		    $test++;
+		    $log->log(LOG_DEBUG, "Testing ACCEPT");
+		    if ($line =~ m{\s(?:-j|--jump)
+				       [ =]?\s*             # spaces or =
+				       ACCEPT               # The rule to match
+				       (?:\s|$ )            # end of pattern
+				   }x
+			) {
+			$match++;
+			$log->log(LOG_DEBUG, "Rule matches ACCEPT %d/%d",
+				  $match, $test);
+		    }
+		}
+		
+		my $chain = $opts->{chain} || $def_chain;
+		
+		if ($chain) {
+		    $test++;
+		    $log->log(LOG_DEBUG, "Testing chain %s", $chain);
+		    if ($line =~ m{\s(?:-A|--append)        # source flag
+				       [ =]?\s*             # spaces or =
+				       \Q$chain\E           # The chain to match
+				       (?:\s|$ )            # end of pattern
+				   }x
+			) {
+			$match++;
+			$log->log(LOG_DEBUG, "Rule matches chain %d/%d",
+				  $match, $test);
+		    }
+		}
+
+		$log->log(LOG_DEBUG, "Line (%d/%d): %s", $match, $test, $line);
+		
+		# The line didn't match in all the tests, let it through.
+		print NEW "$line\n" if $match != $test;
+		#print STDERR "Printing matches\n";
+		#print STDERR "$line\n" if $match != $test;
+	    }
+	    
+	    close NEW;
+	    close ORIG;
+	    
+	    rename("$local_file.new", $local_file);
+
+	    if ($hosts{$host}{user}) {
+		send_file_scp($hosts{$host}->{user},
+			      $hosts{$host}->{host},
+			      $hosts{$host}->{'ssh key'},
+			      $local_file,
+			      $hosts{$host}->{file}
+			      );
+	    } else {
+		copy($local_file, $hosts{$host}{file});
+	    }
+	    
+	    if ($main::DEBUG) {
+		$log->log(LOG_DEBUG, "Debug mode: preserving $local_file.new\n");
+	    } else {
+		unlink $local_file, "$local_file.new";
+	    }
+	} else {
+	    # Just send the command
+	    my $cmd = 'iptables';
     
-	my $file = $hosts{$host}->{file};
-	$file =~ s!/?([^/]+)$!$1!; # Rip the path off the file name
+	    $cmd .= sprintf(' -D %s', $opts->{chain}? $opts->{chain} : $def_chain);
+	    $cmd .= sprintf(' -s %s', $opts->{source}) if ($opts->{source});
+	    $cmd .= sprintf(' --sport %s', $opts->{sport}) if ($opts->{sport});
+	    $cmd .= sprintf(' -d %s', $opts->{destination}) if ($opts->{destination});
+	    $cmd .= sprintf(' --dport %s', $opts->{dport}) if ($opts->{dport});
+	    $cmd .= sprintf(' -p %s', $opts->{protocol}) if $opts->{protocol};
+	    if ($action eq 'allow') {
+		$cmd .= ' -j ACCEPT';
+	    } elsif ($action eq 'block') {
+		$cmd .= ' -j REJECT';
+	    }
 
-	my $local_file = File::Temp::tempnam('/tmp', 'VUser-Firewall-iptables-');
-
-	if ($hosts{$host}->{host}) {
-	    get_file_scp($hosts{$host}->{user},
-			 $hosts{$host}->{host},
-			 $hosts{$host}->{'ssh key'},
-			 $hosts{$host}->{file},
-			 $local_file);
-	} else {
-	    copy($hosts{$host}{file}, $local_file);
+	    if ($hosts{$host}->{host}) {
+		run_cmd_ssh($hosts{$host}->{user},
+			    $hosts{$host}->{host},
+			    $hosts{$host}->{'ssh key'},
+			    $cmd);
+	    } else {
+		system($cmd);
+	    }
 	}
+    }
+}
 
-	# Pull the rule(s) out of the file
-	open ORIG, $local_file or die "Can't open $local_file: $!\n";
-	open NEW, ">$local_file.new" or die "Can't open $local_file.new: $!\n";
+sub fw_flush
+{
+    my ($cfg, $opts, $action, $eh) = @_;
 
-	while (my $line = <ORIG>) {
-	    chomp $line;
-
-	    my $match = 0;
-	    my $test = 0;
-	    if ($opts->{source}) {
-		$test++;
-		$log->log(LOG_DEBUG, "Testing source ($test)");
-		if ($line =~ m{\s(?:-s|--source)        # source flag
-				   [ =]?\s*             # spaces or =
-				   \Q$opts->{source}\E  # The addr to match
-				   (?:\s|$ )            # end of pattern
-			       }x
-		    ) {
-		    $match++;
-		    $log->log(LOG_DEBUG, "Rule matches source %d/%d",
-			      $match, $test);
-		}
+    my $cmd = 'iptables';
+    $cmd .= sprintf(' -F %s', $opts->{chain}? $opts->{chain} : $def_chain);
+    
+    foreach my $host (keys %hosts) {
+	if ($hosts{$host}->{file}) {
+	    my $file = $hosts{$host}->{file};
+	    $file =~ s!/?([^/]+)$!$1!; # Rip the path off the file name
+	    
+	    my $local_file = File::Temp::tempnam('/tmp', 'VUser-Firewall-iptables-');
+	    
+	    if ($hosts{$host}->{host}) {
+		get_file_scp($hosts{$host}->{user},
+			     $hosts{$host}->{host},
+			     $hosts{$host}->{'ssh key'},
+			     $hosts{$host}->{file},
+			     $local_file);
+	    } else {
+		copy($hosts{$host}{file}, $local_file);
 	    }
 
-	    if ($opts->{destination}) {
-		$test++;
-		$log->log(LOG_DEBUG, "Testing dest");
-		if ($line =~ m{\s(?:-d|-destination)    # dst flag
-				   [ =]?\s*             # spaces or =
-				   \Q$opts->{source}\E  # The addr to match
-				   (?:\s|$ )            # end of pattern
-			       }x
-		    ) {
-		    $match++;
-		    $log->log(LOG_DEBUG, "Rule matches dest %d/%d",
-			      $match, $test);
-		}
+	    add_line_to_file($local_file, $cmd);
+
+	    if ($hosts{$host}->{user}) {
+		send_file_scp($hosts{$host}->{user},
+			      $hosts{$host}->{host},
+			      $hosts{$host}->{'ssh key'},
+			      $local_file,
+			      $hosts{$host}->{file}
+			      );
+	    } else {
+		copy($local_file, $hosts{$host}->{file});
 	    }
+	    unlink $local_file;
 
-	    if ($opts->{sport}) {
-		$test++;
-		$log->log(LOG_DEBUG, "Testing sport");
-		if ($line =~ m{\s(?:--sport|--source-port)
-				   [ =]?\s*             # spaces or =
-				   \Q$opts->{sport}\E   # The addr to match
-				   (?:\s|$ )            # end of pattern
-			       }x
-		    ) {
-		    $match++;
-		    $log->log(LOG_DEBUG, "Rule matches sport %d/%d",
-			      $match, $test);
-		}
-	    }
-
-	    if ($opts->{dport}) {
-		$test++;
-		$log->log(LOG_DEBUG, "Testing dport");
-		if ($line =~ m{\s(?:--dport|--destination-port)
-				   [ =]?\s*             # spaces or =
-				   \Q$opts->{dport}\E   # The addr to match
-				   (?:\s|$ )            # end of pattern
-			       }x
-		    ) {
-		    $match++;
-		    $log->log(LOG_DEBUG, "Rule matches dport %d/%d",
-			      $match, $test);
-		}
-	    }
-
-	    if ($opts->{protocol}) {
-		$test++;
-		$log->log(LOG_DEBUG, "Testing protocol");
-		if ($line =~ m{\s(?:-p|--protocol)      # source flag
-				   [ =]?\s*             # spaces or =
-				   \Q$opts->{protocol}\E# The proto to match
-				   (?:\s|$ )            # end of pattern
-			       }x
-		    ) {
-		    $match++;
-		    $log->log(LOG_DEBUG, "Rule matches protocol %d/%d",
-			      $match, $test);
-		}
-	    }
-
-	    if ($action eq 'block'
-		or $action eq 'unblock'
-		) {
-		$test++;
-		$log->log(LOG_DEBUG, "Testing REJECT");
-		if ($line =~ m{\s(?:-j|--jump)
-				   [ =]?\s*             # spaces or =
-				   REJECT               # The rule to match
-				   (?:\s|$ )            # end of pattern
-			       }x
-		    ) {
-		    $match++;
-		    $log->log(LOG_DEBUG, "Rule matches REJECT %d/%d",
-			      $match, $test);
-		}
-	    }
-
-	    if ($action eq 'accept'
-		or $action eq 'unaccept'
-		) {
-		$test++;
-		$log->log(LOG_DEBUG, "Testing ACCEPT");
-		if ($line =~ m{\s(?:-j|--jump)
-				   [ =]?\s*             # spaces or =
-				   ACCEPT               # The rule to match
-				   (?:\s|$ )            # end of pattern
-			       }x
-		    ) {
-		    $match++;
-		    $log->log(LOG_DEBUG, "Rule matches ACCEPT %d/%d",
-			      $match, $test);
-		}
-	    }
-
-	    my $chain = $opts->{chain} || $def_chain;
-
-	    if ($chain) {
-		$test++;
-		$log->log(LOG_DEBUG, "Testing chain %s", $chain);
-		if ($line =~ m{\s(?:-A|--append)        # source flag
-				   [ =]?\s*             # spaces or =
-				   \Q$chain\E           # The chain to match
-				   (?:\s|$ )            # end of pattern
-			       }x
-		    ) {
-		    $match++;
-		    $log->log(LOG_DEBUG, "Rule matches chain %d/%d",
-			      $match, $test);
-		}
-	    }
-
-	    $log->log(LOG_DEBUG, "Line (%d/%d): %s", $match, $test, $line);
-
-	    # The line didn't match in all the tests, let it through.
-	    print NEW "$line\n" if $match != $test;
-	    #print STDERR "Printing matches\n";
-	    #print STDERR "$line\n" if $match != $test;
-	}
-
-	close NEW;
-	close ORIG;
-
-	rename("$local_file.new", $local_file);
-
-	if ($hosts{$host}{user}) {
-	    send_file_scp($hosts{$host}->{user},
-			  $hosts{$host}->{host},
-			  $hosts{$host}->{'ssh key'},
-			  $local_file,
-			  $hosts{$host}->{file}
-			  );
 	} else {
-	    copy($local_file, $hosts{$host}{file});
-	}
-
-	if ($main::DEBUG) {
-	    $log->log(LOG_DEBUG, "Debug mode: preserving $local_file.new\n");
-	} else {
-	    unlink $local_file, "$local_file.new";
+	    if (defined $hosts{$host}) {
+		# Send the command.
+		run_cmd_ssh($hosts{$host}->{user},
+			    $hosts{$host}->{host},
+			    $hosts{$host}->{'ssh key'},
+			    $cmd);
+	    } else {
+		# There should be some error checking here but I'm
+		# suffering from cat /dev/random > /dev/brain
+		system($cmd);
+	    }
 	}
     }
 }

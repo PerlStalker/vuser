@@ -5,3 +5,4 @@ lib/VUser/Firewall/iptables.pm
 Makefile.PL
 MANIFEST			This list of files
 README
+META.yml                                 Module meta-data (added by MakeMaker)
