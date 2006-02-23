@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: M900S.pm,v 1.1 2006-01-09 23:15:07 perlstalker Exp $
+# $Id: M900S.pm,v 1.2 2006-02-23 18:23:47 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::Trango::AP;
@@ -88,7 +88,7 @@ sub sudb_view
 
     my $session = snmp_connect($opts->{host}, $community);
 
-    if (VUser::Trango::AP::get_ap_type($session) ne 'M900S') {
+    if (VUser::Trango::AP::get_ap_type($session) !~ 'M9..S') {
 	$log->log(LOG_INFO, "%s is not a Trango M900S", $opts->{host});
 	return ;
     }
