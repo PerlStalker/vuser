@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.3 2006-08-16 19:59:35 perlstalker Exp $
+# $Id: Radius.pm,v 1.4 2006-08-16 20:17:07 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
@@ -23,6 +23,9 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 	     'attribute' => VUser::Meta->new('name' => 'realm',
 					     'type' => 'string',
 					     'description' => 'Attribute to set for this user'),
+	     'type' => VUser::Meta->new('name' => 'type',
+					'type' => 'string',
+					'description' => '\'check\' or \'reply\'',
 	     'value' => VUser::Meta->new('name' => 'value',
 					 'type' => 'string',
 					 'description' => 'Value of passed attribute')
@@ -57,7 +60,26 @@ sub init {
     $eh->register_option ('radius', 'moduser', $meta{'username'}->new('name' => 'newusername'));
     $eh->register_option ('radius', 'moduser', $meta{'password'}->new('name' => 'newpassword'));
     $eh->register_option ('radius', 'moduser', $meta{'realm'}->new('name' => 'newrealm'));
-    
+
+    # radius-addattrib
+    $eh->register_action ('radius', 'addattrib', 'Add an attribute to a RADIUS user');
+    $eh->register_option ('radius', 'addattrib', $meta{'username'}, 1);
+    $eh->register_option ('radius', 'addattrib', $meta{'realm'});
+    $eh->register_option ('radius', 'addattrib', $meta{'attribute'}, 1);
+    $eh->register_option ('radius', 'addattrib', $meta{'value'}, 1);
+
+    # radius-modattrib
+    $eh->register_action ('radius', 'modattrib', 'Modify an attribute for a RADIUS user');
+    $eh->register_option ('radius', 'modattrib', $meta{'username'}, 1);
+    $eh->register_option ('radius', 'modattrib', $meta{'realm'});
+    $eh->register_option ('radius', 'modattrib', $meta{'attribute'}, 1);
+    $eh->register_option ('radius', 'modattrib', $meta{'value'});
+
+    # radius-rmattrib
+    $eh->register_action ('radius', 'rmattrib', 'Remove an attribute from a RADIUS user');
+    $eh->register_option ('radius', 'rmattrib', $meta{'username'}, 1);
+    $eh->register_option ('radius', 'rmattrib', $meta{'realm'});
+    $eh->register_option ('radius', 'rmattrib', $meta{'attribute'}, 1);
 }
 
 sub meta { return %meta; }
@@ -93,7 +115,7 @@ VUser::Firewall provides a few VUser::Meta objects that may be used by
 other firewall extensions. The safest way to access them is to call
 VUser::Firewall::meta() from within the extension's init() function.
 
-Provided keys: username, password, realm, attribute, value
+Provided keys: username, password, realm, attribute, type, value
 
 =head1 AUTHOR
 
