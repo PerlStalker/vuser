@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.2 2006-08-16 19:57:46 perlstalker Exp $
+# $Id: Radius.pm,v 1.3 2006-08-16 19:59:35 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
 
 our $VERSION = '0.1.0';
 
-out $c_sec = 'Extension Radius';
+our $c_sec = 'Extension Radius';
 our %meta = ('username' => VUser::Meta->new('name' => 'username',
 					    'type' => 'string',
 					    'description' => 'User name'),
