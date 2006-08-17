@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.2 2006-08-17 20:16:04 perlstalker Exp $
+# $Id: SQL.pm,v 1.3 2006-08-17 22:26:32 perlstalker Exp $
 
 use VUser::ExtLib qw(:config);
 use VUser::Log qw(:levels);
@@ -183,18 +183,57 @@ sub radius_rmuser {
 sub radius_moduser {
     my ($cfg, $opts, $action, $eh) = @_;
 
-    # TODO: There needs to be a better way to modify an account
+    ## change password
+    if ($opts->{newpassword}) {
+        execute($cfg, $opts, strip_ws($cfg->{$c_sec}{'moduser_password_query'}));
+    }
+    ## change realm only
+    if ($opts->{newrealm} and not $opts->{newusername}) {
+        execute($cfg, $opts, strip_ws($cfg->{$c_sec}{'moduser_realm_query'}));
+    }
+    ## change username only
+    if ($opts->{newusername} and not $opts->{newrealm}) {
+        execute($cfg, $opts, strip_ws($cfg->{$c_sec}{'moduser_username_query'}));
+    }
+    ## change username and realm
+    if ($opts->{newusername} and $opts->{newrealm}) {
+        execute($cfg, $opts, strip_ws($cfg->{$c_sec}{'moduser_userrealm_query'}));
+    }
 }
 
 sub radius_listusers {
     my ($cfg, $opts, $action, $eh) = @_;
-    # TODO: Fill in radius_listusers
+    
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($VUser::Radius::meta{'username'});
+    $rs->add_meta($VUser::Radius::meta{'realm'});
+    
+    my $sth = execute ($cfg, strip_ws($cfg->{$c_sec}{'listusers_query'}));
+    my @results;
+    while (@results = $sth->fetchrow_array) {
+        $rs->add_data([@results[0..1]]);
+    }
+    
+    $sth->finish;
+    return $rs;
 }
 
 sub radius_userinfo {
     my ($cfg, $opts, $action, $eh) = @_;
 
-    # TODO: Fill in radius_userinfo
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($VUser::Radius::meta{'username'});
+    $rs->add_meta($VUser::Radius::meta{'realm'});
+    $rs->add_meta($VUser::Radius::meta{'password'});
+    
+    my $sth = execute ($cfg, strip_ws($cfg->{$c_sec}{'userinfo_query'}));
+    my @results;
+    while (@results = $sth->fetchrow_array) {
+        $rs->add_data([@results[0..3]]);
+    }
+    
+    $sth->finish;
+    return $rs;
 }
 
 sub radius_addattrib {
@@ -219,12 +258,23 @@ sub radius_listattrib {
         $sql = strip_ws($cfg->{$c_sec}{'listattrib_reply_query'});
     }
 
-    my $sth = execute($cfg, $opts, $sql);
-
     ## Build resultset
-    # TODO: Fill in result set
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($VUser::Radius::meta{'username'});
+    $rs->add_meta($VUser::Radius::meta{'realm'});
+    $rs->add_meta($VUser::Radius::meta{'attribute'});
+    $rs->add_meta($VUser::Radius::meta{'type'});
+    $rs->add_meta($VUser::Radius::meta{'value'});
+    
+    my $sth = execute($cfg, $opts, $sql);
+    
+    my @results;
+    while (@results = $sth->fetchrow_array) {
+        $rs->add_data([@results[0..3]]);
+    }
 
     $sth->finish;
+    return $rs;
 }
 
 1;
@@ -270,20 +320,37 @@ Adds support for storing RADIUS user information in a SQL database.
  #  %v => attribute value
  #  %-option => This will be replaced by the value of --option passed in
  #              when vuser is run.
+ 
+ # Add a RADIUS account
  adduser_query = INSERT into user set user = %u, password = %p, realm = %r
  
+ # Delete a RADIUS account
  rmuser_query = DELETE from user where user = %s and realm = %r
  
- # This may not work. Hmmm.
- moduser_query = UPDATE user set ...
+ # Change a user's password
+ moduser_password_query = UPDATE user set ...
+ 
+ # Change an account's realm only
+ moduser_realm_query = UPDATE user set ...
+ 
+ # Change an account's username only
+ moduser_username_query = UPDATE user set ...
+ 
+ # Change both the username and the realm
+ moduser_userrealm_query = UPDATE user set ...
  
  # Here, we need a way to map columns to values
- # Fixed columns: col1 => username; 2 => password; etc.
+ # Fixed columns:
  #   1 username
- #   2 password
- #   3 realm
- #   N other returned columns will be appended to the output
- listusers_query = SELECT * from user where user = %s and realm = %r
+ #   2 realm
+ listusers_query = SELECT username, realm from user
+ 
+ # Here, we need a way to map columns to values
+ # Fixed columns:
+ #   1 username
+ #   2 realm
+ #   3 password
+ userinfo_query = SELECT * from user where user = %s and realm = %r
  
  addattrib_check_query = INSERT into ...
  rmattrib_check_query  = DELETE from ...
