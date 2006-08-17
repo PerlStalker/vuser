@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.1 2006-08-17 19:31:43 perlstalker Exp $
+# $Id: SQL.pm,v 1.2 2006-08-17 20:16:04 perlstalker Exp $
 
 use VUser::ExtLib qw(:config);
 use VUser::Log qw(:levels);
@@ -25,6 +25,12 @@ sub init {
     my $eh = shift;
     my %cfg = @_;
 
+    if (defined $main::log) {
+        $log = $main::log;
+    } else {
+        $log = VUser::Log->new(\%cfg, 'vuser')
+    }
+
     $dsn = strip_ws($cfg{$c_sec}{'dsn'});
     $username = strip_ws($cfg{$c_sec}{'username'});
     $password = strip_ws($cfg{$c_sec}{'password'});
@@ -42,19 +48,19 @@ sub init {
 }
 
 sub unload {
-    my $cached_connections = connect();
+    my $cached_connections = db_connect();
     %$cached_connections = () if $cached_connections;
 }
 
-sub connect {
+sub db_connect {
     my $cfg = shift;
 
     unless (defined $dsn
 	    and defined $username
 	    and defined $password) {
-	$dsn = strip_ws($cfg{$c_sec}{'dsn'});
-	$username = strip_ws($cfg{$c_sec}{'username'});
-	$password = strip_ws($cfg{$c_sec}{'password'});
+	$dsn = strip_ws($cfg->{$c_sec}{'dsn'});
+	$username = strip_ws($cfg->{$c_sec}{'username'});
+	$password = strip_ws($cfg->{$c_sec}{'password'});
     }
 
     my $dbh = DBI->connect_cached($dsn, $username, $password,
@@ -87,12 +93,12 @@ sub connect {
  # Remember to run ->finish() on the returned statement handle when you're
  # done with it.
 sub execute {
-    $cfg = shift;
-    $opts = shift;
-    $sql = shift;
-    %args = @_;
+    my $cfg = shift;
+    my $opts = shift;
+    my $sql = shift;
+    my %args = @_;
 
-    my $dbh = connect($cfg);
+    my $dbh = db_connect($cfg);
 
     $log->log(LOG_DEBUG, "Original SQL: $sql");
 
@@ -110,17 +116,17 @@ sub execute {
     my @passed_options = ();
     foreach my $opt (@passed_options) {
 	if ($opt eq 'u') {
-	    push @passed_options, $opts{'username'};
+	    push @passed_options, $opts->{'username'};
 	} elsif ($opt eq 'p') {
-	    push @passed_options, $opts{'password'};
+	    push @passed_options, $opts->{'password'};
 	} elsif ($opts eq 'r') {
-	    push @passed_options, $opts{'realm'};
+	    push @passed_options, $opts->{'realm'};
 	} elsif ($opts eq 'a') {
-	    push @passed_options, $opts{'attribute'};
+	    push @passed_options, $opts->{'attribute'};
 	} elsif ($opts eq 'v') {
-	    push @passed_options, $opts{'value'};
+	    push @passed_options, $opts->{'value'};
 	} elsif ($opts =~ /^-([\w-]+)/) {
-	    push @passed_options, $opts{$1};
+	    push @passed_options, $opts->{$1};
 	} elsif ($opts =~ /^%([\w-]+)/) {
 	    push @passed_options, $args{$1};
 	}
@@ -142,24 +148,24 @@ sub do_sql {
 	$sql = strip_ws($cfg->{$c_sec}{'adduser_query'});
     } elsif ($action eq 'rmuser') {
 	$sql = strip_ws($cfg->{$c_sec}{'rmuser_query'});
-    } elsif ($action eq 'addattrib')
-	if ($opts->{'type'} = 'check') {
-	    $sql = strip_ws($cfg->{$c_sec}{'addattrib_check_query'});
-	} elsif ($opts->{'type'} = 'reply') {
-	    $sql = strip_ws($cfg->{$c_sec}{'addattrib_reply_query'});
-	}
-    } elsif ($action eq 'rmattrib'
-	if ($opts->{'type'} = 'check') {
-	    $sql = strip_ws($cfg->{$c_sec}{'rmattrib_check_query'});
-	} elsif ($opts->{'type'} = 'reply') {
-	    $sql = strip_ws($cfg->{$c_sec}{'rmattrib_reply_query'});
-	}
-    } elsif ($action eq 'modattrib'
-	if ($opts->{'type'} = 'check') {
-	    $sql = strip_ws($cfg->{$c_sec}{'modattrib_check_query'});
-	} elsif ($opts->{'type'} = 'reply') {
-	    $sql = strip_ws($cfg->{$c_sec}{'modattrib_reply_query'});
-	}
+    } elsif ($action eq 'addattrib') {
+	   if ($opts->{'type'} == 'check') {
+	      $sql = strip_ws($cfg->{$c_sec}{'addattrib_check_query'});
+	   } elsif ($opts->{'type'} == 'reply') {
+	      $sql = strip_ws($cfg->{$c_sec}{'addattrib_reply_query'});
+	   }
+    } elsif ($action eq 'rmattrib') {
+	   if ($opts->{'type'} == 'check') {
+	       $sql = strip_ws($cfg->{$c_sec}{'rmattrib_check_query'});
+	   } elsif ($opts->{'type'} == 'reply') {
+	       $sql = strip_ws($cfg->{$c_sec}{'rmattrib_reply_query'});
+	   }
+    } elsif ($action eq 'modattrib') {
+	   if ($opts->{'type'} == 'check') {
+	       $sql = strip_ws($cfg->{$c_sec}{'modattrib_check_query'});
+	   } elsif ($opts->{'type'} == 'reply') {
+	       $sql = strip_ws($cfg->{$c_sec}{'modattrib_reply_query'});
+	   }
     }
 
     my $sth = execute($cfg, $opts, $sql);
@@ -207,10 +213,10 @@ sub radius_listattrib {
     my ($cfg, $opts, $action, $eh) = @_;
 
     my $sql;
-    if ($opts->{'type'} = 'check') {
-	$sql = strip_ws($cfg->{$c_sec}{'listattrib_check_query'});
-    } elsif ($opts->{'type'} = 'reply') {
-	$sql = strip_ws($cfg->{$c_sec}{'listattrib_reply_query'});
+    if ($opts->{'type'} == 'check') {
+	   $sql = strip_ws($cfg->{$c_sec}{'listattrib_check_query'});
+    } elsif ($opts->{'type'} == 'reply') {
+        $sql = strip_ws($cfg->{$c_sec}{'listattrib_reply_query'});
     }
 
     my $sth = execute($cfg, $opts, $sql);
