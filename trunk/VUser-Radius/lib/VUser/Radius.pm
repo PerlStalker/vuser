@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.4 2006-08-16 20:17:07 perlstalker Exp $
+# $Id: Radius.pm,v 1.5 2006-08-17 20:13:34 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
@@ -25,7 +25,7 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 					     'description' => 'Attribute to set for this user'),
 	     'type' => VUser::Meta->new('name' => 'type',
 					'type' => 'string',
-					'description' => '\'check\' or \'reply\'',
+					'description' => '\'check\' or \'reply\''),
 	     'value' => VUser::Meta->new('name' => 'value',
 					 'type' => 'string',
 					 'description' => 'Value of passed attribute')
@@ -37,7 +37,11 @@ sub init {
     my $eh = shift;
     my %cfg = @_;
 
-    $log = $main::log;
+    if (defined $main::log) {
+        $log = $main::log;
+    } else {
+        $log = VUser::Log->new(\%cfg, 'vuser')
+    }
 
     # Radius
     $eh->register_keyword ('radius', 'Manage RADIUS users');
