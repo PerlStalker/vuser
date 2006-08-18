@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.1 2006-08-18 20:50:26 perlstalker Exp $
+# $Id: SQL.pm,v 1.2 2006-08-18 21:35:12 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -17,7 +17,15 @@ our %EXPORT_TAGS = ();
 use VUser::Log qw(:levels);
 use DBI;
 
-=pod
+=head1 NAME
+
+VUser::ExtLib::SQL - Common functions for handling SQL with in vuser
+
+=head1 DESCRIPTION
+
+VUser::ExtLib::SQL contains common functions and features for working
+with databases. It has both a functional and an object-oriented interface.
+The OO interface offers more features such as macros.
 
 =head1 Class Methods
 
@@ -105,13 +113,20 @@ This will be replaced by the value of --option passed in when vuser is called.
 =item %$option
 
 This will be replaced by the value of $args{option} passed to execute().
-option may only match I<\w> or I<-> e.g. execute($cfg, $opts,
-                          "select * from foo where bar = %$bar",
-                          (bar => 'baz') )
+option may only match I<\w> or I<->. For example:
 
-execute() returns the statement handle after ->execute() has been run.
-Remember to run ->finish() on the returned statement handle when you're
+ my $db = VUser::ExtUtil::SQL->new(...);
+ my $sth = $db->execute($opts,
+                        "select * from foo where bar = %$bar",
+                        (bar => 'baz') );
+ # Possibly get results with $sth->fetchrow_*
+ $sth->finish;
+
+execute() returns the statement handle after $sth->execute() has been run.
+Remember to run $sth->finish() on the returned statement handle when you're
 done with it.
+
+=back
 
 =cut
 
@@ -126,7 +141,7 @@ sub execute {
         $self = shift;
         $dbh = $self->db_connect();
         $macros = join('|', keys %{$self->macros()});
-        %macros = $self->macros();
+        %macros = %{ $self->macros() };
     } elsif (UNIVERSAL::isa($_[0], '')) {
         $dbh = shift;
     }
@@ -156,14 +171,14 @@ sub execute {
 
     my @passed_options = ();
     foreach my $opt (@options) {
-        if ( defined $macros{$opt} ) {
-            push @passed_options, $opts->{$macros{$opt}};
-        } elsif ( $opt eq '%') {
+        if ( $opt eq '%') {
             push @passed_options, '%';
         } elsif ( $opt =~ /^-([\w-]+)/ ) {
             push @passed_options, $opts->{$1};
         } elsif ( $opt =~ /^\$([\w-]+)/ ) {
             push @passed_options, $args{$1};
+        } elsif ( defined $macros{$opt} ) {
+            push @passed_options, $opts->{$macros{$opt}};
         }
     }
 
@@ -263,3 +278,29 @@ sub DESTROY {
 }
 
 1;
+
+__END__
+
+=head1 AUTHORS
+
+Randy Smith <perlstalker@vuser.org>
+
+=head1 LICENSE
+
+ This file is part of vuser.
+ 
+ vuser is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ vuser is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with vuser; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+=cut
