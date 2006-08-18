@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.3 2006-08-17 22:26:32 perlstalker Exp $
+# $Id: SQL.pm,v 1.4 2006-08-18 17:30:49 perlstalker Exp $
 
 use VUser::ExtLib qw(:config);
 use VUser::Log qw(:levels);
@@ -22,29 +22,29 @@ my $password;
 sub depends { return qw(Radius); }
 
 sub init {
-    my $eh = shift;
+    my $eh  = shift;
     my %cfg = @_;
 
-    if (defined $main::log) {
+    if ( defined $main::log ) {
         $log = $main::log;
     } else {
-        $log = VUser::Log->new(\%cfg, 'vuser')
+        $log = VUser::Log->new( \%cfg, 'vuser' );
     }
 
-    $dsn = strip_ws($cfg{$c_sec}{'dsn'});
-    $username = strip_ws($cfg{$c_sec}{'username'});
-    $password = strip_ws($cfg{$c_sec}{'password'});
+    $dsn      = strip_ws( $cfg{$c_sec}{'dsn'} );
+    $username = strip_ws( $cfg{$c_sec}{'username'} );
+    $password = strip_ws( $cfg{$c_sec}{'password'} );
 
-    $eh->register_task('radius', 'adduser', \&do_sql);
-    $eh->register_task('radius', 'rmuser', \&do_sql);
-    $eh->register_task('radius', 'moduser', \&radius_moduser);
-    $eh->register_task('radius', 'listusers', \&radius_listusers);
-    $eh->register_task('radius', 'userinfo', \&radius_userinfo);
+    $eh->register_task( 'radius', 'adduser',   \&do_sql );
+    $eh->register_task( 'radius', 'rmuser',    \&do_sql );
+    $eh->register_task( 'radius', 'moduser',   \&radius_moduser );
+    $eh->register_task( 'radius', 'listusers', \&radius_listusers );
+    $eh->register_task( 'radius', 'userinfo',  \&radius_userinfo );
 
-    $eh->register_task('radius', 'addattrib', \&do_sql);
-    $eh->register_task('radius', 'modattrib', \&do_sql);
-    $eh->register_task('radius', 'rmattrib', \&do_sql);
-    $eh->register_task('radius', 'listattrib', \&radius_listattrib);
+    $eh->register_task( 'radius', 'addattrib',  \&do_sql );
+    $eh->register_task( 'radius', 'modattrib',  \&do_sql );
+    $eh->register_task( 'radius', 'rmattrib',   \&do_sql );
+    $eh->register_task( 'radius', 'listattrib', \&radius_listattrib );
 }
 
 sub unload {
@@ -55,54 +55,61 @@ sub unload {
 sub db_connect {
     my $cfg = shift;
 
-    unless (defined $dsn
-	    and defined $username
-	    and defined $password) {
-	$dsn = strip_ws($cfg->{$c_sec}{'dsn'});
-	$username = strip_ws($cfg->{$c_sec}{'username'});
-	$password = strip_ws($cfg->{$c_sec}{'password'});
+    unless (     defined $dsn
+             and defined $username
+             and defined $password )
+    {
+        $dsn      = strip_ws( $cfg->{$c_sec}{'dsn'} );
+        $username = strip_ws( $cfg->{$c_sec}{'username'} );
+        $password = strip_ws( $cfg->{$c_sec}{'password'} );
     }
 
-    my $dbh = DBI->connect_cached($dsn, $username, $password,
-				  { private_vuser_cachekey => 'VUser::Radius::SQL' }
-				  )
-	or die $DBI::errstr;
+    my $dbh =
+      DBI->connect_cached( $dsn, $username, $password,
+                           { private_vuser_cachekey => 'VUser::Radius::SQL' } )
+      or die $DBI::errstr;
     return $dbh;
 }
 
-
- ## SQL Queries
- # Here you define the queries used to add, modify and delete users and
- # attributes. There are a few predefined macros that you can use in your
- # SQL. The values will be quoted and escaped before being inserted into
- # the SQL.
- #  %u => username
- #  %p => password
- #  %r => realm
- #  %a => attribute name
- #  %v => attribute value
- #  %-option => This will be replaced by the value of --option passed in
- #              when vuser is called.
- #  %%option => This will be replaced by the value of $args{option} passed
- #              to execute(). option may only match \w or -
- #              e.g. execute($cfg, $opts,
- #                           "select * from foo where bar = %%bar",
- #                           (bar => 'baz') )
- # 
- # execute() returns the statement handle after ->execute() has been run.
- # Remember to run ->finish() on the returned statement handle when you're
- # done with it.
+## SQL Queries
+# Here you define the queries used to add, modify and delete users and
+# attributes. There are a few predefined macros that you can use in your
+# SQL. The values will be quoted and escaped before being inserted into
+# the SQL.
+#  %u => username
+#  %p => password
+#  %r => realm
+#  %a => attribute name
+#  %v => attribute value
+#  %% => Unquoted %
+#  %-option => This will be replaced by the value of --option passed in
+#              when vuser is called.
+#  %$option => This will be replaced by the value of $args{option} passed
+#              to execute(). option may only match \w or -
+#              e.g. execute($cfg, $opts,
+#                           "select * from foo where bar = %$bar",
+#                           (bar => 'baz') )
+#
+# execute() returns the statement handle after ->execute() has been run.
+# Remember to run ->finish() on the returned statement handle when you're
+# done with it.
 sub execute {
-    my $cfg = shift;
+    my $cfg  = shift;
     my $opts = shift;
-    my $sql = shift;
+    my $sql  = shift;
     my %args = @_;
 
     my $dbh = db_connect($cfg);
 
-    $log->log(LOG_DEBUG, "Original SQL: $sql");
+    if ( not defined $sql or $sql =~ /^\s*$/ ) {
+        $log->log( LOG_ERROR, "No SQL command given." );
+        die "No SQL command given\n";
+    }
 
-    my $re = qr/(?:%(u|p|r|a|v|-[\w-]+|%[\w-]+))/o;
+    $log->log( LOG_DEBUG, "Original SQL: $sql" );
+
+    # This will match the macros we are using
+    my $re = qr/(?:%(u|p|r|a|v|%|-[\w-]+|%[\w-]+))/o;
 
     # Pull the options out of the query
     my @options = $sql =~ /$re/g;
@@ -110,167 +117,193 @@ sub execute {
     # replace the options with ? placeholders
     $sql =~ s/$re/?/go;
 
-    $log->log(LOG_DEBUG, "Options: ".join(' ', @options));
-    $log->log(LOG_DEBUG, "New SQL: $sql");
+    $log->log( LOG_DEBUG, "Options (" .scalar @options .'): ' . join( ', ', @options ) );
+    $log->log( LOG_DEBUG, "New SQL: $sql" );
 
     my @passed_options = ();
-    foreach my $opt (@passed_options) {
-	if ($opt eq 'u') {
-	    push @passed_options, $opts->{'username'};
-	} elsif ($opt eq 'p') {
-	    push @passed_options, $opts->{'password'};
-	} elsif ($opts eq 'r') {
-	    push @passed_options, $opts->{'realm'};
-	} elsif ($opts eq 'a') {
-	    push @passed_options, $opts->{'attribute'};
-	} elsif ($opts eq 'v') {
-	    push @passed_options, $opts->{'value'};
-	} elsif ($opts =~ /^-([\w-]+)/) {
-	    push @passed_options, $opts->{$1};
-	} elsif ($opts =~ /^%([\w-]+)/) {
-	    push @passed_options, $args{$1};
-	}
+    foreach my $opt (@options) {
+        if ( $opt eq 'u' ) {
+            push @passed_options, $opts->{'username'};
+        } elsif ( $opt eq 'p' ) {
+            push @passed_options, $opts->{'password'};
+        } elsif ( $opt eq 'r' ) {
+            push @passed_options, $opts->{'realm'};
+        } elsif ( $opt eq 'a' ) {
+            push @passed_options, $opts->{'attribute'};
+        } elsif ( $opt eq 'v' ) {
+            push @passed_options, $opts->{'value'};
+        } elsif ( $opt eq '%') {
+            push @passed_options, '%';
+        } elsif ( $opt =~ /^-([\w-]+)/ ) {
+            push @passed_options, $opts->{$1};
+        } elsif ( $opt =~ /^\$([\w-]+)/ ) {
+            push @passed_options, $args{$1};
+        }
     }
 
+    $log->log( LOG_DEBUG, "Passed Options (" . scalar @passed_options .'): '
+        . join( ', ', @passed_options ) );
+
     my $sth = $dbh->prepare($sql)
-	or die "Cannot prepare SQL: ", $dbh->errstr, "\n";
-    $sth->execute($sql, @passed_options)
-	or die "Cannot execute SQL: ", $sth->errstr, "\n";
+      or die "Cannot prepare SQL: ", $dbh->errstr, "\n";
+    my $rc;
+    if (@passed_options) {
+        $rc = $sth->execute( @passed_options )
+    } else {
+        $rc = $sth->execute( )
+    }
+    die ("Cannot execute SQL: ", $sth->errstr, "\n") unless $rc;
 
     return $sth;
 }
 
 sub do_sql {
-    my ($cfg, $opts, $action, $eh) = @_;
+    my ( $cfg, $opts, $action, $eh ) = @_;
 
-    my $sql;
-    if ($action eq 'adduser') {
-	$sql = strip_ws($cfg->{$c_sec}{'adduser_query'});
-    } elsif ($action eq 'rmuser') {
-	$sql = strip_ws($cfg->{$c_sec}{'rmuser_query'});
-    } elsif ($action eq 'addattrib') {
-	   if ($opts->{'type'} == 'check') {
-	      $sql = strip_ws($cfg->{$c_sec}{'addattrib_check_query'});
-	   } elsif ($opts->{'type'} == 'reply') {
-	      $sql = strip_ws($cfg->{$c_sec}{'addattrib_reply_query'});
-	   }
-    } elsif ($action eq 'rmattrib') {
-	   if ($opts->{'type'} == 'check') {
-	       $sql = strip_ws($cfg->{$c_sec}{'rmattrib_check_query'});
-	   } elsif ($opts->{'type'} == 'reply') {
-	       $sql = strip_ws($cfg->{$c_sec}{'rmattrib_reply_query'});
-	   }
-    } elsif ($action eq 'modattrib') {
-	   if ($opts->{'type'} == 'check') {
-	       $sql = strip_ws($cfg->{$c_sec}{'modattrib_check_query'});
-	   } elsif ($opts->{'type'} == 'reply') {
-	       $sql = strip_ws($cfg->{$c_sec}{'modattrib_reply_query'});
-	   }
+    my $query;
+
+    if ( $action eq 'adduser' ) {
+        $query = 'adduser_query';
+    } elsif ( $action eq 'rmuser' ) {
+        $query = 'rmuser_query';
+    } elsif ( $action eq 'addattrib' ) {
+        if ( $opts->{'type'} == 'check' ) {
+            $query = 'addattrib_check_query';
+        } elsif ( $opts->{'type'} == 'reply' ) {
+            $query = 'addattrib_reply_query';
+        }
+    } elsif ( $action eq 'rmattrib' ) {
+        if ( $opts->{'type'} == 'check' ) {
+            $query = 'rmattrib_check_query';
+        } elsif ( $opts->{'type'} == 'reply' ) {
+            $query = 'rmattrib_reply_query';
+        }
+    } elsif ( $action eq 'modattrib' ) {
+        if ( $opts->{'type'} == 'check' ) {
+            $query = 'modattrib_check_query';
+        } elsif ( $opts->{'type'} == 'reply' ) {
+            $query = 'modattrib_reply_query';
+        }
     }
 
-    my $sth = execute($cfg, $opts, $sql);
+    my $sql = strip_ws( $cfg->{$c_sec}{$query} );
+
+    if (not $sql) {
+        $log->log(LOG_WARN, "No query specified for $query. Skipping.");
+        return;
+    }
+
+    my $sth = execute( $cfg, $opts, $sql );
     $sth->finish;
 }
 
 sub radius_adduser {
-    my ($cfg, $opts, $action, $eh) = @_;
+    my ( $cfg, $opts, $action, $eh ) = @_;
 }
 
 sub radius_rmuser {
-    my ($cfg, $opts, $action, $eh) = @_;
+    my ( $cfg, $opts, $action, $eh ) = @_;
 }
 
 sub radius_moduser {
-    my ($cfg, $opts, $action, $eh) = @_;
+    my ( $cfg, $opts, $action, $eh ) = @_;
 
     ## change password
-    if ($opts->{newpassword}) {
-        execute($cfg, $opts, strip_ws($cfg->{$c_sec}{'moduser_password_query'}));
+    if ( $opts->{newpassword} ) {
+        execute( $cfg, $opts,
+                 strip_ws( $cfg->{$c_sec}{'moduser_password_query'} ) );
     }
     ## change realm only
-    if ($opts->{newrealm} and not $opts->{newusername}) {
-        execute($cfg, $opts, strip_ws($cfg->{$c_sec}{'moduser_realm_query'}));
+    if ( $opts->{newrealm} and not $opts->{newusername} ) {
+        execute( $cfg, $opts,
+                 strip_ws( $cfg->{$c_sec}{'moduser_realm_query'} ) );
     }
     ## change username only
-    if ($opts->{newusername} and not $opts->{newrealm}) {
-        execute($cfg, $opts, strip_ws($cfg->{$c_sec}{'moduser_username_query'}));
+    if ( $opts->{newusername} and not $opts->{newrealm} ) {
+        execute( $cfg, $opts,
+                 strip_ws( $cfg->{$c_sec}{'moduser_username_query'} ) );
     }
     ## change username and realm
-    if ($opts->{newusername} and $opts->{newrealm}) {
-        execute($cfg, $opts, strip_ws($cfg->{$c_sec}{'moduser_userrealm_query'}));
+    if ( $opts->{newusername} and $opts->{newrealm} ) {
+        execute( $cfg, $opts,
+                 strip_ws( $cfg->{$c_sec}{'moduser_userrealm_query'} ) );
     }
 }
 
 sub radius_listusers {
-    my ($cfg, $opts, $action, $eh) = @_;
-    
+    my ( $cfg, $opts, $action, $eh ) = @_;
+
     my $rs = VUser::ResultSet->new();
-    $rs->add_meta($VUser::Radius::meta{'username'});
-    $rs->add_meta($VUser::Radius::meta{'realm'});
-    
-    my $sth = execute ($cfg, strip_ws($cfg->{$c_sec}{'listusers_query'}));
+    $rs->add_meta( $VUser::Radius::meta{'username'} );
+    $rs->add_meta( $VUser::Radius::meta{'realm'} );
+
+    my $sth =
+      execute( $cfg, $opts, strip_ws( $cfg->{$c_sec}{'listusers_query'} ) );
     my @results;
-    while (@results = $sth->fetchrow_array) {
-        $rs->add_data([@results[0..1]]);
+    while ( @results = $sth->fetchrow_array ) {
+        $rs->add_data( [ @results[ 0 .. 1 ] ] );
     }
-    
+
     $sth->finish;
     return $rs;
 }
 
 sub radius_userinfo {
-    my ($cfg, $opts, $action, $eh) = @_;
+    my ( $cfg, $opts, $action, $eh ) = @_;
 
     my $rs = VUser::ResultSet->new();
-    $rs->add_meta($VUser::Radius::meta{'username'});
-    $rs->add_meta($VUser::Radius::meta{'realm'});
-    $rs->add_meta($VUser::Radius::meta{'password'});
-    
-    my $sth = execute ($cfg, strip_ws($cfg->{$c_sec}{'userinfo_query'}));
+    $rs->add_meta( $VUser::Radius::meta{'username'} );
+    $rs->add_meta( $VUser::Radius::meta{'realm'} );
+    $rs->add_meta( $VUser::Radius::meta{'password'} );
+
+    my $sth =
+      execute( $cfg, $opts, strip_ws( $cfg->{$c_sec}{'userinfo_query'} ) );
     my @results;
-    while (@results = $sth->fetchrow_array) {
-        $rs->add_data([@results[0..3]]);
+    while ( @results = $sth->fetchrow_array ) {
+        $rs->add_data( [ @results[ 0 .. 2 ] ] );
     }
-    
+
     $sth->finish;
     return $rs;
 }
 
 sub radius_addattrib {
-    my ($cfg, $opts, $action, $eh) = @_;
+    my ( $cfg, $opts, $action, $eh ) = @_;
 }
 
 sub radius_modattrib {
-    my ($cfg, $opts, $action, $eh) = @_;
+    my ( $cfg, $opts, $action, $eh ) = @_;
 }
 
 sub radius_rmattrib {
-    my ($cfg, $opts, $action, $eh) = @_;
+    my ( $cfg, $opts, $action, $eh ) = @_;
 }
 
 sub radius_listattrib {
-    my ($cfg, $opts, $action, $eh) = @_;
+    my ( $cfg, $opts, $action, $eh ) = @_;
 
     my $sql;
-    if ($opts->{'type'} == 'check') {
-	   $sql = strip_ws($cfg->{$c_sec}{'listattrib_check_query'});
-    } elsif ($opts->{'type'} == 'reply') {
-        $sql = strip_ws($cfg->{$c_sec}{'listattrib_reply_query'});
+    if ( $opts->{'type'} == 'check' ) {
+        $sql = strip_ws( $cfg->{$c_sec}{'listattrib_check_query'} );
+    } elsif ( $opts->{'type'} == 'reply' ) {
+        $sql = strip_ws( $cfg->{$c_sec}{'listattrib_reply_query'} );
     }
+
+    return unless $sql;
 
     ## Build resultset
     my $rs = VUser::ResultSet->new();
-    $rs->add_meta($VUser::Radius::meta{'username'});
-    $rs->add_meta($VUser::Radius::meta{'realm'});
-    $rs->add_meta($VUser::Radius::meta{'attribute'});
-    $rs->add_meta($VUser::Radius::meta{'type'});
-    $rs->add_meta($VUser::Radius::meta{'value'});
-    
-    my $sth = execute($cfg, $opts, $sql);
-    
+    $rs->add_meta( $VUser::Radius::meta{'username'} );
+    $rs->add_meta( $VUser::Radius::meta{'realm'} );
+    $rs->add_meta( $VUser::Radius::meta{'attribute'} );
+    $rs->add_meta( $VUser::Radius::meta{'type'} );
+    $rs->add_meta( $VUser::Radius::meta{'value'} );
+
+    my $sth = execute( $cfg, $opts, $sql );
+
     my @results;
-    while (@results = $sth->fetchrow_array) {
-        $rs->add_data([@results[0..3]]);
+    while ( @results = $sth->fetchrow_array ) {
+        $rs->add_data( [ @results[ 0 .. 2 ], $opts->{'type'}, $results[3] ] );
     }
 
     $sth->finish;
