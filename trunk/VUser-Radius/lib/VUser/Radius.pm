@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.5 2006-08-17 20:13:34 perlstalker Exp $
+# $Id: Radius.pm,v 1.6 2006-08-18 17:26:09 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
@@ -65,6 +65,14 @@ sub init {
     $eh->register_option ('radius', 'moduser', $meta{'password'}->new('name' => 'newpassword'));
     $eh->register_option ('radius', 'moduser', $meta{'realm'}->new('name' => 'newrealm'));
 
+	# radius-listusers
+	$eh->register_action ('radius', 'listusers', 'List all user accounts');
+	
+	# radius-userinfo
+	$eh->register_action ('radius', 'userinfo', 'Get details for a RADIUS user');
+	$eh->register_option ('radius', 'userinfo', $meta{'username'}, 'req');
+	$eh->register_option ('radius', 'userinfo', $meta{'realm'});
+	
     # radius-addattrib
     $eh->register_action ('radius', 'addattrib', 'Add an attribute to a RADIUS user');
     $eh->register_option ('radius', 'addattrib', $meta{'username'}, 1);
@@ -84,6 +92,12 @@ sub init {
     $eh->register_option ('radius', 'rmattrib', $meta{'username'}, 1);
     $eh->register_option ('radius', 'rmattrib', $meta{'realm'});
     $eh->register_option ('radius', 'rmattrib', $meta{'attribute'}, 1);
+    
+    # radius-listattrib
+    $eh->register_action ('radius', 'listattrib', 'List attributes for a RADIUS user');
+    $eh->register_option ('radius', 'listattrib', $meta{'username'}, 1);
+    $eh->register_option ('radius', 'listattrib', $meta{'realm'});
+    $eh->register_option ('radius', 'listattrib', $meta{'type'}, 1);
 }
 
 sub meta { return %meta; }
