@@ -3,10 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.4 2006-08-18 17:30:49 perlstalker Exp $
+# $Id: SQL.pm,v 1.5 2006-08-18 17:34:25 perlstalker Exp $
 
 use VUser::ExtLib qw(:config);
 use VUser::Log qw(:levels);
+use VUser::ResultSet;
+# Should be use()d by vuser when extensions are loaded.
+# Explicitly include here to be sure
+use VUser::Radius;
 use DBI;
 
 my $log;
