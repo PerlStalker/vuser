@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.2 2006-08-18 21:35:12 perlstalker Exp $
+# $Id: SQL.pm,v 1.3 2006-08-29 17:57:32 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -71,7 +71,7 @@ sub new {
         $self->user($class->user());
         $self->password($class->password());
         $self->macros($class->macros());
-        $self->{_log} = $class->log();
+        $self->{_log} = $class->Log();
     } else {
         if (defined $main::log
             and UNIVERSAL::isa($main::log, 'VUser::Log'))
@@ -151,11 +151,11 @@ sub execute {
     my %args = @_;
 
     if ( not defined $sql or $sql =~ /^\s*$/ ) {
-        log()->log( LOG_ERROR, "No SQL command given." );
+        Log()->log( LOG_ERROR, "No SQL command given." );
         die "No SQL command given\n";
     }
 
-    log()->log( LOG_DEBUG, "Original SQL: $sql" );
+    Log()->log( LOG_DEBUG, "Original SQL: $sql" );
 
     # This will match the macros we are using
     my $re = qr/(?:%($macros|%|-[\w-]+|%[\w-]+))/o;
@@ -166,8 +166,8 @@ sub execute {
     # replace the options with ? placeholders
     $sql =~ s/$re/?/go;
 
-    log()->log( LOG_DEBUG, "Options (" .scalar @options .'): ' . join( ', ', @options ) );
-    log()->log( LOG_DEBUG, "New SQL: $sql" );
+    Log()->log( LOG_DEBUG, "Options (" .scalar @options .'): ' . join( ', ', @options ) );
+    Log()->log( LOG_DEBUG, "New SQL: $sql" );
 
     my @passed_options = ();
     foreach my $opt (@options) {
@@ -182,7 +182,7 @@ sub execute {
         }
     }
 
-    log()->log( LOG_DEBUG, "Passed Options (" . scalar @passed_options .'): '
+    Log()->log( LOG_DEBUG, "Passed Options (" . scalar @passed_options .'): '
         . join( ', ', @passed_options ) );
 
     my $sth = $dbh->prepare($sql)
@@ -252,7 +252,7 @@ sub user { $_[0]->{user} = $_[1] if defined $_[1]; return $_[0]->{user}; }
 sub password { $_[0]->{password} = $_[1] if defined $_[1]; return $_[0]->{password}; }
 sub macros { $_[0]->{macros} = $_[1] if defined $_[1]; return $_[0]->{macros}; }
 
-sub log {
+sub Log {
     my $self = shift;
     if (defined $self and UNIVERSAL::isa($self, 'VUser::ExtLib::SQL')) {
         return $self->{_log};
@@ -267,6 +267,36 @@ sub log {
             # I need to create VUser::ExtLib::log but don't have a $cfg. Hmmm.
             die "I can't find a VUser::Log\n";
         }
+    }
+}
+
+sub begin {
+    my $self = shift;
+    if (UNIVERSAL::isa($self, "VUser::ExtLib::SQL")) {
+        Log()->log(LOG_DEBUG, "Beginning transaction");
+        $self->db_connect()->begin_work();
+    } else {
+        Log()->log(LOG_DEBUG, "Cannot begin transaction in function mode");
+    }
+}
+
+sub commit {
+    my $self = shift;
+    if (UNIVERSAL::isa($self, "VUser::ExtLib::SQL")) {
+        Log()->log(LOG_DEBUG, "Committing transaction");
+        $self->db_connect()->commit();
+    } else {
+        Log()->log(LOG_DEBUG, "Cannot commit transaction in function mode");
+    }
+}
+
+sub rollback {
+    my $self = shift;
+    if (UNIVERSAL::isa($self, "VUser::ExtLib::SQL")) {
+        Log()->log(LOG_DEBUG, "Rolling back transaction");
+        $self->db_connect()->rollback();
+    } else {
+        Log()->log(LOG_DEBUG, "Cannot rollback transaction in function mode");
     }
 }
 
