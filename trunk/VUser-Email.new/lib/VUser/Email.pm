@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Email.pm,v 1.1 2006-08-28 22:33:12 perlstalker Exp $
+# $Id: Email.pm,v 1.2 2006-08-29 16:02:49 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 
-our $VERSION = '0.3.0';
+our $VERSION = '0.3.1';
 
 our $c_sec = 'Extension Email';
 our %meta = ('account' => VUser::Meta->new('name' => 'account',
@@ -56,9 +56,9 @@ sub init {
     $eh->register_action('email', 'mod', 'Modify an email account');
     $eh->register_option('email', 'mod', $meta{'account'}, 1);
     $eh->register_option('email', 'mod', $meta{'account'}->new('name' => 'newaccount'));
-    $eh->register_option('email', 'mod', $meta{'password'}->new('name' => 'newpassword'));
-    $eh->register_option('email', 'mod', $meta{'name'}->new('name' => 'newname'));
-    $eh->register_option('email', 'mod', $meta{'quota'}->new('name' => 'newquota'));
+    $eh->register_option('email', 'mod', $meta{'password'});
+    $eh->register_option('email', 'mod', $meta{'name'});
+    $eh->register_option('email', 'mod', $meta{'quota'});
 
     # email-del
     $eh->register_action('email', 'del', 'Delete an email account');
