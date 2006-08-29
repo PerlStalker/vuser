@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Email.pm,v 1.2 2006-08-29 16:02:49 perlstalker Exp $
+# $Id: Email.pm,v 1.3 2006-08-29 16:18:13 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 
@@ -25,6 +25,9 @@ our %meta = ('account' => VUser::Meta->new('name' => 'account',
 	     'domain' => VUser::Meta->new('name' => 'domain',
 					  'type' => 'string',
 					  'description' => 'Domain name'),
+		 'home' => VUser::Meta->new('name' => 'home',
+		                            'type' => 'string',
+		                            'description' => 'Home directory (overrides config setting)'),
 	     'pattern' => VUser::Meta->new('name' => 'pattern',
 					   'type' => 'string',
 					   'description', 'Limit to pattern')
@@ -51,6 +54,7 @@ sub init {
     $eh->register_option('email', 'add', $meta{'password'}, 1);
     $eh->register_option('email', 'add', $meta{'name'});
     $eh->register_option('email', 'add', $meta{'quota'});
+    $eh->register_option('email', 'add', $meta{'home'});
 
     # email-mod
     $eh->register_action('email', 'mod', 'Modify an email account');
@@ -59,6 +63,7 @@ sub init {
     $eh->register_option('email', 'mod', $meta{'password'});
     $eh->register_option('email', 'mod', $meta{'name'});
     $eh->register_option('email', 'mod', $meta{'quota'});
+    $eh->register_option('email', 'mod', $meta{'home'});
 
     # email-del
     $eh->register_action('email', 'del', 'Delete an email account');
