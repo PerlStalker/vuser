@@ -3,8 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Email.pm,v 1.3 2006-08-29 16:18:13 perlstalker Exp $
+# $Id: Email.pm,v 1.4 2006-09-06 21:49:38 perlstalker Exp $
 
+use VUser::Meta;
 use VUser::Log qw(:levels);
 
 our $VERSION = '0.3.1';
