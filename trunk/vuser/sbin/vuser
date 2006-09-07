@@ -6,14 +6,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.17 2006-02-23 18:23:10 perlstalker Exp $
+# $Id: vuser,v 1.18 2006-09-07 16:02:19 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.17 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.18 $'))[1];
 our $VERSION = "0.3.0";
 
 our $DEBUG = 0;
@@ -72,8 +72,20 @@ if (not defined $config_file) {
     die "Unable to find a vuser.conf file in ".join (", ", @etc_dirs).".\n";
 }
 
+if ($debug) {
+    print STDERR "Loading $config_file\n";
+}
+
 my %cfg;
 tie %cfg, 'Config::IniFiles', (-file => $config_file);
+
+if (@Config::IniFiles::errors) {
+    warn "There were errors loading $config_file\n";
+    foreach my $error (@Config::IniFiles::errors) {
+	warn "$error\n";
+    }
+    die "Please correct the errors and try again\n";
+}
 
 $DEBUG = check_bool $cfg{'vuser'}{'debug'};
 $DEBUG = 1 if ($debug);
@@ -137,6 +149,26 @@ vuser [--config=/path/to/vuser.conf] module action [options]
 See 'vuser help module' for a list of actions and options.
 
 =head1 DESCRIPTION
+
+=head1 CONFIGURATION
+
+[vuser]
+# Enable debugging (Lots of output)
+debug = no
+
+# Space delimited list of extensions to load
+# extensions = Email::Courier Radius::SQL
+extensions = Email
+
+#log type = Syslog
+#log level = notice
+log level = debug
+
+show result set = yes
+# Display the result set in a different format.
+# Allowed formats: CSV
+#display format = CSV
+
 
 =head1 BUGS
 
