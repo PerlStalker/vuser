@@ -4,7 +4,7 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Postfix.pm,v 1.1 2006-08-28 22:33:13 perlstalker Exp $
+# $Id: Postfix.pm,v 1.2 2006-09-07 15:21:00 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:files);
@@ -13,7 +13,7 @@ my $log;
 my %meta;
 
 my $VERSION = '0.1.0';
-my $c_sec = 'Extension Email::Courier';
+my $c_sec = 'Extension Email::Postfix';
 
 sub depends { return qw(Email); }
 
