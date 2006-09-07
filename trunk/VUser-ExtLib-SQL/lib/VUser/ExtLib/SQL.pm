@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.3 2006-08-29 17:57:32 perlstalker Exp $
+# $Id: SQL.pm,v 1.4 2006-09-07 16:16:27 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -66,7 +66,7 @@ sub new {
                 };
     bless $self, $class; 
 
-    if (UNIVERSAL::isa($class, 'VUser::ExtLib::SQL')) {
+    if (ref $class && UNIVERSAL::isa($class, 'VUser::ExtLib::SQL')) {
         $self->dsn($class->dsn());
         $self->user($class->user());
         $self->password($class->password());
