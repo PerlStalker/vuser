@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.1 2006-09-06 21:52:39 perlstalker Exp $
+# $Id: SQL.pm,v 1.1 2006-09-07 14:56:01 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
