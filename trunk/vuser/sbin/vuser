@@ -6,14 +6,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.18 2006-09-07 16:02:19 perlstalker Exp $
+# $Id: vuser,v 1.19 2006-09-07 17:47:26 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.18 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.19 $'))[1];
 our $VERSION = "0.3.0";
 
 our $DEBUG = 0;
@@ -89,6 +89,11 @@ if (@Config::IniFiles::errors) {
 
 $DEBUG = check_bool $cfg{'vuser'}{'debug'};
 $DEBUG = 1 if ($debug);
+
+if ($debug) {
+    use Data::Dumper;
+    print Dumper \%cfg;
+}
 
 our $log = VUser::Log->new(\%cfg, 'vuser');
 my $eh = new VUser::ExtHandler (\%cfg);
