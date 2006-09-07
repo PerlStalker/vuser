@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.4 2006-09-07 16:16:27 perlstalker Exp $
+# $Id: SQL.pm,v 1.5 2006-09-07 18:04:09 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -58,7 +58,7 @@ sub new {
     my $cfg = shift;
     my $params = shift;
     
-    my $self = {dns => undef,
+    my $self = {dsn => undef,
                 user => undef,
                 password => undef,
                 macros => {},
@@ -82,7 +82,7 @@ sub new {
         }
     }
     
-    $self->dsn($params->{dns});
+    $self->dsn($params->{dsn});
     $self->user($params->{user});
     $self->password($params->{password});
     $self->macros($params->{macros});    
@@ -118,7 +118,7 @@ option may only match I<\w> or I<->. For example:
  my $db = VUser::ExtUtil::SQL->new(...);
  my $sth = $db->execute($opts,
                         "select * from foo where bar = %$bar",
-                        (bar => 'baz') );
+                        {bar => 'baz'} );
  # Possibly get results with $sth->fetchrow_*
  $sth->finish;
 
@@ -148,7 +148,7 @@ sub execute {
     
     my $opts = shift;
     my $sql  = shift;
-    my %args = @_;
+    my %args = %{ shift() };
 
     if ( not defined $sql or $sql =~ /^\s*$/ ) {
         Log()->log( LOG_ERROR, "No SQL command given." );
@@ -217,7 +217,7 @@ sub db_connect {
     
     my $scope;
     
-    if (UNIVERSAL::isa($_[0], 'VUser::ExtLib::SQL')) {
+    if (ref $_[0] and UNIVERSAL::isa($_[0], 'VUser::ExtLib::SQL')) {
         $self = shift;
         $dsn = $self->dsn();
         $user = $self->user();
@@ -227,6 +227,10 @@ sub db_connect {
     }
     
     $scope = shift || 'VUser::ExtLib::SQL';
+
+    die "No DSN specified\n" unless $dsn;
+
+    Log()->log(LOG_DEBUG, "Connecting to $dsn as $user");
     
     my $dbh =
       DBI->connect_cached( $dsn, $user, $password,
@@ -304,7 +308,7 @@ sub rollback {
 sub DESTROY {
     my $self = shift;
     my $cached_connections = $self->db_connect();
-    %$cached_connections = () if $cached_connections;
+    #%$cached_connections = () if $cached_connections;
 }
 
 1;
