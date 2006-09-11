@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.5 2006-09-07 18:04:09 perlstalker Exp $
+# $Id: SQL.pm,v 1.6 2006-09-11 22:22:36 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -183,7 +183,7 @@ sub execute {
     }
 
     Log()->log( LOG_DEBUG, "Passed Options (" . scalar @passed_options .'): '
-        . join( ', ', @passed_options ) );
+        . join( ', ', map { defined $_? $_ : 'undef' } @passed_options ) );
 
     my $sth = $dbh->prepare($sql)
       or die "Cannot prepare SQL: ", $dbh->errstr, "\n";
