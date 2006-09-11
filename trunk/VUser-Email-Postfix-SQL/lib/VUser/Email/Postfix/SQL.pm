@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.2 2006-09-11 22:21:59 perlstalker Exp $
+# $Id: SQL.pm,v 1.3 2006-09-11 22:23:45 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -401,7 +401,7 @@ VUser::Email::Postfix::SQL - vuser extension for managing postfix users and doma
  
  # The domain*_query allow %d and %$d to be the same.
  # Add a domain 
- domainadd_query = insert into Domains set domain = %d, transport = 'virtual' 
+ domainadd_query = insert into Domains set domain = %d, transport = 'virtual:' 
  
  # Delete a domain
  domaindel_query = delete from Domain where domain = %d
