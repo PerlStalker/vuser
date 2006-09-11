@@ -3,12 +3,21 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Email.pm,v 1.4 2006-09-06 21:49:38 perlstalker Exp $
+# $Id: Email.pm,v 1.5 2006-09-11 22:22:54 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log qw(:levels);
+use VUser::ExtLib qw(:config);
 
 our $VERSION = '0.3.1';
+
+use Exporter;
+our @ISA = qw(Exporter);
+our @EXPORT = ();
+our @EXPORT_OK = qw(split_address get_domain_directory get_home_directory);
+our %EXPORT_TAGS = (utils => [qw(split_address
+				 get_domain_directory
+				 get_home_directory)]);
 
 our $c_sec = 'Extension Email';
 our %meta = ('account' => VUser::Meta->new('name' => 'account',
@@ -21,7 +30,7 @@ our %meta = ('account' => VUser::Meta->new('name' => 'account',
 					'type' => 'string',
 					'description' => 'Real name'),
 	     'quota' => VUser::Meta->new('name' => 'quota',
-					 'type' => 'int',
+					 'type' => 'integer',
 					 'description' => 'Mailbox quota in KB'),
 	     'domain' => VUser::Meta->new('name' => 'domain',
 					  'type' => 'string',
@@ -113,14 +122,14 @@ sub get_home_directory
     my $user = shift;
     my $domain = shift;
 
-    return eval( $cfg->{Extension_Email}{userhomedir} );
+    return eval( $cfg->{$c_sec}{userhomedir} );
 }
 
 sub get_domain_directory
 {
     my $cfg = shift;
     my $domain = shift;
-    return eval( $cfg->{Extension_Email}{domaindir} );
+    return eval( $cfg->{$c_sec}{domaindir} );
 }
 
 sub get_quotafile
@@ -144,10 +153,11 @@ sub split_address
 	$$domain = $2;
     } else {
 	$$username = $account;
- 	$$domain = $cfg->{Extension_Email}{defaultdomain};
+ 	$$domain = $cfg->{$c_sec}{defaultdomain};
 	$$domain =~ s/^\s*(\S+)\s*/$1/;
     }
-##    $$user = lc($$username) if 0+$cfg->{Extension_Email}{'lc_user'};
+
+    $$username = lc($$username) if check_bool($cfg->{$c_sec}{'lc_user'});
     $$domain = lc($$domain);
 }
 
@@ -171,7 +181,7 @@ extensions.
 
 =head1 SAMPLE CONFIGURATION
 
- [Extension_Email]
+ [Extension Email]
  # The location of the files which are copies into a brand new home dir
  skeldir=/usr/local/etc/courier/skel
  
@@ -198,6 +208,9 @@ extensions.
  # User and group name of owner of the vittual user's directories
  virtual user=vmail
  virtual group=vmail
+ 
+ # Default quota in bytes
+ default quota=20000000
 
 =head1 AUTHORS
 

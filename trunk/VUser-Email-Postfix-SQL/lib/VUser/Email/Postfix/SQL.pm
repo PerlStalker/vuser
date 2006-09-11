@@ -3,12 +3,12 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.1 2006-09-07 14:56:01 perlstalker Exp $
+# $Id: SQL.pm,v 1.2 2006-09-11 22:21:59 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
 use VUser::ExtLib::SQL;
-use VUser::Email;
+use VUser::Email qw(:utils);
 use VUser::ResultSet;
 use VUser::Meta;
 
@@ -34,7 +34,7 @@ sub init {
     }
     
     $extlib = VUser::ExtLib::SQL->new(\%cfg,
-                                      {'dns' => $cfg{$c_sec}{'dsn'},
+                                      {'dsn' => $cfg{$c_sec}{'dsn'},
                                        'user' => $cfg{$c_sec}{'user'},
                                        'password' => $cfg{$c_sec}{'password'},
                                        'macros' => { 'a' => 'account',
@@ -61,11 +61,59 @@ sub init {
     $eh->register_task('domain', 'list', \&domain_list);
 }
 
-sub email_add {
-    my ($cfg, $opts, $action, $eh) = @_;
-    
+sub user_exists {
+    my $cfg = shift;
+    my $opts = shift;
+    my $account = shift;
+
     my ($user, $domain);
     VUser::Email::split_address($cfg, $opts->{account}, \$user, \$domain);
+    my $params = { 'u' => $user, 'd', $domain };
+
+    my $sql = strip_ws($cfg->{$c_sec}{userinfo_query});
+    my $sth;
+    eval { $sth = $extlib->execute($opts, $sql, $params); };
+    if ($@) {
+        $log->log(LOG_ERROR, "Unable to get user info: $@");
+        die "Unable to get user info: $@";
+    }
+
+    my $found;
+    my @results;
+    if (@results = $sth->fetchrow_array()) {
+	$found = 1;
+	$log->log(LOG_DEBUG, "User $account exists");
+    } else {
+	$found = 0;
+	$log->log(LOG_DEBUG, "User $account does not exist");
+    }
+
+    $sth->finish;
+    return $found;
+}
+
+sub email_add {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $account = $opts->{account};
+    if ($cfg->{$VUser::Email::c_sec}{"lc user"}) {
+	$account = lc($account);
+    }
+    
+    my ($user, $domain);
+    VUser::Email::split_address($cfg, $account, \$user, \$domain);
+
+    if (user_exists($cfg, $opts, $account)) {
+	return;
+    }
+
+    if (not defined $opts->{home}) {
+	$opts->{"home"} = get_home_directory($cfg, $user, $domain);
+    }
+
+    if (not defined $opts->{quota}) {
+	$opts->{quota} = strip_ws($cfg->{$VUser::Email::c_sec}{'default quota'});
+    }
     
     my $sql = strip_ws($cfg->{$c_sec}{'useradd_query'});
     my $sth = $extlib->execute($opts, $sql, {'u' => $user, 'd' => $domain});
@@ -94,22 +142,27 @@ sub email_mod {
         push @sql, strip_ws($cfg->{$c_sec}{usermod_name_query});
     }
     
-    if ($opts->{name} and $cfg->{$c_sec}{usermod_quota_query}) {
+    if (defined $opts->{quota} and $cfg->{$c_sec}{usermod_quota_query}) {
         push @sql, strip_ws($cfg->{$c_sec}{usermod_quota_query});
     }
        
     if ($opts->{newaccount} and $cfg->{$c_sec}{usermod_account_query}) {
-        # Update the user name
-        push @sql, strip_ws($cfg->{$c_sec}{usermod_account_query});
-        
-        # change the home dir to match the username unless --home was passed
+       # change the home dir to match the username unless --home was passed
         if (not $opts->{home} and $cfg->{$c_sec}{usermod_quota_query}) {
-            $opts->{home} = VUser::Email::get_home_directory($cfg, $user, $domain);
+	    my ($new_user, $new_domain);
+	    VUser::Email::split_address ($cfg, $opts->{newaccount},
+					 \$new_user, \$new_domain);
+            $opts->{home} = VUser::Email::get_home_directory($cfg,
+							     $new_user,
+							     $new_domain);
             push @sql, strip_ws($cfg->{$c_sec}{usermod_home_query});
         }
+
+        # Update the user name
+        push @sql, strip_ws($cfg->{$c_sec}{usermod_account_query});
     }
     
-    $extlib->begin();
+    #$extlib->begin();
     foreach my $sql (@sql) {
         eval { $extlib->execute($opts, $sql, $params); };
         if ($@) {
@@ -118,7 +171,7 @@ sub email_mod {
             $extlib->rollback();
         }
     }
-    $extlib->commit();
+    #$extlib->commit();
 }
 
 sub email_del {
@@ -141,7 +194,7 @@ sub email_info {
     my ($cfg, $opts, $action, $eh) = @_;
     
     my ($user, $domain);
-    VUser::Email::split_addres($cfg, $opts->{account}, \$user, \$domain);
+    VUser::Email::split_address($cfg, $opts->{account}, \$user, \$domain);
     my $params = { 'u' => $user, 'd', $domain };
     
     my $sql = strip_ws($cfg->{$c_sec}{userinfo_query});
@@ -308,6 +361,10 @@ VUser::Email::Postfix::SQL - vuser extension for managing postfix users and doma
 =head1 SAMPLE CONFIGURATION
 
  [Extension Email::Postfix::SQL]
+ dsn = dbi:mysql:database=email
+ user = email
+ password = secret
+
  # The various *_query settings here need to be defined to tell vuser how to
  # add, delete, etc accounts in the database. Any option passed on the commandline
  # can be inserted into the query with %-option_name.

@@ -4,16 +4,20 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Postfix.pm,v 1.2 2006-09-07 15:21:00 perlstalker Exp $
+# $Id: Postfix.pm,v 1.3 2006-09-11 22:22:54 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:files);
+
+use VUser::Email qw(:utils);
 
 my $log;
 my %meta;
 
 my $VERSION = '0.1.0';
 my $c_sec = 'Extension Email::Postfix';
+
+our $user_exists;
 
 sub depends { return qw(Email); }
 
@@ -45,18 +49,20 @@ sub email_add {
     my $user;
     my $domain;
 
-    split_address ($cfg, $account, \$user, \$domain);
+    VUser::Email::split_address ($cfg, $account, \$user, \$domain);
 
     die "'account' must be in the form user\@domain" if (!$user or !$domain);
 
-    # die if user_exists() ?
+    if (defined $user_exists) {
+	die "User $account exists\n" if &$user_exists($cfg, $opts, $account);
+    }
 
     my $userdir = get_home_directory ($cfg, $user, $domain);
     my $user_parentdir = $userdir;
     $user_parentdir =~ s!/[^/]*$!!;
 
-    my $vuid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
-    my $vgid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
+    my $vuid = (getpwnam($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
+    my $vgid = (getpwnam($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
 
     mkdir_p ($user_parentdir,
 	     0775, $vuid, $vgid,
@@ -77,18 +83,20 @@ sub email_mod {
 
     my $old_user;
     my $old_domain;
-    split_address( $cfg, $account, \$old_user, \$old_domain);
+    VUser::Email::split_address( $cfg, $account, \$old_user, \$old_domain);
 
-    die "account must be in form user\@domain" if( !$old_user or $old_domain );
+    die "account must be in form user\@domain\n" if( !$old_user or !$old_domain );
 
     my $new_account = $opts->{newaccount};
     if ($new_account and $new_account ne $account) {
-	# die if user_exists
+	if (defined $user_exists) {
+	    die "User $new_account exists\n" if &$user_exists($cfg, $opts, $new_account);
+	}
 
 	# User is changing the email address for the account.
 	my $new_user;
 	my $new_domain;
-	split_address( $cfg, $new_account, \$new_user, \$new_domain);
+	VUser::Email::split_address( $cfg, $new_account, \$new_user, \$new_domain);
 	die "newaccount must be in form user\@domain" if( !$new_user or !$new_domain );
 
 	my $old_userdir = get_home_directory($cfg, $old_user, $old_domain);
@@ -106,9 +114,15 @@ sub email_del {
     my $user;
     my $domain;
 
-    split_address( $cfg, $account, \$user, \$domain );
+    VUser::Email::split_address( $cfg, $account, \$user, \$domain );
     
     die "account must be in form user\@domain" if( !$user or !$domain );
+
+    if (defined $user_exists
+	and not &$user_exists($cfg, $opts, $account)) {
+	$log->log(LOG_NOTICE, "Deleting unknown user $account");
+	die "Deleting unknown user $account";
+    }
 
     my $userdir = get_home_directory( $cfg, $user, $domain );
     rm_r ("$userdir");
@@ -123,8 +137,8 @@ sub domain_mod {
     my $domain_dir = VUser::Email::Courier::get_domain_directory($cfg, $domain);
     my $new_domain_dir = VUser::Email::Courier::get_domain_directory($cfg, $new_domain);
 
-    my $vuid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
-    my $vgid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
+    my $vuid = (getpwnam($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
+    my $vgid = (getpwnam($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
 
     if ($new_domain and $new_domain ne $domain) {
         # rename dirs
@@ -139,8 +153,8 @@ sub domain_del {
     my $domain = $opts->{domain};
 
     my $domain_dir = VUser::Email::Courier::get_domain_directory($cfg, $domain);
-    my $vuid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
-    my $vgid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
+    my $vuid = (getpwnam($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
+    my $vgid = (getpwnam($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
 
     rm_r($domain_dir);
 }
@@ -162,6 +176,10 @@ for the authmodule being used.
 
 This extension is not normally used directly. Instead, use one of the
 VUser::Email::Postfix::* extensions.
+
+=head1 CONFIGURATION
+
+There in no special configuration for Mail::Postfix.
 
 =head1 AUTHOR
 
