@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.6 2006-08-18 17:26:09 perlstalker Exp $
+# $Id: Radius.pm,v 1.7 2006-09-13 17:12:09 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
@@ -62,7 +62,7 @@ sub init {
     $eh->register_option ('radius', 'moduser', $meta{'username'}, 'req');
     $eh->register_option ('radius', 'moduser', $meta{'realm'});
     $eh->register_option ('radius', 'moduser', $meta{'username'}->new('name' => 'newusername'));
-    $eh->register_option ('radius', 'moduser', $meta{'password'}->new('name' => 'newpassword'));
+    $eh->register_option ('radius', 'moduser', $meta{'password'});
     $eh->register_option ('radius', 'moduser', $meta{'realm'}->new('name' => 'newrealm'));
 
 	# radius-listusers
