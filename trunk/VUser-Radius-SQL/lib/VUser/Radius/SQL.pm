@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.5 2006-08-18 17:34:25 perlstalker Exp $
+# $Id: SQL.pm,v 1.6 2006-09-13 20:21:20 perlstalker Exp $
 
 use VUser::ExtLib qw(:config);
 use VUser::Log qw(:levels);
@@ -11,7 +11,7 @@ use VUser::ResultSet;
 # Should be use()d by vuser when extensions are loaded.
 # Explicitly include here to be sure
 use VUser::Radius;
-use DBI;
+use VUser::ExtLib::SQL;
 
 my $log;
 my %meta;
@@ -19,6 +19,7 @@ my %meta;
 our $VERSION = '0.1.0';
 my $c_sec = 'Extension Radius::SQL';
 
+my $extlib;
 my $dsn;
 my $username;
 my $password;
@@ -39,6 +40,19 @@ sub init {
     $username = strip_ws( $cfg{$c_sec}{'username'} );
     $password = strip_ws( $cfg{$c_sec}{'password'} );
 
+    $extlib = VUser::ExtLib::SQL->new(\%cfg,
+				      {'dsn' => $dsn,
+				       'user' => $username,
+				       'password' => $password,
+				       'macros' => { 'u' => 'username',
+						     'p' => 'password',
+						     'r' => 'realm',
+						     'a' => 'attribute',
+						     't' => 'type',
+						     'v' => 'value'
+						     }
+				   });
+
     $eh->register_task( 'radius', 'adduser',   \&do_sql );
     $eh->register_task( 'radius', 'rmuser',    \&do_sql );
     $eh->register_task( 'radius', 'moduser',   \&radius_moduser );
@@ -51,114 +65,31 @@ sub init {
     $eh->register_task( 'radius', 'listattrib', \&radius_listattrib );
 }
 
-sub unload {
-    my $cached_connections = db_connect();
-    %$cached_connections = () if $cached_connections;
-}
+sub unload { }
 
-sub db_connect {
-    my $cfg = shift;
+sub user_exists {
+    my ($cfg, $opts) = @_;
 
-    unless (     defined $dsn
-             and defined $username
-             and defined $password )
-    {
-        $dsn      = strip_ws( $cfg->{$c_sec}{'dsn'} );
-        $username = strip_ws( $cfg->{$c_sec}{'username'} );
-        $password = strip_ws( $cfg->{$c_sec}{'password'} );
+    my $sql = strip_ws($cfg->{$c_sec}{'userinfo_query'});
+    my $sth;
+    eval { $sth = $extlib->execute($opts, $sql); };
+    if ($@) {
+        $log->log(LOG_ERROR, "Unable to get user info: $@");
+        die "Unable to get user info: $@";
     }
 
-    my $dbh =
-      DBI->connect_cached( $dsn, $username, $password,
-                           { private_vuser_cachekey => 'VUser::Radius::SQL' } )
-      or die $DBI::errstr;
-    return $dbh;
-}
-
-## SQL Queries
-# Here you define the queries used to add, modify and delete users and
-# attributes. There are a few predefined macros that you can use in your
-# SQL. The values will be quoted and escaped before being inserted into
-# the SQL.
-#  %u => username
-#  %p => password
-#  %r => realm
-#  %a => attribute name
-#  %v => attribute value
-#  %% => Unquoted %
-#  %-option => This will be replaced by the value of --option passed in
-#              when vuser is called.
-#  %$option => This will be replaced by the value of $args{option} passed
-#              to execute(). option may only match \w or -
-#              e.g. execute($cfg, $opts,
-#                           "select * from foo where bar = %$bar",
-#                           (bar => 'baz') )
-#
-# execute() returns the statement handle after ->execute() has been run.
-# Remember to run ->finish() on the returned statement handle when you're
-# done with it.
-sub execute {
-    my $cfg  = shift;
-    my $opts = shift;
-    my $sql  = shift;
-    my %args = @_;
-
-    my $dbh = db_connect($cfg);
-
-    if ( not defined $sql or $sql =~ /^\s*$/ ) {
-        $log->log( LOG_ERROR, "No SQL command given." );
-        die "No SQL command given\n";
-    }
-
-    $log->log( LOG_DEBUG, "Original SQL: $sql" );
-
-    # This will match the macros we are using
-    my $re = qr/(?:%(u|p|r|a|v|%|-[\w-]+|%[\w-]+))/o;
-
-    # Pull the options out of the query
-    my @options = $sql =~ /$re/g;
-
-    # replace the options with ? placeholders
-    $sql =~ s/$re/?/go;
-
-    $log->log( LOG_DEBUG, "Options (" .scalar @options .'): ' . join( ', ', @options ) );
-    $log->log( LOG_DEBUG, "New SQL: $sql" );
-
-    my @passed_options = ();
-    foreach my $opt (@options) {
-        if ( $opt eq 'u' ) {
-            push @passed_options, $opts->{'username'};
-        } elsif ( $opt eq 'p' ) {
-            push @passed_options, $opts->{'password'};
-        } elsif ( $opt eq 'r' ) {
-            push @passed_options, $opts->{'realm'};
-        } elsif ( $opt eq 'a' ) {
-            push @passed_options, $opts->{'attribute'};
-        } elsif ( $opt eq 'v' ) {
-            push @passed_options, $opts->{'value'};
-        } elsif ( $opt eq '%') {
-            push @passed_options, '%';
-        } elsif ( $opt =~ /^-([\w-]+)/ ) {
-            push @passed_options, $opts->{$1};
-        } elsif ( $opt =~ /^\$([\w-]+)/ ) {
-            push @passed_options, $args{$1};
-        }
-    }
-
-    $log->log( LOG_DEBUG, "Passed Options (" . scalar @passed_options .'): '
-        . join( ', ', @passed_options ) );
-
-    my $sth = $dbh->prepare($sql)
-      or die "Cannot prepare SQL: ", $dbh->errstr, "\n";
-    my $rc;
-    if (@passed_options) {
-        $rc = $sth->execute( @passed_options )
+    my $found;
+    my @results;
+    if (@results = $sth->fetchrow_array()) {
+	$found = 1;
+	$log->log(LOG_DEBUG, "User exists");
     } else {
-        $rc = $sth->execute( )
+	$found = 0;
+	$log->log(LOG_DEBUG, "User does not exist");
     }
-    die ("Cannot execute SQL: ", $sth->errstr, "\n") unless $rc;
 
-    return $sth;
+    $sth->finish;
+    return $found;
 }
 
 sub do_sql {
@@ -167,6 +98,7 @@ sub do_sql {
     my $query;
 
     if ( $action eq 'adduser' ) {
+	die "User ".$opts->{username}." exists\n" if user_exists($cfg, $opts);
         $query = 'adduser_query';
     } elsif ( $action eq 'rmuser' ) {
         $query = 'rmuser_query';
@@ -197,40 +129,32 @@ sub do_sql {
         return;
     }
 
-    my $sth = execute( $cfg, $opts, $sql );
+    my $sth = $extlib->execute( $opts, $sql );
     $sth->finish;
-}
-
-sub radius_adduser {
-    my ( $cfg, $opts, $action, $eh ) = @_;
-}
-
-sub radius_rmuser {
-    my ( $cfg, $opts, $action, $eh ) = @_;
 }
 
 sub radius_moduser {
     my ( $cfg, $opts, $action, $eh ) = @_;
 
     ## change password
-    if ( $opts->{newpassword} ) {
-        execute( $cfg, $opts,
-                 strip_ws( $cfg->{$c_sec}{'moduser_password_query'} ) );
+    if ( $opts->{password} ) {
+        $extlib->execute($opts,
+			 strip_ws( $cfg->{$c_sec}{'moduser_password_query'} ));
     }
     ## change realm only
     if ( $opts->{newrealm} and not $opts->{newusername} ) {
-        execute( $cfg, $opts,
-                 strip_ws( $cfg->{$c_sec}{'moduser_realm_query'} ) );
+        $extlib->execute($opts,
+			 strip_ws( $cfg->{$c_sec}{'moduser_realm_query'} ) );
     }
     ## change username only
     if ( $opts->{newusername} and not $opts->{newrealm} ) {
-        execute( $cfg, $opts,
-                 strip_ws( $cfg->{$c_sec}{'moduser_username_query'} ) );
+        $extlib->execute($opts,
+			 strip_ws( $cfg->{$c_sec}{'moduser_username_query'} ));
     }
     ## change username and realm
     if ( $opts->{newusername} and $opts->{newrealm} ) {
-        execute( $cfg, $opts,
-                 strip_ws( $cfg->{$c_sec}{'moduser_userrealm_query'} ) );
+        $extlib->execute($opts,
+			 strip_ws( $cfg->{$c_sec}{'moduser_userrealm_query'} ));
     }
 }
 
@@ -242,7 +166,7 @@ sub radius_listusers {
     $rs->add_meta( $VUser::Radius::meta{'realm'} );
 
     my $sth =
-      execute( $cfg, $opts, strip_ws( $cfg->{$c_sec}{'listusers_query'} ) );
+      $extlib->execute( $opts, strip_ws( $cfg->{$c_sec}{'listusers_query'} ) );
     my @results;
     while ( @results = $sth->fetchrow_array ) {
         $rs->add_data( [ @results[ 0 .. 1 ] ] );
@@ -261,7 +185,7 @@ sub radius_userinfo {
     $rs->add_meta( $VUser::Radius::meta{'password'} );
 
     my $sth =
-      execute( $cfg, $opts, strip_ws( $cfg->{$c_sec}{'userinfo_query'} ) );
+      $extlib->execute( $opts, strip_ws( $cfg->{$c_sec}{'userinfo_query'} ) );
     my @results;
     while ( @results = $sth->fetchrow_array ) {
         $rs->add_data( [ @results[ 0 .. 2 ] ] );
@@ -269,18 +193,6 @@ sub radius_userinfo {
 
     $sth->finish;
     return $rs;
-}
-
-sub radius_addattrib {
-    my ( $cfg, $opts, $action, $eh ) = @_;
-}
-
-sub radius_modattrib {
-    my ( $cfg, $opts, $action, $eh ) = @_;
-}
-
-sub radius_rmattrib {
-    my ( $cfg, $opts, $action, $eh ) = @_;
 }
 
 sub radius_listattrib {
@@ -303,7 +215,7 @@ sub radius_listattrib {
     $rs->add_meta( $VUser::Radius::meta{'type'} );
     $rs->add_meta( $VUser::Radius::meta{'value'} );
 
-    my $sth = execute( $cfg, $opts, $sql );
+    my $sth = $extlib->execute( $opts, $sql );
 
     my @results;
     while ( @results = $sth->fetchrow_array ) {
