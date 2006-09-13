@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.6 2006-09-11 22:22:36 perlstalker Exp $
+# $Id: SQL.pm,v 1.7 2006-09-13 17:15:25 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -148,7 +148,11 @@ sub execute {
     
     my $opts = shift;
     my $sql  = shift;
-    my %args = %{ shift() };
+    my $argsref = shift;
+    my %args = (); 
+    if (defined $argsref and ref $argsref eq 'HASH') {
+	%args = %{ $argsref };
+    }
 
     if ( not defined $sql or $sql =~ /^\s*$/ ) {
         Log()->log( LOG_ERROR, "No SQL command given." );
