@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.7 2006-09-13 17:12:09 perlstalker Exp $
+# $Id: Radius.pm,v 1.8 2006-09-14 14:44:35 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
@@ -129,9 +129,9 @@ Other VUser::Radius::* extensions may have their own configuration.
 
 =head1 META SHORTCUTS
 
-VUser::Firewall provides a few VUser::Meta objects that may be used by
-other firewall extensions. The safest way to access them is to call
-VUser::Firewall::meta() from within the extension's init() function.
+VUser::Radius provides a few VUser::Meta objects that may be used by
+other radius extensions. The safest way to access them is to call
+VUser::Radius::meta() from within the extension's init() function.
 
 Provided keys: username, password, realm, attribute, type, value
 
