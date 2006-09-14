@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.6 2006-09-13 20:21:20 perlstalker Exp $
+# $Id: SQL.pm,v 1.7 2006-09-14 15:11:33 perlstalker Exp $
 
 use VUser::ExtLib qw(:config);
 use VUser::Log qw(:levels);
@@ -17,12 +17,14 @@ my $log;
 my %meta;
 
 our $VERSION = '0.1.0';
-my $c_sec = 'Extension Radius::SQL';
+our $c_sec = 'Extension Radius::SQL';
 
 my $extlib;
 my $dsn;
 my $username;
 my $password;
+
+sub c_sec { return $c_sec; }
 
 sub depends { return qw(Radius); }
 
