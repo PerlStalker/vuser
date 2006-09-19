@@ -3,10 +3,10 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.42 2006-01-04 21:57:48 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.43 2006-09-19 16:51:38 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.42 $'))[1];
-our $VERSION = "0.3.0";
+our $REVISION = (split (' ', '$Revision: 1.43 $'))[1];
+our $VERSION = "0.3.1";
 
 use lib qw(..);
 use Getopt::Long;
@@ -361,6 +361,7 @@ sub load_extensions
     my %cfg = @_;
 
     $self->{'_loaded'} = {};
+    $self->{'_loadorder'} = [];
 
     $self->load_extension('CORE');
     my $exts = $cfg{ vuser }{ extensions };
@@ -408,6 +409,8 @@ sub load_extension
     }
        
     $log->log(LOG_INFO, "Loading extension: $ext");
+    $self->{'_loaded'}{$ext} = 1;
+    push (@{$self->{'_loadorder'}}, $ext);
     &{$pm.'::init'}($self, %cfg);
 }
 
@@ -416,7 +419,8 @@ sub unload_extensions
     my $self = shift;
     my %cfg = @_;
 
-    foreach my $ext (keys %{ $self->{'_loaded'} }) {
+    # foreach my $ext (keys %{ $self->{'_loaded'} }) {
+    foreach my $ext (reverse (@{$self->{'_loadorder'}})) {
 	eval { $self->unload_extension($ext, %cfg); };
 	warn "Unable to unload $ext: $@\n" if $@;
     }
@@ -431,7 +435,10 @@ sub unload_extension
     my $pm = 'VUser::'.$ext;
 
     no strict ('refs');
-    &{$pm.'::unload'}($self, %cfg);
+    $log->log(LOG_INFO, "Unloading extension: $ext");
+    if (UNIVERSAL::can($pm, 'unload')) {
+	&{$pm.'::unload'}($self, %cfg);
+    }
 }
 
 sub run_tasks
