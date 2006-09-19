@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.3 2006-09-11 22:23:45 perlstalker Exp $
+# $Id: SQL.pm,v 1.4 2006-09-19 15:32:24 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -19,6 +19,7 @@ our %meta;
 our $extlib;
 our $c_sec = 'Extension Email::Postfix::SQL';
 
+sub c_sec { return $c_sec; }
 sub depends { qw(Email::Postfix); }
 
 sub init {
