@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.7 2006-09-13 17:15:25 perlstalker Exp $
+# $Id: SQL.pm,v 1.8 2006-09-19 15:53:35 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -311,7 +311,7 @@ sub rollback {
 # Clean up after ourself
 sub DESTROY {
     my $self = shift;
-    my $cached_connections = $self->db_connect();
+    #my $cached_connections = $self->db_connect();
     #%$cached_connections = () if $cached_connections;
 }
 
