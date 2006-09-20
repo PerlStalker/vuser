@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.8 2006-09-19 15:53:35 perlstalker Exp $
+# $Id: SQL.pm,v 1.9 2006-09-20 14:34:47 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -149,9 +149,16 @@ sub execute {
     my $opts = shift;
     my $sql  = shift;
     my $argsref = shift;
+    my $overridesref = shift;
+
     my %args = (); 
     if (defined $argsref and ref $argsref eq 'HASH') {
 	%args = %{ $argsref };
+    }
+
+    my %overrides = ();
+    if (defined $overridesref and ref $overridesref eq 'HASH') {
+	%args = %{ $overridesref };
     }
 
     if ( not defined $sql or $sql =~ /^\s*$/ ) {
@@ -162,13 +169,15 @@ sub execute {
     Log()->log( LOG_DEBUG, "Original SQL: $sql" );
 
     # This will match the macros we are using
-    my $re = qr/(?:%($macros|%|-[\w-]+|%[\w-]+))/o;
+    my $re = qr/(?:%($macros|%|-[\w-]+|\$[\w-]+))/;
+
+    Log()->log( LOG_DEBUG, "Macros: $macros; RE: $re");
 
     # Pull the options out of the query
     my @options = $sql =~ /$re/g;
 
     # replace the options with ? placeholders
-    $sql =~ s/$re/?/go;
+    $sql =~ s/$re/?/g;
 
     Log()->log( LOG_DEBUG, "Options (" .scalar @options .'): ' . join( ', ', @options ) );
     Log()->log( LOG_DEBUG, "New SQL: $sql" );
@@ -182,7 +191,11 @@ sub execute {
         } elsif ( $opt =~ /^\$([\w-]+)/ ) {
             push @passed_options, $args{$1};
         } elsif ( defined $macros{$opt} ) {
-            push @passed_options, $opts->{$macros{$opt}};
+	    if (exists $args{$opt}) {
+		push @passed_options, $overrides{$opt};
+	    } else {
+		push @passed_options, $opts->{$macros{$opt}};
+	    }
         }
     }
 
