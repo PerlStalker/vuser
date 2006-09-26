@@ -7,7 +7,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapd,v 1.1 2006-09-25 22:54:16 perlstalker Exp $
+# $Id: vsoapd,v 1.2 2006-09-26 21:47:34 perlstalker Exp $
 
 our $VERSION = "0.4.0";
 
@@ -137,7 +137,7 @@ foreach my $trans (@transports) {
 
 foreach my $daemon (@daemons) {
     $daemon->objects_by_reference(qw(VUser::SOAP::Dispatcher))
-        ->dispatch_to('VUser::SOAP::Dispatcher');
+        ->dispatch_with({'urn:/VUser' => 'VUser::SOAP::Dispatcher'});
 }
 
 # This will probably do really stupid things if more than one
@@ -156,11 +156,11 @@ sub daemonize
     return $pid if $DEBUG; # Don't daemonize if we're in debug mode.
 
     if ($pid = fork) {
-	$SIG{CHLD} = "INGORE";
-	# exit;
+	   $SIG{CHLD} = "INGORE";
+	   # exit;
     } elsif ($pid == 0) {
     } else {
-	die "Unable to daemonize: $!";
+	   die "Unable to daemonize: $!";
     }
 
     return $pid;
