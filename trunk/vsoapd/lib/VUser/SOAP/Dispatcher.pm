@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: Dispatcher.pm,v 1.2 2006-09-26 20:00:02 perlstalker Exp $
+# $Id: Dispatcher.pm,v 1.3 2006-09-26 21:30:33 perlstalker Exp $
 
 use SOAP::Lite;
 use VUser::SOAP;
@@ -104,6 +104,12 @@ sub get_options {
 }
 
 # SOAP Param order: keyword, action, @params
+
+# This might be hairy from a WSDL perspective since the options change
+# based on the keyword/action pair that's used. It might be better if, instead,
+# a hash is used (as per the original vsoapd) in this case. Or it might be 
+# be better if it's not here at all.
+# For now, I'll leave it here as an undocumented feature.
 sub run_tasks {
     my $class = shift;
     
