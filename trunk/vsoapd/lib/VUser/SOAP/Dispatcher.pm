@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: Dispatcher.pm,v 1.1 2006-09-25 22:54:16 perlstalker Exp $
+# $Id: Dispatcher.pm,v 1.2 2006-09-26 20:00:02 perlstalker Exp $
 
 use SOAP::Lite;
 use VUser::SOAP;
@@ -101,6 +101,37 @@ sub get_options {
     }
     
     return VUser::SOAP::get_options ($authinfo, $keyword, $action);
+}
+
+# SOAP Param order: keyword, action, @params
+sub run_tasks {
+    my $class = shift;
+    
+    my $env = $_[-1]; # SOAP::SOM object
+
+    my $keyword = shift;
+    my $action = shift;
+    my @params = @_;
+    
+    my $authinfo = $env->valueof ("//authinfo");
+        
+    # authenticate here
+    if (check_bool(VUser::SOAP::conf($c_sec, 'require authentication'))) {
+        if (not VUser::SOAP::check_ticket($authinfo)) {
+            # error: invalid or expired ticket: FAULT
+            die SOAP::Failt
+             ->faultcode('Server.Custom')
+             ->faultstring('Authentication failed');
+        }
+    }
+       
+    # We've successfully gotten passed the authentication.
+    # Let's do some work.
+	return VUser::SOAP::run_tasks($authinfo->{'username'},
+	                              $authinfo->{'ip'},
+	                              $keyword->value,
+	                              $action->value,
+	                              @params);
 }
 
 sub AUTOLOAD {
