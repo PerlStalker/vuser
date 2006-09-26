@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: SOAP.pm,v 1.1 2006-09-25 22:54:15 perlstalker Exp $
+# $Id: SOAP.pm,v 1.2 2006-09-26 21:44:28 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtHandler;
@@ -13,6 +13,7 @@ my $eh;
 my $log;
 my $cfg;
 my $acl;
+my $debug = 0;
 
 my $c_sec = 'vsoapd';
 
@@ -25,6 +26,10 @@ sub init {
         $log = $main::log;
     } else {
         $log = VUser::Log->new($cfg, 'VUser::SOAP');
+    }
+    
+    if (defined $main::debug) {
+        $debug = $main::debug;
     }
     
     ## Load up the ACL and auth info
@@ -41,7 +46,13 @@ sub login {
     my $ip = shift;
     
     if (check_bool($cfg->{$c_sec}{'require_authentication'})) {
-        return 0 unless $acl->auth_user($cfg, $user, $password, $ip);
+        if (not $acl->auth_user($cfg, $user, $password, $ip)) {
+            if ($debug) {
+                $log->log(LOG_NOTICE, "Authentication failed for $user\@$ip [$password]");
+            } else {
+                $log->log(LOG_NOTICE, "Authentication failed for $user\@$ip");
+            }
+        }
     }
     
     my ($ticket, $expr);
@@ -67,6 +78,7 @@ sub check_ticket {
         ne $authinfo->{ticket})
     {
         # Bad creds or invalid ticket
+        $log->log(LOG_NOTICE, "Invalid ticket for %s\@%s", $authinfo->{user}, $authinfo->{ip});
         return 0;
     }
     
@@ -100,6 +112,7 @@ sub run_tasks {
     
     # We've passed all of the ACL checks. Run the task.
     my $rs = [];
+    $log->log(LOG_NOTICE, "$user\@$ip running $keyword | $action");
     eval { $rs = $eh->run_tasks($keyword, $action, $cfg, %opts); };
     if ($@) {
 	   die SOAP::Fault
