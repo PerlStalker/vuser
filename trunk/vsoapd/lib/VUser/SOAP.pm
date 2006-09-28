@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: SOAP.pm,v 1.3 2006-09-28 17:32:58 perlstalker Exp $
+# $Id: SOAP.pm,v 1.4 2006-09-28 17:34:31 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -182,7 +182,7 @@ sub get_keywords {
             next if ($@);
         }
         if ($key eq 'config' || $key eq 'help' || $key eq 'man') {
-            # next;
+            next;
         }
         push @keywords, { keyword => $key,
                           description => $eh->get_description($key) };
