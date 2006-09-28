@@ -3,28 +3,44 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: HTTP.pm,v 1.1 2006-09-25 22:54:15 perlstalker Exp $
+# $Id: HTTP.pm,v 1.2 2006-09-28 17:32:58 perlstalker Exp $
 
 use VUser::ExtLib qw(:config);
+use VUser::Log qw(:levels);
 use SOAP::Transport::HTTP;
 
 my $c_sec = 'vsoapd HTTP';
+my $log;
 
 sub new {
     my $class = shift;
     my $cfg = shift;
+    my %passed_opts = @_;
+
+    if (ref $main::log and UNIVERSAL::isa($main::log, 'VUser::Log')) {
+        $log = $main::log;
+    } else {
+        $log = VUser::Log->new ($cfg, 'vsoapd/http');
+    }
     
     my $port = strip_ws($cfg->{$c_sec}{port});
     my $address = strip_ws($cfg->{$c_sec}{address});
     
-    my %daemon_opts = ('LocalPort' => $port);
+    my %daemon_opts = ('LocalPort' => $port, Reuse => 1);
     if ($address) {
         $daemon_opts{'LocalAddress'} = $address;
     }
     
+    foreach my $key (keys %passed_opts) {
+        if (not defined $daemon_opts{$key}) {
+            $daemon_opts{$key} = $passed_opts{$key};
+        }
+    }
+    
+    $log->log(LOG_NOTICE, "Starting HTTP on port $port%s",
+              ($address ? " at $address" : '')
+              );
     my $daemon = SOAP::Transport::HTTP::Daemon->new (%daemon_opts);
-    $daemon->objects_by_reference(qw(VUser::SOAP::Dispatcher));
-    $daemon->dispatch_to('VUser::SOAP::Dispatcher');
     return $daemon;
 }
 

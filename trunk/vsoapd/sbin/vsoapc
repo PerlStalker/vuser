@@ -6,11 +6,12 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapc,v 1.2 2006-09-26 21:56:06 perlstalker Exp $
+# $Id: vsoapc,v 1.3 2006-09-28 17:32:59 perlstalker Exp $
 our $VERSION = "0.4.0";
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
+use Term::ReadKey;
 use FindBin;
 use Config::IniFiles;
 use SOAP::Lite
@@ -110,7 +111,7 @@ if ($version) {
     exit;
 }
 
-if (not $password) {
+if (check_bool ($cfg{$c_sec}{'require authentication'}) and not $password) {
     print "Password: ";
     ReadMode('noecho'); # Turn off character echo
     $password = ReadLine(0);
@@ -141,6 +142,8 @@ my $proxy = strip_ws($cfg{$c_sec}{'proxy'});
 
 $log->log (LOG_INFO, "Attempting to connect to $proxy for $uri");
 
+$log->log (LOG_DEBUG, "Credentials: $username, $password");
+
 # Log sends back info in the SOAP headers including a ticket that
 # is sent back through the headers for the other task functions
 my $authinfo = SOAP::Lite
@@ -148,6 +151,10 @@ my $authinfo = SOAP::Lite
     -> proxy ($proxy)
     -> login ($username, $password)
     -> result;
+    
+if ($debug) {
+    use Data::Dumper; print Dumper $authinfo;
+}
     
 $log->log (LOG_DEBUG, "Login: $authinfo");
 
@@ -187,39 +194,48 @@ sub show_help
     my $keyword = shift;
 
     if (not $keyword) {
-	my $keywords = SOAP::Lite
-	    -> uri ($uri)
-	    -> proxy ($proxy)
-	    -> get_keywords ($username, $password, $ip)
-	    -> result;
-foreach my $key (@$keywords) {
-	    my $descr = $key->{description} || 'No description';
-	    printf ("%8s - %s\n", $key->{keyword}, $descr);
-	}
+	   my @keywords = SOAP::Lite
+	       -> uri ($uri)
+	       -> proxy ($proxy)
+	       -> get_keywords (SOAP::Header->new(authinfo => $authinfo))
+	       -> valueof('//keywords');
+	   
+	   if ($debug) {
+	       print "Keywords: ";
+	       use Data::Dumper; print Dumper \@keywords;
+	   }
+	   
+	   foreach my $key (@keywords) {
+	       #if ($debug) { print "Key: "; use Data::Dumper; print Dumper $key; }
+	       my $descr = $key->{description} || 'No description';
+	       printf ("%8s - %s\n", $key->{keyword}, $descr);
+	   }
     } else {
-	print "Options marked with '*' are required.\n";
-	my $actions = SOAP::Lite
-	    -> uri ($uri)
-	    -> proxy ($proxy)
-	    -> get_actions($username, $password, $ip, $keyword)
-	    -> result;
-	foreach my $action (@$actions) {
-	    my $descr = $action->{description} || 'No description';
-	    printf ("%8s - %s\n", $action->{action}, $action->{description});
-	    my $options = SOAP::Lite
-	        -> uri ($uri)
-		-> proxy ($proxy)
-		-> get_options($username, $password, $ip,
-			       $keyword, $action->{action})
-		-> result;
-	    foreach my $option (@$options) {
-		my $descr = $option->{description} || 'No description';
-		printf("\t%-16s %s - %s\n",
-		       "--".$option->{option},
-		       ($option->{required}? '*': ' '),
-		       $descr);
-	    }
-	}
+	   print "Options marked with '*' are required.\n";
+	   my @actions = SOAP::Lite
+	       -> uri ($uri)
+	       -> proxy ($proxy)
+	       -> get_actions(SOAP::Header->new(authinfo => $authinfo),
+	                      SOAP::Data->name('keyword' => $keyword))
+	       -> valueof('//actions');
+	   foreach my $action (@actions) {
+	       my $descr = $action->{description} || 'No description';
+	       printf ("%8s - %s\n", $action->{action}, $descr);
+	       my @options = SOAP::Lite
+	           -> uri ($uri)
+		       -> proxy ($proxy)
+		       -> get_options(SOAP::Header->new(authinfo => $authinfo),
+		                      SOAP::Data->name('keyword' => $keyword),
+		                      SOAP::Data->name('action' => $action->{action}))
+		       -> valueof('//options');
+	       foreach my $option (@options) {
+		       my $descr = $option->{description} || 'No description';
+		       printf("\t%-16s %s - %s\n",
+		              "--".$option->{option},
+		              ($option->{required}? '*': ' '),
+		              $descr);
+	       }
+	   }
     }
 }
 
@@ -229,47 +245,48 @@ sub create_opts
     my $keyword = shift;
     my $action = shift;
 
-    my $options = SOAP::Lite
+    $log->log(LOG_DEBUG, "Creating options for $keyword | $action");
+
+    my @options = SOAP::Lite
 	-> uri ($uri)
 	-> proxy ($proxy)
-	-> get_options ($username, $password, $ip, $keyword, $action)
-	-> result;
+	-> get_options (SOAP::Header->new(authinfo => $authinfo),
+	                SOAP::Data->name('keyword' => $keyword),
+	                SOAP::Data->name('action' => $action))
+	-> valueof('//options');
+
+    if ($debug) {
+        print "Raw options: ";
+        use Data::Dumper; print Dumper \@options;
+    }
 
     # This should be the same (or very similar to) what's done in
     # VUser::ExtHandler
     my %opts = ();
     my @opt_defs = ();
 
-    foreach my $opt (@$options) {
-	my $gopt_type = '';
+    foreach my $opt (@options) {
+	   my $gopt_type = '';
 
-	my $meta = SOAP::Lite
-	    -> uri ($uri)
-	    -> proxy ($proxy)
-	    -> get_meta ($username, $password, $ip,
-			 $keyword, $opt->{option})
-	    -> result;
-	$meta = $meta->[0];
+	   my $type = $opt->{type};
+	   if ($type eq 'string') {
+	       $gopt_type = '=s';
+	   } elsif ($type eq 'integer') {
+	       $gopt_type = '=i';
+	   } elsif ($type eq 'counter') {
+	       $gopt_type = '+';
+	   } elsif ($type eq 'boolean') {
+	       $gopt_type = '!';
+	   } elsif ($type eq 'float') {
+	       $gopt_type = '=f';
+	   }
 
-	my $type = $meta->type;
-	if ($type eq 'string') {
-	    $gopt_type = '=s';
-	} elsif ($type eq 'integer') {
-	    $gopt_type = '=i';
-	} elsif ($type eq 'counter') {
-	    $gopt_type = '+';
-	} elsif ($type eq 'boolean') {
-	    $gopt_type = '!';
-	} elsif ($type eq 'float') {
-	    $gopt_type = '=f';
-	}
-
-	my $def = $meta->name().$gopt_type;
-	push @opt_defs , $def;
+	   my $def = $opt->{option}.$gopt_type;
+	   push @opt_defs , $def;
     }
 
     if (@opt_defs) {
-	GetOptions(\%opts, @opt_defs);
+	   GetOptions(\%opts, @opt_defs);
     }
     return %opts;
 }
@@ -292,6 +309,9 @@ vsoapd - vuser SOAP daemon.
  # Server to connect to. The protocol must match the transport
  # used by the vsoapd server. (vsoapd defaults to HTTP.)
  proxy = http://localhost:8000/
+ 
+ # Set to 'yes' if vsoapd required authentication
+ require authentication = no
 
 =head1 BUGS
 

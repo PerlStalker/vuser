@@ -3,21 +3,24 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: Dispatcher.pm,v 1.3 2006-09-26 21:30:33 perlstalker Exp $
+# $Id: Dispatcher.pm,v 1.4 2006-09-28 17:32:59 perlstalker Exp $
 
 use SOAP::Lite;
 use VUser::SOAP;
 use VUser::ExtLib qw(:config);
+use VUser::Log qw(:levels);
 
-our @ISA = qw(SOAP::Server::Parameters);
+our @ISA = qw(Exporter SOAP::Server::Parameters);
 
 my $c_sec = 'vsoapd';
 
 sub login {
-    my $class = shift;
+    my $self = shift;
     my $user = shift;
     my $password = shift;
     my $envelope = shift; # SOAP::SOM object
+    
+    VUser::SOAP::Log(LOG_DEBUG, "In login");
     
     # Is there a way to get the IP from a SOAP::SOM object?
     my $ip = '127.0.0.1';
@@ -25,14 +28,18 @@ sub login {
     # Check auth
     my $authinfo = VUser::SOAP::login($user, $password, $ip);
     
+    VUser::SOAP::Log(LOG_DEBUG, "Mid login");
+    
     if ($authinfo == 0) {
         # auth failed FAULT
+        die $self->SOAP::Fault->faultcode('Server.Custom')->faultstring("Failed login");
     } else {
         return $authinfo;
     }
 }
 
 sub get_keywords {
+    my $self = shift;
     my $envelope = pop; # SOAP::SOM object
     my $authinfo = $envelope->valueof ("//authinfo");
     
@@ -46,10 +53,13 @@ sub get_keywords {
         }
     }
     
-    return VUser::SOAP::get_keywords($authinfo);
+    #return VUser::SOAP::get_keywords($authinfo);
+    my @keywords = VUser::SOAP::get_keywords($authinfo);
+    return SOAP::Data->name('keywords' => @keywords);
 }
 
 sub get_actions {
+    my $self = shift;
     my $envelop = pop; # SOAP::SOM object
     my $authinfo = $envelop->valueof ("//authinfo");
     
@@ -63,18 +73,14 @@ sub get_actions {
         }
     }
     
-    my $keyword;
-    foreach my $elm (@_) {
-        if ($elm->isa('SOAP::Data')
-            and $elm->name() eq 'keyword') {
-            $keyword = $elm->value;
-        }
-    }
+    my $keyword = $envelop->valueof('//keyword');
     
-    return VUser::SOAP::get_actions ($authinfo, $keyword);
+    my @actions = VUser::SOAP::get_actions ($authinfo, $keyword);
+    return SOAP::Data->name('actions' => @actions);
 }
 
 sub get_options {
+    my $self = shift;
     my $envelop = pop; # SOAP::SOM object
     my $authinfo = $envelop->valueof ("//authinfo");
     
@@ -88,19 +94,20 @@ sub get_options {
         }
     }
     
-    my $keyword;
-    my $action;
-    foreach my $elm (@_) {
-        if ($elm->isa('SOAP::Data')) {
-            if ($elm->name() eq 'keyword') {
-                $keyword = $elm->value;
-            } elsif ($elm->name() eq 'action') {
-                $action = $elm->value;
-            }
-        }
+    #print STDERR "get_options() Passed options: ";
+    #use Data::Dumper; print Dumper [@_];
+    
+    my $keyword = $envelop->valueof('//keyword');
+    my $action = $envelop->valueof('//action');
+    
+    VUser::SOAP::Log (LOG_DEBUG, "Dispatch: get options for %s | %s", $keyword, $action);
+    
+    if (not defined $keyword or not defined $action) {
+        die SOAP::Fault->faultcode('Server.Custom')->faultstring("Missing keyword or action");
     }
     
-    return VUser::SOAP::get_options ($authinfo, $keyword, $action);
+    my @options = VUser::SOAP::get_options ($authinfo, $keyword, $action);
+    return SOAP::Data->name('options' => @options);
 }
 
 # SOAP Param order: keyword, action, @params
@@ -111,7 +118,7 @@ sub get_options {
 # be better if it's not here at all.
 # For now, I'll leave it here as an undocumented feature.
 sub run_tasks {
-    my $class = shift;
+    my $self = shift;
     
     my $env = $_[-1]; # SOAP::SOM object
 
@@ -125,7 +132,7 @@ sub run_tasks {
     if (check_bool(VUser::SOAP::conf($c_sec, 'require authentication'))) {
         if (not VUser::SOAP::check_ticket($authinfo)) {
             # error: invalid or expired ticket: FAULT
-            die SOAP::Failt
+            die SOAP::Fault
              ->faultcode('Server.Custom')
              ->faultstring('Authentication failed');
         }
@@ -133,16 +140,23 @@ sub run_tasks {
        
     # We've successfully gotten passed the authentication.
     # Let's do some work.
-	return VUser::SOAP::run_tasks($authinfo->{'username'},
+    print "Authinfo: "; use Data::Dumper; print Dumper $authinfo;
+	return VUser::SOAP::run_tasks($authinfo->{'user'},
 	                              $authinfo->{'ip'},
 	                              $keyword->value,
 	                              $action->value,
 	                              @params);
 }
 
+#sub handle {
+#    my $self = shift;
+#    print STDERR "Getting a handle\n";
+#    $self->SUPER::handle(@_);
+#}
+
 sub AUTOLOAD {
     use vars '$AUTOLOAD';
-    my $class = shift;
+    my $self = shift;
     
     my $envelope = $_[-1]; # SOAP::SOM object
     

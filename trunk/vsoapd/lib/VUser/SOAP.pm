@@ -3,9 +3,10 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: SOAP.pm,v 1.2 2006-09-26 21:44:28 perlstalker Exp $
+# $Id: SOAP.pm,v 1.3 2006-09-28 17:32:58 perlstalker Exp $
 
 use VUser::Log qw(:levels);
+use VUser::ExtLib qw(:config);
 use VUser::ExtHandler;
 use VUser::ACL;
 use Digest::MD5 qw(md5);
@@ -40,10 +41,14 @@ sub init {
     return;
 }
 
+sub Log { $log->log(@_); }
+
 sub login {
     my $user = shift;
     my $password = shift;
     my $ip = shift;
+    
+    $log->log(LOG_DEBUG, "In ::SOAP::login");
     
     if (check_bool($cfg->{$c_sec}{'require_authentication'})) {
         if (not $acl->auth_user($cfg, $user, $password, $ip)) {
@@ -60,6 +65,8 @@ sub login {
     my $timeout = strip_ws($cfg->{$c_sec}{'ticket lifetime'});
     # Default to 10 minutes if timeout is not a valid number 
     $timeout = 10 unless defined $timeout and $timeout =~ /^\d+(?:\.\d+)$/;
+
+    $log->log(LOG_DEBUG, "Doing login");
     
     $expr = time() + 60 * $timeout;
     $ticket = calculate_ticket($user, $ip, $expr);
@@ -86,12 +93,12 @@ sub check_ticket {
 }
 
 sub calculate_ticket {
-    return md5(join '', $cfg->{$c_sec}{'digest key'}, @_);
+    return md5(join '', $cfg->{$c_sec}{'digest key'}, map { defined $_? $_ : '' } @_);
 }
 
 sub run_tasks {
-    my $user = shift;
-    my $ip = shift;
+    my $user = shift || '';
+    my $ip = shift || '';
     my $keyword = shift;
     my $action = shift;
     my @params = shift;
@@ -99,6 +106,8 @@ sub run_tasks {
     # We need to translate the SOAP::Data params into a hash
     # suitable for ::ExtHandler->run_tasks.
     my %opts = build_opts(@params);
+    
+    #print "\%opts: "; use Data::Dumper; print Dumper \%opts;
     
     if (check_bool($cfg->{$c_sec}{'require authentication'})) {
         # Do all of the ACL checks.
@@ -172,9 +181,13 @@ sub get_keywords {
             eval { $acl->check_acls($cfg, $authinfo->{'user'}, $authinfo->{'ip'}, $key); };
             next if ($@);
         }
+        if ($key eq 'config' || $key eq 'help' || $key eq 'man') {
+            # next;
+        }
         push @keywords, { keyword => $key,
                           description => $eh->get_description($key) };
     }
+    #print "Keywords: "; use Data::Dumper; print Dumper \@keywords;
     return @keywords;
 }
 
@@ -202,6 +215,7 @@ sub get_options {
     my $action = shift;
     
     my @options = ();
+    $log->log(LOG_DEBUG, "Getting options for %s | %s", $keyword, $action);
     foreach my $opt ($eh->get_options($keyword, $action)) {
         if (check_bool($cfg->{$c_sec}{'require authentication'})) {
             eval { $acl->check_acls($cfg,
@@ -211,12 +225,15 @@ sub get_options {
             next if $@;
         }
         
-        my $meta = $eh->get_meta($keyword, $opt);
+        $log->log(LOG_DEBUG, "Sending option $opt");
+        
+        my @meta = $eh->get_meta($keyword, $opt);
         push @options, { option => $opt,
                          description => $eh->get_description($keyword, $action, $opt),
                          required => $eh->is_required($keyword, $action, $opt),
-                         type => $meta->type() };
+                         type => $meta[0]->type() };
     }
+    #use Data::Dumper; print Dumper \@options;
     return @options;
 }
 

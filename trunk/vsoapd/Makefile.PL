@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Makefile.PL,v 1.1 2006-09-25 22:54:15 perlstalker Exp $
+# $Id: Makefile.PL,v 1.2 2006-09-28 17:32:58 perlstalker Exp $
 
 use ExtUtils::MakeMaker;
 
@@ -20,6 +20,7 @@ WriteMakefile(
                               'SOAP::Transport::HTTP' => 0,
                               'Config'           => 0,
                               'Digest::MD5'      => 0,
+                              'Term::ReadKey'    => 0,
                               # VUser modules
 				              'VUser::Log'       => 0,
 				              'VUser::ExtHandler' => 0,
