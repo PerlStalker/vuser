@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.43 2006-09-19 16:51:38 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.44 2006-09-28 17:10:51 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.43 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.44 $'))[1];
 our $VERSION = "0.3.1";
 
 use lib qw(..);
@@ -313,8 +313,14 @@ sub get_options
     my $self = shift;
     my $keyword = shift;
     my $action = shift;
+    
+    my $real_act = $action;
+    if (not defined $self->{keywords}{$keyword}{$action}
+        and defined $self->{keywords}{$keyword}{'*'}) {
+        $real_act = '*';
+    }
 
-    return sort keys %{ $self->{keywords}{$keyword}{$action}{options}};
+    return sort keys %{ $self->{keywords}{$keyword}{$real_act}{options}};
 }
 
 # Return unsorted list of VUser::Meta objects;
