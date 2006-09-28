@@ -20,7 +20,5 @@ Makefile.PL
 MANIFEST			This list of files
 META.yml
 README
-sbin/vsoapc
-sbin/vsoapd
 sbin/vuser
 vuser.conf.dist
