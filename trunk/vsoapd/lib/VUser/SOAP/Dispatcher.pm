@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: Dispatcher.pm,v 1.4 2006-09-28 17:32:59 perlstalker Exp $
+# $Id: Dispatcher.pm,v 1.5 2006-09-28 20:20:16 perlstalker Exp $
 
 use SOAP::Lite;
 use VUser::SOAP;
@@ -183,7 +183,7 @@ sub AUTOLOAD {
        
        # We've successfully gotten passed the authentication.
        # Let's do some work.
-	   return VUser::SOAP::run_tasks($authinfo->{'username'},
+	   return VUser::SOAP::run_tasks($authinfo->{'user'},
 	                                 $authinfo->{'ip'},
 	                                 $keyword, $action, @params);
     } else {
