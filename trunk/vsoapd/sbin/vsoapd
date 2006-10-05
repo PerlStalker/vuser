@@ -7,7 +7,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapd,v 1.4 2006-10-04 21:54:15 perlstalker Exp $
+# $Id: vsoapd,v 1.5 2006-10-05 17:02:25 perlstalker Exp $
 
 our $VERSION = "0.4.0";
 
@@ -98,12 +98,14 @@ my $cmd = shift;
 if (not defined $cmd or $cmd eq 'start') {
 } elsif ($cmd eq 'stop') {
     my $old_pid = get_old_pid($pid_file);
+    $log->log(LOG_NOTICE, "Stopping vsoapd ($old_pid)");
     print "Sending signal $signo{INT} to pid $old_pid\n" if $debug;
     kill $signo{INT}, $old_pid;
     unlink $pid_file;
     exit;
 } elsif ($cmd eq 'restart') {
     my $old_pid = get_old_pid($pid_file);
+    $log->log(LOG_NOTICE, "Restarting vsoapd ($old_pid)");
     kill $signo{INT}, $old_pid;
 } else {
     die "Unknown command $cmd\n";

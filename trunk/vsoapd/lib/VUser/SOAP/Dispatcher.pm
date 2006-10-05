@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: Dispatcher.pm,v 1.5 2006-09-28 20:20:16 perlstalker Exp $
+# $Id: Dispatcher.pm,v 1.6 2006-10-05 17:02:25 perlstalker Exp $
 
 use SOAP::Lite;
 use VUser::SOAP;
@@ -30,11 +30,13 @@ sub login {
     
     VUser::SOAP::Log(LOG_DEBUG, "Mid login");
     
-    if ($authinfo == 0) {
+    if (not defined $authinfo) {
         # auth failed FAULT
         die $self->SOAP::Fault->faultcode('Server.Custom')->faultstring("Failed login");
     } else {
-        return $authinfo;
+        VUser::SOAP::Log(LOG_INFO, "Login successful for $user\@$ip");
+        my $soap_info = SOAP::Data->name('authinfo' => $authinfo);
+        return $soap_info;
     }
 }
 
@@ -141,11 +143,10 @@ sub run_tasks {
     # We've successfully gotten passed the authentication.
     # Let's do some work.
     print "Authinfo: "; use Data::Dumper; print Dumper $authinfo;
-	return VUser::SOAP::run_tasks($authinfo->{'user'},
-	                              $authinfo->{'ip'},
-	                              $keyword->value,
-	                              $action->value,
-	                              @params);
+	return VUser::SOAP::rs2soap(VUser::SOAP::run_tasks($authinfo,
+	                                                   $keyword->value,
+	                                                   $action->value,
+	                                                   @params));
 }
 
 #sub handle {
@@ -183,9 +184,8 @@ sub AUTOLOAD {
        
        # We've successfully gotten passed the authentication.
        # Let's do some work.
-	   return VUser::SOAP::run_tasks($authinfo->{'user'},
-	                                 $authinfo->{'ip'},
-	                                 $keyword, $action, @params);
+	   return VUser::SOAP::rs2soap(VUser::SOAP::run_tasks($authinfo,
+	                                                      $keyword, $action, @params));
     } else {
 	   return;
     }

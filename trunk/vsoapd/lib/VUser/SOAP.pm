@@ -3,12 +3,13 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: SOAP.pm,v 1.4 2006-09-28 17:34:31 perlstalker Exp $
+# $Id: SOAP.pm,v 1.5 2006-10-05 17:02:24 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
 use VUser::ExtHandler;
 use VUser::ACL;
+use VUser::Meta;
 use Digest::MD5 qw(md5);
 my $eh;
 my $log;
@@ -17,6 +18,8 @@ my $acl;
 my $debug = 0;
 
 my $c_sec = 'vsoapd';
+
+my %sessions = ();
 
 sub init {
     $cfg = shift;
@@ -57,8 +60,12 @@ sub login {
             } else {
                 $log->log(LOG_NOTICE, "Authentication failed for $user\@$ip");
             }
+            return undef;
         }
     }
+    
+    # Expire old sessions
+    clean_sessions();
     
     my ($ticket, $expr);
     
@@ -70,23 +77,25 @@ sub login {
     
     $expr = time() + 60 * $timeout;
     $ticket = calculate_ticket($user, $ip, $expr);
-    return { user => $user, ip => $ip, ticket => $ticket, expires => $expr };  
+    $sessions{$ticket} = {user => $user, ip => $ip, expires => $expr};
+    return $ticket;
 }
 
 sub check_ticket {
-    my $authinfo = shift;
+    my $ticket = shift;
     
-    if (time() > $authinfo->{expires}) {
-        # Ticket has expired
+    if (not defined $sessions{$ticket}
+        or $sessions{$ticket}{expires} > time()
+        ) {
+        $log->log(LOG_NOTICE, "Invalid ticket");
+        delete $sessions{$ticket};
         return 0;
-    }
-    
-    if (calculate_ticket($authinfo->{user}, $authinfo->{ip}, $authinfo->{expires})
-        ne $authinfo->{ticket})
-    {
-        # Bad creds or invalid ticket
-        $log->log(LOG_NOTICE, "Invalid ticket for %s\@%s", $authinfo->{user}, $authinfo->{ip});
-        return 0;
+    } else {
+        my $timeout = strip_ws($cfg->{$c_sec}{'ticket lifetime'});
+        # Default to 10 minutes if timeout is not a valid number 
+        $timeout = 10 unless defined $timeout and $timeout =~ /^\d+(?:\.\d+)$/;
+        
+        $sessions{$ticket}{expires} = time() + 60 * $timeout;
     }
     
     return 1;
@@ -97,11 +106,13 @@ sub calculate_ticket {
 }
 
 sub run_tasks {
-    my $user = shift || '';
-    my $ip = shift || '';
+    my $ticket = shift;
     my $keyword = shift;
     my $action = shift;
     my @params = shift;
+
+    my $user = $sessions{$ticket}{user};
+    my $ip = $sessions{$ticket}{ip};
     
     # We need to translate the SOAP::Data params into a hash
     # suitable for ::ExtHandler->run_tasks.
@@ -132,6 +143,13 @@ sub run_tasks {
 
     return $rs;
 };
+
+sub clean_sessions {
+    my $now = time();
+    foreach my $ticket (keys %sessions) {
+        delete $sessions{$ticket} if $sessions{$ticket}{expires} > $now;
+    }
+}
 
 sub check_acls {
     my $user = shift;
@@ -262,6 +280,56 @@ sub conf {
     return $cfg->{$section}{$key};
 }
 
+sub rs2soap {
+    my @result_sets = shift;
+    
+    my @records = ();
+    foreach my $record (@result_sets) {
+        
+        my @soap_rs = ();
+        foreach my $rs (@$record) {
+            my @meta = $rs->get_metadata();
+            my (@cols, @types); 
+            foreach my $meta (@meta) {
+                push @cols, $meta->name();
+                push @types, $meta->type();
+            }
+            ## Set columns
+            my $columns = SOAP::Data->name('columns' => @cols);
+            $columns->type('ColumnArray');
+            
+            ## Set types
+            my $types = SOAP::Data->name('types' => @types);
+            $types->type('TypeArray');
+            
+            ## Set values            
+            my @table = $rs->results();
+            my @vals = ();
+            foreach my $row (@table) {
+                # Force conversion of values to strings
+                my @entries = map { SOAP::Data->value($_)->type('string'); } @$row;
+                
+                # Put strings is a 'ValueArray'
+                push @vals, SOAP::Data->value(@entries)->type('ValueArray'); 
+            }
+            my $values = SOAP::Data->name('values' => @vals);
+            $values->type('DataArray');
+            
+            my $result_set = SOAP::Data->value($columns, $types, $values);
+            $result_set->type('ResultSet');
+            push @soap_rs, $result_set; 
+        }
+        
+        ## Record
+        my $record = SOAP::Data->value(@soap_rs)->type('Record');
+        push @records, $record;
+    }
+    
+    ## RecordArray
+    my $soap_results = SOAP::Data->name('results' => @records)->type('RecordArray');
+    return $soap_results;
+}
+
 1;
 
 __END__
@@ -272,7 +340,13 @@ VUser::SOAP - SOAP handling for vsoapd
 
 =head1 DESCRIPTION
 
-Function description here
+Provides all of the utilites for handling vuser actions via SOAP.
+
+=head1 BUGS
+
+Sessions information is all kept in memory. This may lead to problems if there
+are a large number of different users using the service. It may be better to
+move this to a database at some point.
 
 =head1 AUTHOR
 
