@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Makefile.PL,v 1.2 2006-09-28 17:32:58 perlstalker Exp $
+# $Id: Makefile.PL,v 1.3 2006-10-05 17:25:45 perlstalker Exp $
 
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
 	      NAME            => 'vsoapd',
 	      VERSION_FROM    => 'sbin/vsoapd',
-	      EXE_FILES       => [qw[sbin/vsoapd sbin/vsoapc]],
+	      EXE_FILES       => [qw[sbin/vsoapd sbin/vsoapc sbin/gen-wsdl.pl]],
 	      INSTALLSCRIPT   => '$(PREFIX)/sbin',
 	      PREREQ_PM       => {'Config::IniFiles' => 0,
 				              'Regexp::Common'   => 0,
