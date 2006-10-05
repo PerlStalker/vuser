@@ -6,30 +6,31 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.21 2006-09-19 17:45:25 perlstalker Exp $
+# $Id: vuser,v 1.22 2006-10-05 19:23:05 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.21 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.22 $'))[1];
 our $VERSION = "0.3.0";
 
 our $DEBUG = 0;
 
 BEGIN {
 
-    our @etc_dirs = ('/usr/local/etc',
-		     '/usr/local/etc/vuser',
-		     '/etc',
-		     '/etc/vuser',
-		     "$FindBin::Bin/../etc",
-		     "$FindBin::Bin",
-		     "$FindBin::Bin/..",
+    our @etc_dirs = (
+		             "$FindBin::Bin/../etc",
+		             "$FindBin::Bin",
+		             "$FindBin::Bin/..",
                      "$FindBin::Bin/vuser",
                      "$FindBin::Bin/../vuser",
-                     "$FindBin::Bin/../etc/vuser"
+                     "$FindBin::Bin/../etc/vuser",
+                     '/usr/local/etc',
+		             '/usr/local/etc/vuser',
+		             '/etc',
+		             '/etc/vuser',
                      );
 }
 
