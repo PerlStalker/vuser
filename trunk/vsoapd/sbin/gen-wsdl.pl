@@ -7,9 +7,8 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: gen-wsdl.pl,v 1.2 2006-10-05 17:02:25 perlstalker Exp $
+# $Id: gen-wsdl.pl,v 1.3 2006-10-05 19:38:18 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = "0.1.0";
 
 our $DEBUG = 0;
