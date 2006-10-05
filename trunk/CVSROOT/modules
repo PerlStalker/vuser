@@ -31,7 +31,7 @@ vuser-old vuser-old
 VUser-Asterisk VUser-Asterisk
 VUser-Barracuda VUser-Barracuda
 VUser-Bind VUser-Bind
-VUser-Email VUser-Email
+VUser-Email -a VUser-Email.new
 VUser-Install VUser-Install
 VUser-SpamAssassin VUser-SpamAssassin
 VUser-SquirrelMail VUser-SquirrelMail
