@@ -6,7 +6,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapc,v 1.4 2006-10-05 17:02:25 perlstalker Exp $
+# $Id: vsoapc,v 1.5 2006-10-12 21:57:39 perlstalker Exp $
 our $VERSION = "0.4.0";
 
 use Pod::Usage;
@@ -15,10 +15,20 @@ use Term::ReadKey;
 use FindBin;
 use Config::IniFiles;
 use SOAP::Lite
-    on_fault=> sub { my ($soap, $res) = @_;
-		     die "Error: ", ref $res ? $res->faultstring : $soap->transport->status, "\n"
-		     };
-
+#    on_fault=> sub { my ($soap, $res) = @_;
+#                if (ref $res) {
+#                    #print "res: "; use Data::Dumper; print Dumper $res;
+#                    die "Error: ", $res->faultstring, "\n"
+#                } else {
+#                    print "soap: "; use Data::Dumper; print Dumper $soap;
+#                    if ($soap->transport->status =~ /^200 /) {
+#                        # Fault when everything is OK?
+#                    } else {
+#                        die "Error: ", $soap->transport->status, "\n";
+#                    }
+#                }
+#		     };
+;
 our $DEBUG = 0;
 our $c_sec = 'vsoapc';
 
@@ -137,27 +147,33 @@ if (defined $action
 $action = '' unless defined $action;
 
 # Ok. Now it's time to do the action.
-my $uri = strip_ws($cfg{$c_sec}{'uri'}) || 'urn:/VUser';
-my $proxy = strip_ws($cfg{$c_sec}{'proxy'});
+our $uri = strip_ws($cfg{$c_sec}{'uri'}) || 'urn:/VUser';
+our $proxy = strip_ws($cfg{$c_sec}{'proxy'});
+our $service = strip_ws($cfg{$c_sec}{'service'});
 
-$log->log (LOG_INFO, "Attempting to connect to $proxy for $uri");
+my $soap;
+if ($service) {
+    $log->log (LOG_INFO, "Attempting to connect to $service");
+    $soap = SOAP::Lite->service($service);
+} else {
+    $log->log (LOG_INFO, "Attempting to connect to $proxy for $uri");
+    $soap = SOAP::Lite
+    -> uri ($uri)
+    -> proxy ($proxy);
+}
 
-$log->log (LOG_DEBUG, "Credentials: $username, $password");
+$log->log (LOG_DEBUG, "Credentials: %s, %s", $username, defined $password? $password : 'undef');
 
 # Log sends back info in the SOAP headers including a ticket that
 # is sent back through the headers for the other task functions
-my $authinfo = SOAP::Lite
-    -> uri ($uri)
-    -> proxy ($proxy)
+my $authinfo = #$soap
+    SOAP::Lite->service($service)
     -> login ($username, $password)
-    -> result;
+    ; #-> result;
     
 if ($debug) {
-    print "Authinfo: ";
-    use Data::Dumper; print Dumper $authinfo;
+    $log->log (LOG_DEBUG, "Login: $authinfo");
 }
-    
-$log->log (LOG_DEBUG, "Login: $authinfo");
 
 if (not $authinfo) {
     die "Invalid login\n";
@@ -169,12 +185,54 @@ if ($keyword eq 'help') {
     my %opts = create_opts($keyword, $action);
     ## Now translate the options into SOAP::Data objects in a magical way
     my @params = hash2soap(%opts);
+    if ($debug) {
+        print "SOAP params: ";
+        use Data::Dumper; print Dumper \@params;
+    }
     # Do action
-    my $results = SOAP::Lite
-	-> uri ($uri)
-	-> proxy ($proxy)
-	-> call("$keyword\_$action", SOAP::Header->name("authinfo", $authinfo), @params)
-	-> result;
+    my $soap_auth = SOAP::Header->name("authinfo", $authinfo);
+    #my $soap_auth = SOAP::Data->name("authinfo", $authinfo);
+    
+    my $call = #$soap
+        SOAP::Lite->uri($uri)->proxy($proxy)
+	   -> call("$keyword\_$action", $soap_auth, @params);
+	if ($debug) {
+	    print "\$call: "; use Data::Dumper; print Dumper $call;
+	}
+	
+	my @results = $call->valueof("//results");
+	#my @results = $call->paramsout();
+	if ($debug > 1) {
+	    print "RS: "; use Data::Dumper; print Dumper \@results;
+	}
+	
+	display_resultSet(@results);
+}
+
+sub display_resultSet {
+    my @results = @_;
+    foreach my $result (@results) {
+        if ($debug > 2) {
+            print '$result: ';
+            use Data::Dumper; print Dumper $result;
+        }
+        my $cols = $result->{'results'}{'ResultSet'}{'columns'}{'item'};
+        my $values = $result->{'results'}{'ResultSet'}{'values'}{'item'};
+        my @rows;
+        #use Data::Dumper; print Dumper $values;
+        if (ref $values eq 'HASH') {
+            push @rows, $values;
+        } elsif (ref $values eq 'ARRAY') {
+            @rows = @{ $values };
+        }
+        for (my $i = 0; $i < @rows; $i++) {
+            print "\n" if ($i > 0);
+            for (my $j = 0; $j < @$cols; $j++) {
+                #use Data::Dumper; print Dumper $rows[$i];
+                printf("%s: %s\n", $cols->[$j], $rows[$i]{'item'}[$j]);
+            }
+        }
+    }
 }
 
 sub hash2soap {
@@ -195,10 +253,9 @@ sub show_help
     my $keyword = shift;
 
     if (not $keyword) {
-	   my @keywords = SOAP::Lite
-	       -> uri ($uri)
-	       -> proxy ($proxy)
-	       -> get_keywords (SOAP::Header->new(authinfo => $authinfo))
+	   my @keywords = #$soap
+	       SOAP::Lite->uri($uri)->proxy($proxy)
+	       -> call ('get_keywords', SOAP::Header->new(authinfo => $authinfo))
 	       -> valueof('//keywords');
 	   
 	   if ($debug) {
@@ -212,24 +269,34 @@ sub show_help
 	       printf ("%8s - %s\n", $key->{keyword}, $descr);
 	   }
     } else {
-	   print "Options marked with '*' are required.\n";
-	   my @actions = SOAP::Lite
-	       -> uri ($uri)
-	       -> proxy ($proxy)
-	       -> get_actions(SOAP::Header->new(authinfo => $authinfo),
+	    print "Options marked with '*' are required.\n";
+
+        if ($debug) {
+            use Data::Dumper; print Dumper $soap;
+            $log->log(LOG_DEBUG, "Service: %s / %s", $service, $soap->service);
+        }
+
+	   my @actions = #$soap
+	       #SOAP::Lite->service($service)
+	       SOAP::Lite->uri($uri)->proxy($proxy)
+           -> call ('get_actions', SOAP::Header->name(authinfo => $authinfo),
 	                      SOAP::Data->name('keyword' => $keyword))
 	       -> valueof('//actions');
+	   if ($debug) {
+	       print '@actions: ';
+	       use Data::Dumper; print Dumper \@actions;
+	   }
 	   foreach my $action (@actions) {
 	       my $descr = $action->{description} || 'No description';
 	       printf ("%8s - %s\n", $action->{action}, $descr);
-	       my @options = SOAP::Lite
-	           -> uri ($uri)
-		       -> proxy ($proxy)
-		       -> get_options(SOAP::Header->new(authinfo => $authinfo),
+	       my @options = #$soap
+	           SOAP::Lite->uri($uri)->proxy($proxy)
+		       -> call ('get_options', SOAP::Header->new(authinfo => $authinfo),
 		                      SOAP::Data->name('keyword' => $keyword),
 		                      SOAP::Data->name('action' => $action->{action}))
 		       -> valueof('//options');
 	       foreach my $option (@options) {
+	           next if $option eq '';
 		       my $descr = $option->{description} || 'No description';
 		       printf("\t%-16s %s - %s\n",
 		              "--".$option->{option},
@@ -248,13 +315,13 @@ sub create_opts
 
     $log->log(LOG_DEBUG, "Creating options for $keyword | $action");
 
-    my @options = SOAP::Lite
-	-> uri ($uri)
-	-> proxy ($proxy)
-	-> get_options (SOAP::Header->new(authinfo => $authinfo),
-	                SOAP::Data->name('keyword' => $keyword),
-	                SOAP::Data->name('action' => $action))
-	-> valueof('//options');
+    my @options = #$soap
+        SOAP::Lite->uri($uri)->proxy($proxy)
+        -> get_options (SOAP::Header->name('authinfo' => $authinfo),
+	                    SOAP::Data->name('keyword' => $keyword),
+	                    SOAP::Data->name('action' => $action)
+	                    )
+        -> valueof('//options');
 
     if ($debug) {
         print "Raw options: ";
@@ -267,6 +334,7 @@ sub create_opts
     my @opt_defs = ();
 
     foreach my $opt (@options) {
+        next if $opt eq '';
 	   my $gopt_type = '';
 
 	   my $type = $opt->{type};
@@ -311,10 +379,19 @@ vsoapd - vuser SOAP daemon.
  # used by the vsoapd server. (vsoapd defaults to HTTP.)
  proxy = http://localhost:8000/
  
+ # Path to a generated wsdl file for vsoapd.
+ service = /path/to/vuser.wsdl
+ 
  # Set to 'yes' if vsoapd required authentication
  require authentication = no
 
 =head1 BUGS
+
+Despite what one may think, both 'proxy' and 'service' need to be set.
+SOAP::Lite needs the WSDL so that it can handle the custom data types
+but using ->service() calls seems to fail after the first call. Some
+enterprising soul should try to find out why ->service() does not work
+at fix it.
 
 =head1 SEE ALSO
 

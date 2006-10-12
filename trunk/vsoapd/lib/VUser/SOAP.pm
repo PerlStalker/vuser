@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: SOAP.pm,v 1.5 2006-10-05 17:02:24 perlstalker Exp $
+# $Id: SOAP.pm,v 1.6 2006-10-12 21:57:38 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -109,14 +109,23 @@ sub run_tasks {
     my $ticket = shift;
     my $keyword = shift;
     my $action = shift;
-    my @params = shift;
-
+    my $env = pop;
+    my $body = $env->body;
+    #use Data::Dumper; print Dumper $body;
+    my %opts = ();
+    if (defined  $body->{$keyword.'_'.$action}
+        and ref $body->{$keyword.'_'.$action} eq 'HASH'
+        ) {
+        %opts = %{ $body->{$keyword.'_'.$action} };
+    }
+    #use Data::Dumper; print Dumper \%opts;
+    
     my $user = $sessions{$ticket}{user};
     my $ip = $sessions{$ticket}{ip};
     
     # We need to translate the SOAP::Data params into a hash
     # suitable for ::ExtHandler->run_tasks.
-    my %opts = build_opts(@params);
+    #my %opts = build_opts(@params);
     
     #print "\%opts: "; use Data::Dumper; print Dumper \%opts;
     
@@ -295,38 +304,64 @@ sub rs2soap {
                 push @types, $meta->type();
             }
             ## Set columns
-            my $columns = SOAP::Data->name('columns' => @cols);
-            $columns->type('ColumnArray');
+            # It would be really nice to set the name space globally.
+            my $columns = SOAP::Data->name('columns' =>
+                \SOAP::Data->name('item' => @cols)->type('string')
+                );
+            $log->log(LOG_DEBUG, "Creating ColumnArray");
+            $columns->type('tns:ColumnArray');
+            #$columns->type('ArrayOf_string');
             
             ## Set types
-            my $types = SOAP::Data->name('types' => @types);
-            $types->type('TypeArray');
+            my $types = SOAP::Data->name('types' =>
+                \SOAP::Data->name('item' => @types)->type('string')
+                );
+            $log->log(LOG_DEBUG, "Creating TypeArray");
+            $types->type('tns:TypeArray');
+            #$types->type('ArrayOf_string');
             
             ## Set values            
             my @table = $rs->results();
             my @vals = ();
+            $log->log(LOG_DEBUG, "Creating ValueArray");
             foreach my $row (@table) {
                 # Force conversion of values to strings
-                my @entries = map { SOAP::Data->value($_)->type('string'); } @$row;
+                #my @entries = map { SOAP::Data->value($_)->type('string'); } @$row;
                 
                 # Put strings is a 'ValueArray'
-                push @vals, SOAP::Data->value(@entries)->type('ValueArray'); 
+                #push @vals, SOAP::Data->value(@entries)->type('tns:ValueArray');
+                push @vals, SOAP::Data->value(
+                    \SOAP::Data->name('item' => @$row)->type('string')
+                    );
             }
-            my $values = SOAP::Data->name('values' => @vals);
-            $values->type('DataArray');
+            my $values = SOAP::Data->name('values' =>
+                \SOAP::Data->name('item' => @vals)->type('tns:ValueArray')
+                );
+            $log->log(LOG_DEBUG, "Creating DataArray");
+            $values->type('tns:DataArray');
             
-            my $result_set = SOAP::Data->value($columns, $types, $values);
-            $result_set->type('ResultSet');
+            my $result_set = SOAP::Data->name('ResultSet' => 
+                \SOAP::Data->value($columns, $types, $values)
+                );
+            $log->log(LOG_DEBUG, "Creating ResultSet");
+            $result_set->type('tns:ResultSet');
             push @soap_rs, $result_set; 
         }
         
         ## Record
-        my $record = SOAP::Data->value(@soap_rs)->type('Record');
+        $log->log(LOG_DEBUG, "Creating Record");
+        my $record = SOAP::Data->name('results' => 
+            \SOAP::Data->name('item' => @soap_rs)->type('tns:ResultSet')
+            );
+        $record->type('tns:Record');
         push @records, $record;
     }
     
     ## RecordArray
-    my $soap_results = SOAP::Data->name('results' => @records)->type('RecordArray');
+    $log->log(LOG_DEBUG, "Creating RecordArray");
+    my $soap_results = SOAP::Data->name('results' => 
+        \SOAP::Data->name('item' => @records)->type('tns:Record')
+        )->type('tns:RecordArray');
     return $soap_results;
 }
 

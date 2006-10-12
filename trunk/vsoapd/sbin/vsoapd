@@ -7,7 +7,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapd,v 1.5 2006-10-05 17:02:25 perlstalker Exp $
+# $Id: vsoapd,v 1.6 2006-10-12 21:57:39 perlstalker Exp $
 
 our $VERSION = "0.4.0";
 
@@ -15,6 +15,7 @@ use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
+#use SOAP::Lite;
 use SOAP::Lite;
 
 our $DEBUG = 0;
@@ -138,6 +139,9 @@ foreach my $trans (@transports) {
     no strict 'refs';
     $log->log(LOG_INFO, "Attempting to start transport $trans");
     my $daemon = $module->new(\%cfg);
+    # We may need a custom serializer :-/
+    $daemon->serializer->register_ns('urn:/VUser', 'tns');
+    $daemon->action('urn:/VUser');
     $daemon->objects_by_reference(qw(VUser::SOAP::Dispatcher));
     $daemon->dispatch_with({'urn:/VUser' => 'VUser::SOAP::Dispatcher'});
     $log->log(LOG_DEBUG, "$trans uri: ".$daemon->myuri);

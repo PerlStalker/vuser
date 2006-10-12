@@ -7,7 +7,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: gen-wsdl.pl,v 1.3 2006-10-05 19:38:18 perlstalker Exp $
+# $Id: gen-wsdl.pl,v 1.4 2006-10-12 21:57:39 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -127,15 +127,15 @@ foreach my $key (@keywords) {
 print <<'HEAD';
 <?xml version="1.0"?>
 <wsdl:definitions name="VUser"
-    targetNamespace="urn:VUser"
-    xmlns:tns="urn:VUser"
+    targetNamespace="urn:/VUser"
+    xmlns:tns="urn:/VUser"
     xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
     xmlns:enc="http://schemas.xmlsoap.org/soap/encoding/"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
     xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
     
  <wsdl:types>
-  <xsd:schema targetNamespace="urn:VUser">
+  <xsd:schema targetNamespace="urn:/VUser">
    <xsd:complexType name="ColumnArray">
     <xsd:complexContent>
      <xsd:restriction base="enc:Array">
@@ -185,6 +185,13 @@ print <<'HEAD';
      </xsd:restriction>
     </xsd:complexContent>
    </xsd:complexType>
+   <xsd:complexType name="StringArray">
+    <xsd:complexContent>
+     <xsd:restriction base="enc:Array">
+      <xsd:attribute ref="enc:arrayType" wsdl:arrayType="xsd:string[]" />
+     </xsd:restriction>
+    </xsd:complexContent>
+   </xsd:complexType>
   </xsd:schema>
  </wsdl:types>
    
@@ -193,15 +200,42 @@ HEAD
 ## Now for the <messages>
 
 print <<'MSGS';
- <wsdl:message name="LoginRequest">
-  <wsdl:part name="username" type="tns:string" />
-  <wsdl:part name="password" type="tns:string" />
+ <wsdl:message name="loginRequest">
+  <wsdl:part name="username" type="xsd:string" />
+  <wsdl:part name="password" type="xsd:string" />
  </wsdl:message>
 
- <wsdl:message name="LoginResponse">
+ <wsdl:message name="loginResponse">
   <wsdl:part name="authinfo" type="xsd:string" />
  </wsdl:message>
 
+ <wsdl:message name="get_keywordsRequest" >
+  <wsdl:part name="authinfo" type="xsd:string" />
+ </wsdl:message>
+
+ <wsdl:message name="get_keywordsResponse">
+  <wsdl:part name="keywords" type="tns:StringArray" />
+ </wsdl:message>
+ 
+ <wsdl:message name="get_actionsRequest" >
+  <wsdl:part name="authinfo" type="xsd:string" />
+  <wsdl:part name="keyword" type="xsd:string" />
+ </wsdl:message>
+ 
+ <wsdl:message name="get_actionsResponse">
+  <wsdl:part name="actions" type="tns:StringArray" />
+ </wsdl:message>
+ 
+ <wsdl:message name="get_optionsRequest" >
+  <wsdl:part name="authinfo" type="xsd:string" />
+  <wsdl:part name="keyword" type="xsd:string" />
+  <wsdl:part name="action" type="xsd:string" />
+ </wsdl:message>
+
+ <wsdl:message name="get_optionsResponse">
+  <wsdl:part name="options" type="tns:StringArray" />
+ </wsdl:message>
+ 
  <wsdl:message name="ResultsResponse">
   <wsdl:part name="results" type="tns:RecordArray" />
  </wsdl:message>
@@ -209,7 +243,7 @@ MSGS
 
 foreach my $key (sort keys %event_tree) {
     foreach my $act (sort keys %{$event_tree{$key}{actions}}) {
-        printf(" <wsdl:message name=\"%s%sRequest\">\n", ucfirst($key), ucfirst($act));
+        printf(" <wsdl:message name=\"%s_%sRequest\">\n", $key, $act);
         print "  <wsdl:part name=\"authinfo\" type=\"xsd:string\" />\n";
         foreach my $opt (sort keys %{$event_tree{$key}{actions}{$act}{opts}}) {
             my $wsdl_type = 'xsd:string';
@@ -219,6 +253,10 @@ foreach my $key (sort keys %event_tree) {
                    $event_tree{$key}{actions}{$act}{opts}{$opt}{descr});
             print("  </wsdl:part>\n");            
         }
+        print " </wsdl:message>\n";
+        
+        printf(" <wsdl:message name=\"%s_%sResponse\">\n", $key, $act);
+        print "  <wsdl:part name=\"results\" type=\"tns:RecordArray\" />\n";
         print " </wsdl:message>\n";
     }
 }
@@ -232,8 +270,20 @@ print <<'PORT';
    to the other operations.
   </wsdl:documentation>
   <wsdl:operation name="login">
-   <wsdl:input message="tns:LoginRequest" />
-   <wsdl:output message="tns:LoginResponse" />
+   <wsdl:input message="tns:loginRequest" />
+   <wsdl:output message="tns:loginResponse" />
+  </wsdl:operation>
+  <wsdl:operation name="get_keywords">
+   <wsdl:input message="tns:get_keywordsRequest" />
+   <wsdl:output message="tns:get_keywordsResponse" />
+  </wsdl:operation>
+  <wsdl:operation name="get_actions">
+   <wsdl:input message="tns:get_actionsRequest" />
+   <wsdl:output message="tns:get_actionsResponse" />
+  </wsdl:operation>
+  <wsdl:operation name="get_options">
+   <wsdl:input message="tns:get_optionsRequest" />
+   <wsdl:output message="tns:get_optionsResponse" />
   </wsdl:operation>
  </wsdl:portType>
 PORT
@@ -250,9 +300,9 @@ foreach my $key (sort keys %event_tree) {
         printf ("  <wsdl:operation name=\"%s_%s\">\n", $key, $act);
         printf("   <wsdl:documentation>%s</wsdl:documentation>\n",
                $event_tree{$key}{actions}{$act}{descr});
-        printf ("   <wsdl:input message=\"tns:%s%sRequest\" />\n", $uc_key, $uc_act);
-        #printf ("   <wsdl:output message=\"tns:%s%sResponse\" />\n", $uc_key, $uc_act);
-        printf ("   <wsdl:output message=\"tns:ResultsResponse\" />\n");
+        printf ("   <wsdl:input message=\"tns:%s_%sRequest\" />\n", $key, $act);
+        printf ("   <wsdl:output message=\"tns:%s_%sResponse\" />\n", $key, $act);
+        #printf ("   <wsdl:output message=\"tns:ResultsResponse\" />\n");
         print "  </wsdl:operation>\n";
     }
     
@@ -265,14 +315,62 @@ print <<'BINDING';
   <soap:binding style="rpc"
     transport="http://schemas.xmlsoap.org/soap/http" />
   <wsdl:operation name="login">
-   <soap:operation soapAction="urn:VUser" />
+   <soap:operation soapAction="urn:/VUser#login" />
    <wsdl:input>
     <soap:body use="encoded" parts="username password"
-      namespace="urn:VUser"
+      namespace="urn:/VUser"
       encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
    </wsdl:input>
    <wsdl:output>
-    <soap:body use="encoded" namespace="urn:VUser"
+    <soap:body use="encoded" namespace="urn:/VUser"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+   </wsdl:output>
+  </wsdl:operation>
+  <wsdl:operation name="get_keywords">
+   <soap:operation soapAction="urn:/VUser#get_keywords" />
+   <wsdl:input>
+    <soap:body use="encoded"
+      namespace="urn:/VUser"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+    <soap:header use="encoded" part="authinfo"
+      namespace="urn:/VUser"
+      message="tns:get_keywordsRequest" wsdl:required="1"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+   </wsdl:input>
+   <wsdl:output>
+    <soap:body use="encoded" namespace="urn:/VUser"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+   </wsdl:output>
+  </wsdl:operation>
+  <wsdl:operation name="get_actions">
+   <soap:operation soapAction="urn:/VUser#get_actions" />
+   <wsdl:input>
+    <soap:body use="encoded" part="keyword"
+      namespace="urn:/VUser"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+    <soap:header use="encoded" part="authinfo"
+      namespace="urn:/VUser"
+      message="tns:get_actionsRequest" wsdl:required="1"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+   </wsdl:input>
+   <wsdl:output>
+    <soap:body use="encoded" namespace="urn:/VUser"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+   </wsdl:output>
+  </wsdl:operation>
+  <wsdl:operation name="get_options">
+   <soap:operation soapAction="urn:/VUser#get_options" />
+   <wsdl:input>
+    <soap:body use="encoded" parts="keyword action"
+      namespace="urn:/VUser"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+    <soap:header use="encoded" part="authinfo"
+      namespace="urn:/VUser"
+      message="tns:get_optionsRequest" wsdl:required="1"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+   </wsdl:input>
+   <wsdl:output>
+    <soap:body use="encoded" namespace="urn:/VUser"
       encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
    </wsdl:output>
   </wsdl:operation>
@@ -289,20 +387,21 @@ foreach my $key (sort keys %event_tree) {
     foreach my $act (sort keys %{ $event_tree{$key}{actions} }) {
         my $uc_act = ucfirst($act);
         # Documentation? action description?
-        printf ("  <wsdl:operation name=\"%s_%s\">\n", $key, $act);
+        printf("  <wsdl:operation name=\"%s_%s\">\n", $key, $act);
+        printf( "   <soap:operation soapAction=\"urn:/VUser#%s_%s\" />\n", $key, $act);
         print "   <wsdl:input>\n";
         printf("    <soap:body use=\"encoded\"");
         if (keys %{ $event_tree{$key}{actions}{$act}{opts} }) {
             printf(" parts=\"%s\"",
                 join " ", sort keys %{ $event_tree{$key}{actions}{$act}{opts} });
         }
-        print " namespace=\"urn:VUser\" encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" />\n";
+        print " namespace=\"urn:/VUser\" encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" />\n";
         print "    <soap:header use=\"encoded\" part=\"authinfo\"";
         printf (" message=\"tns:%s%sRequest\" wsdl:required=\"1\"", $uc_key, $uc_act);
-        print " namespace=\"urn:VUser\" encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" />\n";
+        print " namespace=\"urn:/VUser\" encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" />\n";
         print "   </wsdl:input>\n";
         print "   <wsdl:output>\n";
-        print "    <soap:body use=\"encoded\" namespace=\"urn:VUser\"";
+        print "    <soap:body use=\"encoded\" namespace=\"urn:/VUser\"";
         print " encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" />\n";
         print "   </wsdl:output>\n";
         print "  </wsdl:operation>\n";

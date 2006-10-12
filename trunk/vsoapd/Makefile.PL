@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Makefile.PL,v 1.3 2006-10-05 17:25:45 perlstalker Exp $
+# $Id: Makefile.PL,v 1.4 2006-10-12 21:57:39 perlstalker Exp $
 
 use ExtUtils::MakeMaker;
 
@@ -13,7 +13,7 @@ WriteMakefile(
 	      PREREQ_PM       => {'Config::IniFiles' => 0,
 				              'Regexp::Common'   => 0,
 				              'File::Path'       => 0,
-				              'SOAP::Lite'       => 0,
+				              'SOAP::Lite'       => "0.67",
 				              'Pod::Usage'       => 0,
                               'Getopt::Long'     => 0,
                               'FindBin'          => 0,

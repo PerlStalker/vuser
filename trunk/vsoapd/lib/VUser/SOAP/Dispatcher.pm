@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: Dispatcher.pm,v 1.6 2006-10-05 17:02:25 perlstalker Exp $
+# $Id: Dispatcher.pm,v 1.7 2006-10-12 21:57:39 perlstalker Exp $
 
 use SOAP::Lite;
 use VUser::SOAP;
@@ -62,8 +62,10 @@ sub get_keywords {
 
 sub get_actions {
     my $self = shift;
-    my $envelop = pop; # SOAP::SOM object
-    my $authinfo = $envelop->valueof ("//authinfo");
+    my $env = pop; # SOAP::SOM object
+    my $authinfo = $env->valueof ("//authinfo");
+    
+    VUser::SOAP::Log(LOG_DEBUG, "get_actions()");
     
     # authenticate here
     if (check_bool(VUser::SOAP::conf($c_sec, 'require authentication'))) {
@@ -75,9 +77,10 @@ sub get_actions {
         }
     }
     
-    my $keyword = $envelop->valueof('//keyword');
+    my $keyword = $env->valueof('//keyword');
     
     my @actions = VUser::SOAP::get_actions ($authinfo, $keyword);
+    use Data::Dumper; print Dumper \@actions;
     return SOAP::Data->name('actions' => @actions);
 }
 
@@ -176,7 +179,7 @@ sub AUTOLOAD {
        if (check_bool(VUser::SOAP::conf($c_sec, 'require authentication'))) {
            if (not VUser::SOAP::check_ticket($authinfo)) {
                # error: invalid or expired ticket: FAULT
-               die SOAP::Failt
+               die SOAP::Fault
                 ->faultcode('Server.Custom')
                 ->faultstring('Authentication failed');
            }
@@ -184,10 +187,14 @@ sub AUTOLOAD {
        
        # We've successfully gotten passed the authentication.
        # Let's do some work.
-	   return VUser::SOAP::rs2soap(VUser::SOAP::run_tasks($authinfo,
+       my $results = VUser::SOAP::rs2soap(VUser::SOAP::run_tasks($authinfo,
 	                                                      $keyword, $action, @params));
+	   #print "results: "; use Data::Dumper; print Dumper $results;
+	   return $results;
     } else {
-	   return;
+        VUser::SOAP::Log(LOG_INFO, "Unknown method called: $name");
+	   die SOAP::Fault->faultcode("Server.Custom")
+	       ->faultstring("Unknown method");
     }
 }
 
