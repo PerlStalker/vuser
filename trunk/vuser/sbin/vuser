@@ -6,15 +6,15 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.22 2006-10-05 19:23:05 perlstalker Exp $
+# $Id: vuser,v 1.23 2006-10-27 03:44:44 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.22 $'))[1];
-our $VERSION = "0.3.0";
+our $REVISION = (split (' ', '$Revision: 1.23 $'))[1];
+our $VERSION = "0.4.0";
 
 our $DEBUG = 0;
 
