@@ -6,7 +6,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapc,v 1.5 2006-10-12 21:57:39 perlstalker Exp $
+# $Id: vsoapc,v 1.6 2006-12-07 22:52:50 perlstalker Exp $
 our $VERSION = "0.4.0";
 
 use Pod::Usage;
@@ -211,25 +211,44 @@ if ($keyword eq 'help') {
 
 sub display_resultSet {
     my @results = @_;
+    $log->log(LOG_DEBUG, "Displaying ResultSet");
     foreach my $result (@results) {
         if ($debug > 2) {
             print '$result: ';
             use Data::Dumper; print Dumper $result;
         }
-        my $cols = $result->{'results'}{'ResultSet'}{'columns'}{'item'};
-        my $values = $result->{'results'}{'ResultSet'}{'values'}{'item'};
-        my @rows;
-        #use Data::Dumper; print Dumper $values;
-        if (ref $values eq 'HASH') {
-            push @rows, $values;
-        } elsif (ref $values eq 'ARRAY') {
-            @rows = @{ $values };
+        # Psuedo-hashes here ---v
+        # {'ResultSet'} is a []
+        my $result_sets = $result->{'results'}{'ResultSet'};
+        my $sets;
+        if (ref $result_sets eq 'ARRAY') {
+            $sets = $result_sets;
+        } else {
+            $sets = [$result_sets];
         }
-        for (my $i = 0; $i < @rows; $i++) {
-            print "\n" if ($i > 0);
-            for (my $j = 0; $j < @$cols; $j++) {
-                #use Data::Dumper; print Dumper $rows[$i];
-                printf("%s: %s\n", $cols->[$j], $rows[$i]{'item'}[$j]);
+        foreach my $rs (@$sets) { 
+            my $cols = $rs->{'columns'}{'item'};
+            my $values = $rs->{'values'}{'item'};
+            my @rows = ();
+            if ($debug > 2) {
+                print '$values: ';
+                use Data::Dumper; print Dumper $values;
+            }
+            if (ref $values eq 'HASH') {
+                push @rows, $values;
+            } elsif (ref $values eq 'ARRAY') {
+                @rows = @{ $values };
+            }
+            if ($debug > 2) {
+                print '$rows: ';
+                use Data::Dumper; print Dumper \@rows;
+            }
+            for (my $i = 0; $i < @rows; $i++) {
+                print "\n" if ($i > 0);
+                for (my $j = 0; $j < @$cols; $j++) {
+                    #use Data::Dumper; print Dumper $rows[$i];
+                    printf("%s: %s\n", $cols->[$j], $rows[$i]{'item'}[$j]);
+                }
             }
         }
     }
