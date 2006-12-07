@@ -1,3 +1,4 @@
+.cvsignore
 COPYING
 INSTALL
 lib/VUser/ACL.pm
