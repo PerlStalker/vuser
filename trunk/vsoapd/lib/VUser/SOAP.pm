@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: SOAP.pm,v 1.6 2006-10-12 21:57:38 perlstalker Exp $
+# $Id: SOAP.pm,v 1.7 2006-12-07 22:55:54 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -330,8 +330,10 @@ sub rs2soap {
                 
                 # Put strings is a 'ValueArray'
                 #push @vals, SOAP::Data->value(@entries)->type('tns:ValueArray');
+                # Convert undefs to ''
+                my @clean_row = map { defined $_? $_ : 'undef'; } @$row;
                 push @vals, SOAP::Data->value(
-                    \SOAP::Data->name('item' => @$row)->type('string')
+                    \SOAP::Data->name('item' => @clean_row)->type('string')
                     );
             }
             my $values = SOAP::Data->name('values' =>
