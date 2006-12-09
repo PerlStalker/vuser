@@ -1,4 +1,3 @@
-.cvsignore
 COPYING
 INSTALL
 lib/VUser/Email/Postfix/SQL.pm

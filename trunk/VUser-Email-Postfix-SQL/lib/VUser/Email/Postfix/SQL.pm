@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.4 2006-09-19 15:32:24 perlstalker Exp $
+# $Id: SQL.pm,v 1.5 2006-12-09 03:54:57 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -225,7 +225,7 @@ sub email_list {
     my ($cfg, $opts, $action, $eh) = @_;
     
     my ($user, $domain);
-    VUser::Email::split_addres($cfg, $opts->{account}, \$user, \$domain);
+    VUser::Email::split_address($cfg, $opts->{account}, \$user, \$domain);
     my $params = { 'u' => $user, 'd', $domain };
     
     my $sql = strip_ws($cfg->{$c_sec}{userlist_query});
