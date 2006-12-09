@@ -1,5 +1,3 @@
-.cvsignore
-.project
 COPYING
 INSTALL
 lib/VUser/Email.pm

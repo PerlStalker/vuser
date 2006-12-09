@@ -4,7 +4,7 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2006 Randy Smith <perstalker@vuser.org>
-# $Id: Courier.pm,v 1.1 2006-08-28 22:33:13 perlstalker Exp $
+# $Id: Courier.pm,v 1.2 2006-12-09 04:10:59 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:files);
@@ -60,7 +60,7 @@ sub email_add {
     $user_parentdir =~ s!/[^/]*$!!;
 
     my $vuid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
-    my $vgid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
+    my $vgid = (getgrname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
 
     mkdir_p ($user_parentdir,
 	     0775, $vuid, $vgid,
@@ -134,7 +134,7 @@ sub domain_add {
 
     my $domain_dir = VUser::Email::Courier::get_domain_directory($cfg, $domain);
     my $vuid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
-    my $vgid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
+    my $vgid = (getgrname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
 
     mkdir_p ($domain_dir, 0775, $vuid, $vgid)
 	or die "Can't create domain directory: $domain_dir\n";
@@ -153,7 +153,7 @@ sub domain_mod {
     my $new_domain_dir = VUser::Email::Courier::get_domain_directory($cfg, $new_domain);
 
     my $vuid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
-    my $vgid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
+    my $vgid = (getgrname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
 
     if ($new_domain and $new_domain ne $domain) {
         # rename dirs
@@ -171,7 +171,7 @@ sub domain_del {
 
     my $domain_dir = VUser::Email::Courier::get_domain_directory($cfg, $domain);
     my $vuid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual user'}))[2];
-    my $vgid = (getpwname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
+    my $vgid = (getgrname($cfg->{$VUser::Email::c_sec}{'virtual group'}))[2];
 
     rm_r($domain_dir);
     # Remove from hosteddomains
