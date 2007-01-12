@@ -3,10 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.8 2006-09-14 14:44:35 perlstalker Exp $
+# $Id: Radius.pm,v 1.9 2007-01-12 16:55:21 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
+use VUser::ResultSet;
 
 our $VERSION = '0.1.0';
 
@@ -98,10 +99,40 @@ sub init {
     $eh->register_option ('radius', 'listattrib', $meta{'username'}, 1);
     $eh->register_option ('radius', 'listattrib', $meta{'realm'});
     $eh->register_option ('radius', 'listattrib', $meta{'type'}, 1);
+    
+    # radius-allowedattribs
+    $eh->register_action ('radius', 'allowedattribs', 'List allowed attributes for RADIUS');
+    $eh->register_task ('radius', 'allowedattribs', \&radius_allowedattribs);
 }
 
 sub meta { return %meta; }
 sub c_sec { return $c_sec; }
+
+sub radius_allowedattribs {
+    my ($cfg, $opts, $action, $eh) = @_;
+    
+    my @attribs = ();
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($meta{'attribute'});
+    $rs->add_meta($meta{'type'});
+    
+    # Name[:check|reply] (defaults to 'reply')
+    my $values = $cfg->{c_sec()}{'allowed attributes'};
+    
+    if (defined $values) {
+        my @attrib_pairs = split (/ /, $values);
+        foreach my $attrib_pair (@attrib_pairs) {
+            my ($attrib, $type) = split (':', $attrib_pair);
+            if (not defined ($type)
+                or ($type ne 'reply' and $type ne 'check')) {
+                $type = 'reply';
+            }
+            $rs->add_data([$attrib, $type]); 
+        }
+    }
+    return $rs;
+}
 
 1;
 
@@ -122,6 +153,14 @@ extensions.
 =head1 CONFIGURATION
 
  [Extension Radius]
+ # List of allowed RADIUS attributes. The attributes are seperated by whitespace.
+ # Each attribute may, optionally, be follwed by a ':' and the words 'reply' or 'check'
+ # to identify the attribute type. 'reply' is assumed if no type (or an unknown type)
+ # is specified.
+ #
+ # Note: This is list is not currently used by radius|addattrib and friends to test
+ # if the passed attribute is allowed. 
+ allowed attributes = Framed-IP-Address Framed-Netmask Simultaneous-Use:check
 
 Any Radius::* extensions will automatically load I<Radius>. There is no
 need to add I<Radius> to I<vuser|extensions>.
