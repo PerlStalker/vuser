@@ -7,7 +7,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: gen-wsdl.pl,v 1.4 2006-10-12 21:57:39 perlstalker Exp $
+# $Id: gen-wsdl.pl,v 1.5 2007-01-15 21:43:50 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -397,7 +397,8 @@ foreach my $key (sort keys %event_tree) {
         }
         print " namespace=\"urn:/VUser\" encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" />\n";
         print "    <soap:header use=\"encoded\" part=\"authinfo\"";
-        printf (" message=\"tns:%s%sRequest\" wsdl:required=\"1\"", $uc_key, $uc_act);
+        #printf (" message=\"tns:%s%sRequest\" wsdl:required=\"1\"", $uc_key, $uc_act);
+        printf (" message=\"tns:%s_%sRequest\" wsdl:required=\"1\"", $key, $act);
         print " namespace=\"urn:/VUser\" encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" />\n";
         print "   </wsdl:input>\n";
         print "   <wsdl:output>\n";
