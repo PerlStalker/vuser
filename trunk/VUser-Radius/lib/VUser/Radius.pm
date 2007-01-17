@@ -3,11 +3,12 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.9 2007-01-12 16:55:21 perlstalker Exp $
+# $Id: Radius.pm,v 1.10 2007-01-17 15:23:19 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
 use VUser::ResultSet;
+use VUser::ExtLib qw(:config);
 
 our $VERSION = '0.1.0';
 
@@ -118,7 +119,7 @@ sub radius_allowedattribs {
     $rs->add_meta($meta{'type'});
     
     # Name[:check|reply] (defaults to 'reply')
-    my $values = $cfg->{c_sec()}{'allowed attributes'};
+    my $values = strip_ws($cfg->{c_sec()}{'allowed attributes'});
     
     if (defined $values) {
         my @attrib_pairs = split (/ /, $values);
