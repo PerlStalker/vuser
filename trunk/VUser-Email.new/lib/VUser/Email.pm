@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Email.pm,v 1.5 2006-09-11 22:22:54 perlstalker Exp $
+# $Id: Email.pm,v 1.6 2007-01-18 20:30:25 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log qw(:levels);
@@ -159,6 +159,8 @@ sub split_address
 
     $$username = lc($$username) if check_bool($cfg->{$c_sec}{'lc_user'});
     $$domain = lc($$domain);
+    
+    $log->log(LOG_DEBUG, "account: $account, user: $$username, domain: $$domain");
 }
 
 sub unload { }
