@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.44 2006-09-28 17:10:51 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.45 2007-01-18 17:45:05 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.44 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.45 $'))[1];
 our $VERSION = "0.3.1";
 
 use lib qw(..);
@@ -66,6 +66,8 @@ sub register_keyword
     unless (exists $self->{keywords}{$keyword}) {
 	$self->{keywords}{$keyword} = {};
 
+	$log->log(LOG_DEBUG, "Reg keyword : $keyword");
+
 	$self->{descrs}{$keyword} = {_descr => $descr};
     }
 }
@@ -86,6 +88,7 @@ sub register_action
     }
 
     unless (exists $self->{keywords}{$keyword}{$action}) {
+	$log->log(LOG_DEBUG, "Reg action for $keyword: $action");
 	$self->{keywords}{$keyword}{$action} = {tasks => [], options => {}};
 	$self->{descrs}{$keyword}{$action} = {_descr => $descr};
     }
