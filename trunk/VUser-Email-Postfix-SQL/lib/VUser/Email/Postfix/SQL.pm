@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.5 2006-12-09 03:54:57 perlstalker Exp $
+# $Id: SQL.pm,v 1.6 2007-01-18 21:06:20 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -108,7 +108,7 @@ sub email_add {
 	return;
     }
 
-    if (not defined $opts->{home}) {
+    if (not defined $opts->{home} or not $opts->{home}) {
 	$opts->{"home"} = get_home_directory($cfg, $user, $domain);
     }
 

@@ -4,7 +4,7 @@ use strict;
 
 # Copyright 2005 Michael O'Connor <stew@vireo.org>
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Postfix.pm,v 1.4 2006-12-09 04:10:59 perlstalker Exp $
+# $Id: Postfix.pm,v 1.5 2007-01-18 21:05:41 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:files);
@@ -57,7 +57,10 @@ sub email_add {
 	die "User $account exists\n" if &$user_exists($cfg, $opts, $account);
     }
 
-    my $userdir = get_home_directory ($cfg, $user, $domain);
+    my $userdir = $opts->{home};
+    if (not defined $userdir or not $userdir) {
+	get_home_directory ($cfg, $user, $domain);
+    }
     my $user_parentdir = $userdir;
     $user_parentdir =~ s!/[^/]*$!!;
 
