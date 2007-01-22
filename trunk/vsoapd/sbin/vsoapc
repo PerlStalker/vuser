@@ -6,7 +6,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapc,v 1.6 2006-12-07 22:52:50 perlstalker Exp $
+# $Id: vsoapc,v 1.7 2007-01-22 16:20:38 perlstalker Exp $
 our $VERSION = "0.4.0";
 
 use Pod::Usage;
@@ -22,7 +22,7 @@ use SOAP::Lite
 #                } else {
 #                    print "soap: "; use Data::Dumper; print Dumper $soap;
 #                    if ($soap->transport->status =~ /^200 /) {
-#                        # Fault when everything is OK?
+#                       # Fault when everything is OK?
 #                    } else {
 #                        die "Error: ", $soap->transport->status, "\n";
 #                    }
@@ -166,12 +166,16 @@ $log->log (LOG_DEBUG, "Credentials: %s, %s", $username, defined $password? $pass
 
 # Log sends back info in the SOAP headers including a ticket that
 # is sent back through the headers for the other task functions
-my $authinfo = #$soap
-    SOAP::Lite->service($service)
+if ($debug) {
+    use Data::Dumper; print Dumper $soap;
+}
+my $authinfo = $soap
+    #SOAP::Lite->service($service)
     -> login ($username, $password)
     ; #-> result;
     
 if ($debug) {
+    use Data::Dumper; print Dumper $authinfo;
     $log->log (LOG_DEBUG, "Login: $authinfo");
 }
 
