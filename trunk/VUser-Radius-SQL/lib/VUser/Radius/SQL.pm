@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.7 2006-09-14 15:11:33 perlstalker Exp $
+# $Id: SQL.pm,v 1.8 2007-01-29 23:25:30 perlstalker Exp $
 
 use VUser::ExtLib qw(:config);
 use VUser::Log qw(:levels);
@@ -201,9 +201,9 @@ sub radius_listattrib {
     my ( $cfg, $opts, $action, $eh ) = @_;
 
     my $sql;
-    if ( $opts->{'type'} == 'check' ) {
+    if ( $opts->{'type'} eq 'check' ) {
         $sql = strip_ws( $cfg->{$c_sec}{'listattrib_check_query'} );
-    } elsif ( $opts->{'type'} == 'reply' ) {
+    } elsif ( $opts->{'type'} eq 'reply' ) {
         $sql = strip_ws( $cfg->{$c_sec}{'listattrib_reply_query'} );
     }
 
