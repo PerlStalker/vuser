@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith
-# $Id: Prefs.pm,v 1.4 2005-12-06 23:44:20 perlstalker Exp $
+# $Id: Prefs.pm,v 1.5 2007-02-12 21:40:26 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
 our $VERSION = "0.1.1";
 
 use VUser::Meta;
@@ -19,7 +19,7 @@ my $csec = 'Extension SquirrelMail::Prefs'; # config section
 
 my $dbh = undef;
 
-my %meta = ('username' => VUser::Meta->new(name => 'username',
+our %meta = ('username' => VUser::Meta->new(name => 'username',
 					   type => 'string',
 					   description => 'User name'),
 	    'option' => VUser::Meta->new (name => 'option',
@@ -29,6 +29,8 @@ my %meta = ('username' => VUser::Meta->new(name => 'username',
 					 type => 'string',
 					 description => 'Value for option')
 	    );
+
+sub meta { return %meta; }
 
 sub config_sample
 {
