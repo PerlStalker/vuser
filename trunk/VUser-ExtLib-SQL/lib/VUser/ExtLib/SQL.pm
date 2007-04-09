@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.9 2006-09-20 14:34:47 perlstalker Exp $
+# $Id: SQL.pm,v 1.10 2007-04-09 17:32:43 perlstalker Exp $
 
-our $VERSION = "0.1.0";
+our $VERSION = "0.1.1";
 
 use Exporter;
 our @ISA = qw(Exporter);
@@ -126,6 +126,15 @@ execute() returns the statement handle after $sth->execute() has been run.
 Remember to run $sth->finish() on the returned statement handle when you're
 done with it.
 
+=item %\option
+
+B<WARNING:> This is a very dangerous option and must be handled with care.
+If you don't need to use it, don't use it.
+
+Replace the option with the unescaped value of the option. This does not
+use placeholders like the other options above. All quoting, escaping, etc.
+is left to the caller to handle before passing the value to execute().
+
 =back
 
 =cut
@@ -158,7 +167,7 @@ sub execute {
 
     my %overrides = ();
     if (defined $overridesref and ref $overridesref eq 'HASH') {
-	%args = %{ $overridesref };
+	%overrides = %{ $overridesref };
     }
 
     if ( not defined $sql or $sql =~ /^\s*$/ ) {
@@ -178,6 +187,18 @@ sub execute {
 
     # replace the options with ? placeholders
     $sql =~ s/$re/?/g;
+
+    # Now replace the manually escaped options. %\option-name
+    my @man_opts = $sql =~ /(?:%\\([\w-]+))/;
+    foreach my $opt (@man_opts) {
+	if (defined $overrides{$opt}) {
+	    $sql =~ s/%\\$opt/$overrides{$opt}/e;
+	} elsif (defined $args{$opt}) {
+	    $sql =~ s/%\\$opt/$args{$opt}/e;
+	} elsif (defined $macros{$opt}) {
+	    $sql =~ s/%\\$opt/$opts->{$macros{$opt}/e;
+	}
+    }
 
     Log()->log( LOG_DEBUG, "Options (" .scalar @options .'): ' . join( ', ', @options ) );
     Log()->log( LOG_DEBUG, "New SQL: $sql" );
