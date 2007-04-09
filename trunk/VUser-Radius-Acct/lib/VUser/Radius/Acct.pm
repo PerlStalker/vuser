@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2007 Randy Smith <perlstalker@vuser.org>
-# $Id: Acct.pm,v 1.1 2007-04-06 16:13:41 perlstalker Exp $
+# $Id: Acct.pm,v 1.2 2007-04-09 17:43:39 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
@@ -33,7 +33,35 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 					  'description' => 'Comma seperated list of called station IDs.'),
 	     'report-type' => VUser::Meta->new('name' => 'report-type',
 					       'type' => 'string',
-					       'description' => 'Report type. "total" or "records" for total seconds used or each connection record')
+					       'description' => 'Report type. "total" or "records" for total seconds and octets used or each connection record'),
+	     # Common result set types
+	     'session-id' => VUser::Meta->new('name' => 'session-id',
+					      'type' => 'string',
+					      'description' => 'Unique session ID'),
+	     'timestamp' => VUser::Meta->new('name' => 'timestamp',
+					     'type' => 'string',
+					     'description' => 'Timestamp'),
+	     'nas-ip-address' => VUser::Meta->new('name' => 'nas-ip-address',
+						  'type' => 'string',
+						  'description' => 'IP address of NAS'),
+	     'session-time' => VUser::Meta->new('name' => 'session-time',
+						'type' => 'int',
+						'description' => 'Session time in seconds'),
+	     'input-octets' => VUser::Meta->new('name' => 'input-octets',
+						'type' => 'int',
+						'description' => 'Number of input octets'),
+	     'output-octets' => VUser::Meta->new('name' => 'output-octets',
+						 'type' => 'int',
+						 'description' => 'Number of output octets'),
+	     'framed-ip-address' => VUser::Meta->new('name' => 'framed-ip-address',
+						     'type' => 'string',
+						     'description' => 'Framed IP address'),
+	     'called-station-id' => VUser::Meta->new('name' => 'called-station-id',
+						     'type' => 'string',
+						     'description' => 'Called station ID'),
+	     'calling-station-id' => VUser::Meta->new('name' => 'calling-station-id',
+						      'type' => 'string',
+						      'description' => 'Calling station id')
 	     
 	     );
 my $log;
@@ -54,7 +82,6 @@ sub init {
     # radius-acct
     $eh->register_action ('radius', 'acct', 'View accouting data for a user');
     $eh->register_option ('radius', 'acct', $meta{'username'}, 'req');
-    $eh->register_option ('radius', 'acct', $meta{'password'}, 'req');
     $eh->register_option ('radius', 'acct', $meta{'starttime'}, 'req');
     $eh->register_option ('radius', 'acct', $meta{'endtime'}, 'req');
     $eh->register_option ('radius', 'acct', $meta{'realm'});
