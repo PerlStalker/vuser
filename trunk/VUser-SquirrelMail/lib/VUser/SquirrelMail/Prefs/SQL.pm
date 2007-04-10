@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2007 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.1 2007-02-13 15:35:15 perlstalker Exp $
+# $Id: SQL.pm,v 1.2 2007-04-10 21:17:22 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.2 $'))[1];
 our $VERSION = "0.1.1";
 
 use VUser::Meta;
@@ -40,24 +40,26 @@ sub init
         $log = VUser::Log->new( \%cfg, 'vuser' );
     }
 
-	my $dsn = strip_ws($cfg{$csec}{dsn});
+    my $dsn = strip_ws($cfg{$csec}{dsn});
 	
-	if (not defined $dsn) { 
-    
-        my $db_type = VUser::ExtLib::strip_ws($cfg{$csec}{'db type'});
-        if ($db_type and $db_type ne 'none') {
-
-            my $db_name = VUser::ExtLib::strip_ws($cfg{$csec}{'db name'});
-	        my $db_host = VUser::ExtLib::strip_ws($cfg{$csec}{'db host'});
-	       if ($db_type eq 'mysql') {
-	           $dsn .= "database=$db_name";
-	           $dsn .= ";host=$db_host" if $db_host;
-	       } else {
-	           # Semi-reasonable default if we don't know what the DB is.
-	           $dsn .= "$db_name";
-	       }
-        }
+    if (not defined $dsn) { 
+	
+	my $db_type = VUser::ExtLib::strip_ws($cfg{$csec}{'db type'});
+	$dsn = "dbi:$db_type:";
+	if ($db_type and $db_type ne 'none') {
+	    
+	    my $db_name = VUser::ExtLib::strip_ws($cfg{$csec}{'db name'});
+	    my $db_host = VUser::ExtLib::strip_ws($cfg{$csec}{'db host'});
+	    $dsn .= "$db_host:";
+	    if ($db_type eq 'mysql') {
+		$dsn .= "database=$db_name";
+		$dsn .= ";host=$db_host" if $db_host;
+	    } else {
+		# Semi-reasonable default if we don't know what the DB is.
+		$dsn .= "$db_name";
+	    }
 	}
+    }
 	
     my $user = VUser::ExtLib::strip_ws($cfg{$csec}{'db user'});
     my $pass = VUser::ExtLib::strip_ws($cfg{$csec}{'db password'});
