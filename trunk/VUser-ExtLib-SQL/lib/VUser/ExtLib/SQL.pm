@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.10 2007-04-09 17:32:43 perlstalker Exp $
+# $Id: SQL.pm,v 1.11 2007-04-10 22:38:39 perlstalker Exp $
 
 our $VERSION = "0.1.1";
 
@@ -191,13 +191,13 @@ sub execute {
     # Now replace the manually escaped options. %\option-name
     my @man_opts = $sql =~ /(?:%\\([\w-]+))/;
     foreach my $opt (@man_opts) {
-	if (defined $overrides{$opt}) {
-	    $sql =~ s/%\\$opt/$overrides{$opt}/e;
-	} elsif (defined $args{$opt}) {
-	    $sql =~ s/%\\$opt/$args{$opt}/e;
-	} elsif (defined $macros{$opt}) {
-	    $sql =~ s/%\\$opt/$opts->{$macros{$opt}/e;
-	}
+	   if (defined $overrides{$opt}) {
+	       $sql =~ s/%\\$opt/$overrides{$opt}/e;
+	   } elsif (defined $args{$opt}) {
+	       $sql =~ s/%\\$opt/$args{$opt}/e;
+	   } elsif (defined $macros{$opt}) {
+	       $sql =~ s/%\\$opt/$opts->{$macros{$opt}}/e;
+	   }
     }
 
     Log()->log( LOG_DEBUG, "Options (" .scalar @options .'): ' . join( ', ', @options ) );
