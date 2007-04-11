@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Makefile.PL,v 1.1 2007-04-11 21:42:45 perlstalker Exp $
+# $Id: Makefile.PL,v 1.2 2007-04-11 21:45:09 perlstalker Exp $
 
 use ExtUtils::MakeMaker;
 
@@ -15,7 +15,7 @@ WriteMakefile(
 				  'VUser::ResultSet' => '0.2.0',
 				  'VUser::Extension' => '0.2.0',
 				  'VUser::ExtLib::SQL' => '0.1.0',
-				  'VUser::SpamAssassin' => '0.2.0'
+				  'VUser::SpamAssassin' => '0.3.0'
 				  }
 	      );
 
