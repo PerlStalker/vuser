@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2007 Randy Smith <perlstalker@vuser.org>
-# $Id: SQL.pm,v 1.1 2007-04-09 17:42:51 perlstalker Exp $
+# $Id: SQL.pm,v 1.2 2007-04-11 19:59:18 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -59,9 +59,9 @@ sub radius_acct {
     if (defined $phones) {
 	$phones = join (',', map { "'$_'" } split(/\s*,\s*/, $phones));
 	#$phones = join (',', split(/\s*,\s*/, $phones));
-    }
 
-    $log->log(LOG_DEBUG, "Phones: $phones");
+	$log->log(LOG_DEBUG, "Phones: $phones");
+    }
 
     my $params = { 'phones' => $phones,
 	       };
