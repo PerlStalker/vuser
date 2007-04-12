@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2007 Randy Smith <perlstalker@vuser.org>
-# $Id: Bayes.pm,v 1.1 2007-04-11 21:42:45 perlstalker Exp $
+# $Id: Bayes.pm,v 1.2 2007-04-12 19:17:08 perlstalker Exp $
 
 our $VERSION = '0.1.0';
 
@@ -118,6 +118,19 @@ users' SpamAssassin Bayesian data in an SQL database. For now only deleting the 
  #dsn = dbi:mysql:localhost
  #username = sa
  #password = a-password
+
+ ## SQL Queries
+ # Here you define the queries used to add, modify and delete users and
+ # attributes. There are a few predefined macros that you can use in your
+ # SQL. The values will be quoted and escaped before being inserted into
+ # the SQL.
+ #  %u => username
+ #  %o => option
+ #  %v => value
+ #  %-option => This will be replaced by the value of --option passed in
+ #              when vuser is run.
+ # Delete all preferences for a user
+ delall_query = DELETE from bayes where username = %u
 
 =head1 AUTHOR
 

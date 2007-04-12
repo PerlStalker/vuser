@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2007 Randy Smith <perlstalker@vuser.org>
-# $Id: Userprefs.pm,v 1.1 2007-04-11 21:42:45 perlstalker Exp $
+# $Id: Userprefs.pm,v 1.2 2007-04-12 19:17:08 perlstalker Exp $
 
 our $VERSION = '0.1.0';
 
@@ -79,6 +79,8 @@ sub init {
     $eh->register_action('email', 'del');
     $eh->register_task('email', 'del', \&sa_delall);
 }
+
+sub unload {};
 
 sub do_sql {
     my ( $cfg, $opts, $action, $eh ) = @_;
@@ -174,6 +176,42 @@ users' SpamAssassin preferences in an SQL database.
  #dsn = dbi:mysql:localhost
  #username = sa
  #password = a-password
+
+ ## SQL Queries
+ # Here you define the queries used to add, modify and delete users and
+ # attributes. There are a few predefined macros that you can use in your
+ # SQL. The values will be quoted and escaped before being inserted into
+ # the SQL.
+ #  %u => username
+ #  %o => option
+ #  %v => value
+ #  %-option => This will be replaced by the value of --option passed in
+ #              when vuser is run.
+ # Add a preference to the database
+ add_query = INSERT into userpref set username = %u, preference = %o, value = %v
+ 
+ # Modify a value in the database
+ mod_query = UPDATE userpref set value = %v where username = %u and preference = %o
+ 
+ # Delete a preference for a user
+ del_query = DELETE from userpref where username = %u and preference = %o
+ 
+ # Delete all preferences for a user
+ delall_query = DELETE from userpref where username = %u
+
+ # Get the user's preferences
+ # Fixed columns:
+ #   1 username
+ #   2 preference
+ #   3 value
+ show_query = SELECT username,preference,value from userpref where username = %u
+
+=head1 BUGS
+
+VUser::SA::SQL::Userprefs doesn't handle preferences with multiple values
+(ex. blacklist_from) very well. It can't add them and attempting to modify
+them will change all of the values unless you contruct the query very
+carefully.
 
 =head1 AUTHOR
 
