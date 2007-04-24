@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: Syslog.pm,v 1.5 2007-01-18 17:45:06 perlstalker Exp $
+# $Id: Syslog.pm,v 1.6 2007-04-24 14:25:44 perlstalker Exp $
 
 our $VERSION = "0.3.0";
 
@@ -19,7 +19,7 @@ my %prior_map = (VUser::Log::LOG_EMERG() => 'emerg',
 		 VUser::Log::LOG_ALERT() => 'alert',
 		 VUser::Log::LOG_CRIT()  => 'crit',
 		 VUser::Log::LOG_ERR()   => 'err',
-		 VUser::Log::LOG_WARN()  => 'warn',
+		 VUser::Log::LOG_WARN()  => 'warning',
 		 VUser::Log::LOG_NOTICE() => 'notice',
 		 VUser::Log::LOG_INFO()  => 'info',
 		 VUser::Log::LOG_DEBUG() => 'debug');
@@ -43,7 +43,14 @@ sub write_msg
     my $self = shift;
     my ($level, $msg) = @_;
 
-    syslog ($prior_map{$level}, '%s', $msg);
+    if (not defined $level or not defined $prior_map{$level}) {
+	$level = VUser::Log::LOG_ERR();
+    }
+
+    eval { syslog ($prior_map{$level}, '%s', $msg); };
+    if ($@) {
+	# ...?
+    }
 }
 
 sub version { return $VERSION; }
