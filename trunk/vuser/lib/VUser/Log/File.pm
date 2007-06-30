@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: File.pm,v 1.3 2007-06-30 01:03:11 perlstalker Exp $
+# $Id: File.pm,v 1.4 2007-06-30 01:22:28 perlstalker Exp $
 
 our $VERSION = "0.3.0";
 
@@ -27,6 +27,7 @@ sub init {
 
     my $fh = new IO::File;
     if ($fh->open(">> ".$self->log_file)) {
+	$fh->autoflush(1);
 	$self->add_member('fh', $fh);
     } else {
 	die "Unable to open log file ".$self->log_file.": $!\n";
@@ -45,17 +46,20 @@ sub write_msg {
     $out .= "$msg\n";
 
     eval {
-	print $self->{'fh'} ($out);
+	$self->fh->print($out);
+	#print STDERR "Print: $out";
     };
 
     if ($@) {
+	#warn "Unable to write to logs. Retrying: $@\n";
 	# There was a problem printing. Try reopening the file and try again.
 	$self->fh->close();
 
 	$self->{'fh'} = IO::File->new();
+	$self->fh->autoflush(1);
 	if ($self->{'fh'}->open('>>'.$self->log_file)) {
 	    eval {
-		print $self->{'fh'} ($out);
+		$self->fh->print($out);
 	    };
 	    if ($@) {
 		# We cannot log any more
