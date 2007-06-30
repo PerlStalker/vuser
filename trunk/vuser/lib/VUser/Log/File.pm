@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: File.pm,v 1.1 2007-06-30 00:58:40 perlstalker Exp $
+# $Id: File.pm,v 1.2 2007-06-30 01:01:13 perlstalker Exp $
 
 our $VERSION = "0.3.0";
 
@@ -81,7 +81,9 @@ VUser::Log::File - File log module
 
 =head1 DESCRIPTION
 
-Sends vuser logs to syslog. This will probably not work on Windows systems.
+Log to a file. VUser::Log::File allows the file to be moved or rotated
+without stopping while vuser is running. (This is especially important if
+you are using vsoapd.) The missing file will be recreated as needed.
 
 =head1 CONFIGURATION
 
