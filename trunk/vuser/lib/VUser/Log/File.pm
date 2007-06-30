@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: File.pm,v 1.2 2007-06-30 01:01:13 perlstalker Exp $
+# $Id: File.pm,v 1.3 2007-06-30 01:03:11 perlstalker Exp $
 
 our $VERSION = "0.3.0";
 
@@ -44,11 +44,8 @@ sub write_msg {
     my $out = sprintf ('%s: %s ', $self->ident, $levels[$level]);
     $out .= "$msg\n";
 
-    print STDERR "Out: $out";
-
     eval {
 	print $self->{'fh'} ($out);
-	print STDERR "After print\n";
     };
 
     if ($@) {
