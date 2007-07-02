@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2005 Randy Smith <perlstalker@vuser.org>
-# $Id: File.pm,v 1.4 2007-06-30 01:22:28 perlstalker Exp $
+# $Id: File.pm,v 1.5 2007-07-02 20:00:14 perlstalker Exp $
 
 our $VERSION = "0.3.0";
 
-use VUser::ExtLib qw(strip_ws);
+use VUser::ExtLib qw(:config);
 use VUser::Log qw(:levels);
 our @ISA = qw(VUser::Log);
 
@@ -24,6 +24,9 @@ sub init {
 
     my $log_file = strip_ws($cfg->{$c_sec}{'log file'});
     $self->add_member('log_file', $log_file);
+
+    my $use_timestamp = check_bool($cfg->{$c_sec}{'use timestamp'});
+    $self->add_member('use_timestamp', $use_timestamp);
 
     my $fh = new IO::File;
     if ($fh->open(">> ".$self->log_file)) {
@@ -42,7 +45,20 @@ sub write_msg {
 	$level = VUser::Log::LOG_ERR();
     }
 
-    my $out = sprintf ('%s: %s ', $self->ident, $levels[$level]);
+    my $out = '';
+
+    if ($self->use_timestamp) {
+	my @now = localtime;
+	$out .= sprintf('%04d-%02d-%02d %02d:%02d:%02d ',
+			$now[5]+1900,
+			$now[4]+1,
+			$now[3],
+			$now[2],
+			$now[1],
+			$now[0]);
+    }
+
+    $out .= sprintf ('%s: %s ', $self->ident, $levels[$level]);
     $out .= "$msg\n";
 
     eval {
@@ -90,6 +106,9 @@ you are using vsoapd.) The missing file will be recreated as needed.
 
  [Log File]
  log file = /var/log/vuser.log
+ 
+ # Include timestamps in the output
+ show timestamp = yes
 
 =head1 AUTHORS
 
