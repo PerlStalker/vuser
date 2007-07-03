@@ -3,7 +3,9 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: Dispatcher.pm,v 1.8 2006-12-07 22:55:54 perlstalker Exp $
+# $Id: Dispatcher.pm,v 1.9 2007-07-03 21:10:57 perlstalker Exp $
+
+use Data::Dumper;
 
 use SOAP::Lite;
 use VUser::SOAP;
@@ -32,6 +34,7 @@ sub login {
     
     if (not defined $authinfo) {
         # auth failed FAULT
+        VUser::SOAP::Log(LOG_INFO, "Login failed for $user\@$ip");
         die $self->SOAP::Fault->faultcode('Server.Custom')->faultstring("Failed login");
     } else {
         VUser::SOAP::Log(LOG_INFO, "Login successful for $user\@$ip");
@@ -80,7 +83,8 @@ sub get_actions {
     my $keyword = $env->valueof('//keyword');
     
     my @actions = VUser::SOAP::get_actions ($authinfo, $keyword);
-    use Data::Dumper; print Dumper \@actions;
+    #use Data::Dumper; print Dumper \@actions;
+    VUser::SOAP::Log(LOG_DEBUG, 'Actions: '.Dumper(\@actions));
     return SOAP::Data->name('actions' => @actions);
 }
 
@@ -145,7 +149,8 @@ sub run_tasks {
        
     # We've successfully gotten passed the authentication.
     # Let's do some work.
-    print "Authinfo: "; use Data::Dumper; print Dumper $authinfo;
+    #print "Authinfo: "; use Data::Dumper; print Dumper $authinfo;
+    VUser::SOAP::Log (LOG_DEBUG, "Authinfo $authinfo");
 	return VUser::SOAP::rs2soap(VUser::SOAP::run_tasks($authinfo,
 	                                                   $keyword->value,
 	                                                   $action->value,

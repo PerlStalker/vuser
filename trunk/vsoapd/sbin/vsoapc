@@ -6,7 +6,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapc,v 1.7 2007-01-22 16:20:38 perlstalker Exp $
+# $Id: vsoapc,v 1.8 2007-07-03 21:10:57 perlstalker Exp $
 our $VERSION = "0.4.0";
 
 use Pod::Usage;
@@ -172,7 +172,7 @@ if ($debug) {
 my $authinfo = $soap
     #SOAP::Lite->service($service)
     -> login ($username, $password)
-    ; #-> result;
+    ;# -> result;
     
 if ($debug) {
     use Data::Dumper; print Dumper $authinfo;

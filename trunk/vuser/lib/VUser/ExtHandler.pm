@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.45 2007-01-18 17:45:05 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.46 2007-07-03 21:10:23 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.45 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.46 $'))[1];
 our $VERSION = "0.3.1";
 
 use lib qw(..);
@@ -158,7 +158,8 @@ sub register_option
 	$required = shift;
     } else {
 	if ($main::DEBUG) {
-	    use Data::Dumper; print Dumper $option;
+	    use Data::Dumper;
+	    $log->log(LOG_DEBUG, 'Option: '.Dumper($option));
 	}
 	die "Option on $keyword|$action was not a VUser::Meta\n";
     }
@@ -462,8 +463,8 @@ sub run_tasks
     $log->log(LOG_DEBUG,"Keyword: '$keyword' Action: '$action' ARGV: @ARGV");
 
     if ($main::DEBUG >= 1) {
-	print "Options: ";
-	use Data::Dumper; print Dumper \%opts;
+	use Data::Dumper;
+	$log->log(LOG_DEBUG, 'Options: '. Dumper(\%opts));
     }
 
     unless (exists $self->{keywords}{$keyword}) {

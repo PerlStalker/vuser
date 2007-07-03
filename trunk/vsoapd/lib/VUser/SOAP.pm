@@ -3,7 +3,9 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: SOAP.pm,v 1.7 2006-12-07 22:55:54 perlstalker Exp $
+# $Id: SOAP.pm,v 1.8 2007-07-03 21:10:57 perlstalker Exp $
+
+use Data::Dumper;
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -32,8 +34,8 @@ sub init {
         $log = VUser::Log->new($cfg, 'VUser::SOAP');
     }
     
-    if (defined $main::debug) {
-        $debug = $main::debug;
+    if (defined $main::DEBUG) {
+        $debug = $main::DEBUG;
     }
     
     ## Load up the ACL and auth info
@@ -83,6 +85,9 @@ sub login {
 
 sub check_ticket {
     my $ticket = shift;
+
+    # I need to be able to check the binary ticket as well as the ticket
+    # converted to a hex string.
     
     if (not defined $sessions{$ticket}
         or $sessions{$ticket}{expires} > time()
@@ -118,8 +123,7 @@ sub run_tasks {
         ) {
         %opts = %{ $body->{$keyword.'_'.$action} };
     }
-    #use Data::Dumper; print Dumper \%opts;
-    
+   
     my $user = $sessions{$ticket}{user};
     my $ip = $sessions{$ticket}{ip};
     
@@ -127,7 +131,7 @@ sub run_tasks {
     # suitable for ::ExtHandler->run_tasks.
     #my %opts = build_opts(@params);
     
-    #print "\%opts: "; use Data::Dumper; print Dumper \%opts;
+    $log->log(LOG_DEBUG, '%opts => '.Dumper(\%opts));
     
     if (check_bool($cfg->{$c_sec}{'require authentication'})) {
         # Do all of the ACL checks.
@@ -141,7 +145,11 @@ sub run_tasks {
     
     # We've passed all of the ACL checks. Run the task.
     my $rs = [];
-    $log->log(LOG_NOTICE, "$user\@$ip running $keyword | $action");
+    $log->log(LOG_NOTICE, "%s\@%s running %s | %s",
+	      defined $user? $user : 'undef',
+	      defined $ip? $ip : 'undef',
+	      defined $keyword? $keyword : 'undef',
+	      defined $action? $action : 'undef');
     eval { $rs = $eh->run_tasks($keyword, $action, $cfg, %opts); };
     if ($@) {
 	   die SOAP::Fault
@@ -274,6 +282,8 @@ sub build_opts {
     
     foreach my $param (@params) {
         $opts{$param->name()} = $param->value();
+	$log->log(LOG_DEBUG, "Param: %s => %s", $param->name(),
+		  defined ($param->value())? $param->value() : 'undef');
     }
     
     return %opts;
@@ -364,6 +374,9 @@ sub rs2soap {
     my $soap_results = SOAP::Data->name('results' => 
         \SOAP::Data->name('item' => @records)->type('tns:Record')
         )->type('tns:RecordArray');
+    if ($debug) {
+	$log->log(LOG_DEBUG, '$soap_results => '. Dumper($soap_results));
+    }
     return $soap_results;
 }
 

@@ -7,7 +7,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapd,v 1.6 2006-10-12 21:57:39 perlstalker Exp $
+# $Id: vsoapd,v 1.7 2007-07-03 21:10:57 perlstalker Exp $
 
 our $VERSION = "0.4.0";
 
@@ -15,9 +15,10 @@ use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
-#use SOAP::Lite;
 use SOAP::Lite;
+use Data::Dumper;
 
+use utf8;
 our $DEBUG = 0;
 our $c_sec = 'vsoapd';
 
@@ -144,12 +145,13 @@ foreach my $trans (@transports) {
     $daemon->action('urn:/VUser');
     $daemon->objects_by_reference(qw(VUser::SOAP::Dispatcher));
     $daemon->dispatch_with({'urn:/VUser' => 'VUser::SOAP::Dispatcher'});
+    #$daemon->dispatch_to('VUser::SOAP::Dispatcher');
     $log->log(LOG_DEBUG, "$trans uri: ".$daemon->myuri);
     
     if ($debug) {
-        use Data::Dumper;
-        print "$trans Dispatch table\n";
-        print Dumper $daemon->dispatch_with();
+        $log->log(LOG_DEBUG, "$trans Dispatch table");
+        $log->log(LOG_DEBUG, Dumper $daemon->dispatch_with());
+	$log->log(LOG_DEBUG, Dumper $daemon->dispatch_to());
     }
     push @daemons, $daemon;
 }
