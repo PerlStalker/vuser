@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: SOAP.pm,v 1.8 2007-07-03 21:10:57 perlstalker Exp $
+# $Id: SOAP.pm,v 1.9 2007-07-03 21:23:57 perlstalker Exp $
 
 use Data::Dumper;
 
@@ -164,7 +164,11 @@ sub run_tasks {
 sub clean_sessions {
     my $now = time();
     foreach my $ticket (keys %sessions) {
-        delete $sessions{$ticket} if $sessions{$ticket}{expires} > $now;
+        if (defined $sessions{$ticket}{expires}
+	    and $sessions{$ticket}{expires} > $now)
+	{
+	    delete $sessions{$ticket} 
+	}
     }
 }
 
