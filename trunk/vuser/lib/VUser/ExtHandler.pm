@@ -3,10 +3,10 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.46 2007-07-03 21:10:23 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.47 2007-07-18 15:08:22 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.46 $'))[1];
-our $VERSION = "0.3.1";
+our $REVISION = (split (' ', '$Revision: 1.47 $'))[1];
+our $VERSION = "0.3.2";
 
 use lib qw(..);
 use Getopt::Long;
@@ -408,7 +408,7 @@ sub load_extension
     $log->log(LOG_DEBUG, "Checking dependencies for %s", $ext);    
     if ($pm->can('depends')) {
 	my @depends = ();
-	@depends = $pm->depends();
+	@depends = $pm->depends(\%cfg);
 
 	foreach my $depend (@depends) {
 	    next if not $depend; # Should not happen but let's be careful
