@@ -35,3 +35,4 @@ VUser-Email -a VUser-Email.new
 VUser-Install VUser-Install
 VUser-SpamAssassin VUser-SpamAssassin
 VUser-SquirrelMail VUser-SquirrelMail
+VUser-Google-Apps VUser-Google-Apps
