@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.47 2007-07-18 15:08:22 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.48 2007-09-19 19:17:28 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.47 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.48 $'))[1];
 our $VERSION = "0.3.2";
 
 use lib qw(..);
@@ -52,7 +52,7 @@ sub new
 
     bless $me, $class;
 
-    $me->load_extensions(%$cfg);
+    #$me->load_extensions(%$cfg);
 
     return $me;
 }
@@ -385,6 +385,23 @@ sub load_extensions
     }
 }
 
+sub load_extensions_list {
+    my $self = shift;
+    my $cfg = shift;
+    my @exts = @_;
+
+    $self->{'_loaded'} = {};
+    $self->{'_loadorder'} = [];
+
+    $self->load_extension('CORE');
+    $log->log(LOG_DEBUG, "Cfg extensions: ".join(',', @exts));
+    foreach my $extension (@exts)
+    {
+	eval { $self->load_extension( $extension, %cfg ); };
+	$log->log(LOG_DEBUG, "Unable to load %s: %s", $extension, $@) if $@;
+    }
+}
+
 sub load_extension
 {
     my $self = shift;
@@ -646,9 +663,15 @@ __END__
 
 =head1 NAME
 
-ExtHandler - vuser extension handler.
+VUser::ExtHandler - vuser extension handler.
 
 =head1 DESCRIPTION
+
+=head2 new
+
+=head2 load_extensions
+
+=head2 load_extensions_list
 
 =head2 register_keyword
 
@@ -658,7 +681,7 @@ ExtHandler - vuser extension handler.
 
 =head1 AUTHOR
 
-Randy Smith <perlstalker@gmail.com>
+Randy Smith <perlstalker@vuser.org>
 
 =head1 LICENSE
  

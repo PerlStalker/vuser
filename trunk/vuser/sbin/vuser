@@ -6,15 +6,15 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.23 2006-10-27 03:44:44 perlstalker Exp $
+# $Id: vuser,v 1.24 2007-09-19 19:17:28 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.23 $'))[1];
-our $VERSION = "0.4.0";
+our $REVISION = (split (' ', '$Revision: 1.24 $'))[1];
+our $VERSION = "0.4.1";
 
 our $DEBUG = 0;
 
@@ -98,6 +98,7 @@ if ($debug) {
 
 our $log = VUser::Log->new(\%cfg, 'vuser');
 my $eh = new VUser::ExtHandler (\%cfg);
+$eh->load_extensions(%cfg);
 
 $log->log(LOG_DEBUG, "Config loaded from $config_file");
 
