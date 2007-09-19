@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: SOAP.pm,v 1.9 2007-07-03 21:23:57 perlstalker Exp $
+# $Id: SOAP.pm,v 1.10 2007-09-19 19:16:25 perlstalker Exp $
 
 use Data::Dumper;
 
@@ -27,6 +27,7 @@ sub init {
     $cfg = shift;
     
     $eh = VUser::ExtHandler->new($cfg);
+    $eh->load_extensions(%$cfg);
     
     if (ref $main::log and UNIVERSAL::isa($main::log, 'VUser::Log')) {
         $log = $main::log;
