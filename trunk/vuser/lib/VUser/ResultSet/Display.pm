@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Display.pm,v 1.2 2006-01-06 23:50:23 perlstalker Exp $
+# $Id: Display.pm,v 1.3 2007-09-20 18:01:51 perlstalker Exp $
 
 use VUser::ExtLib qw(:config);
 our $VERSION = "0.3.1";
@@ -58,6 +58,7 @@ sub display
 	    # $rs is a list ref. Dereference the list and send it to
 	    # display() again to process any ResultSets within that list.
 	    $self->display(@$rs);
+	    print "\n";
 	} else {
 	    # It's not a VUser::ResultSet
 	}
@@ -78,7 +79,7 @@ sub display_one
 		   $meta[$i]->name,
 		   defined $row->[$i]? $row->[$i] : 'undef');
 	}
-	print "\n";
+	#print "\n";
     }
 }
 

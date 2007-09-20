@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.49 2007-09-20 15:20:48 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.50 2007-09-20 18:01:51 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.49 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.50 $'))[1];
 our $VERSION = "0.3.2";
 
 use lib qw(..);
@@ -639,8 +639,17 @@ sub run_tasks
 	foreach my $task (@$priority) {
 	    # Return values?
 	    my $rs = &$task($cfg, \%opts, $action, $self);
-	    if (defined $rs and UNIVERSAL::isa($rs, "VUser::ResultSet")) {
+	    if (not defined $rs) {
+	    } elsif (UNIVERSAL::isa($rs, "VUser::ResultSet")) {
 		push @results, $rs;
+	    } elsif (UNIVERSAL::isa($rs, "ARRAY")) {
+		# Someone sent us an array ref. Go through the list
+		# and push any ::ResultSets on to the result list.
+		foreach my $r (@$rs) {
+		    if (UNIVERSAL::isa($r, "VUser::ResultSet")) {
+			push @results, $rs;
+		    }
+		}
 	    }
 	}
     }
