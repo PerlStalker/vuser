@@ -3,9 +3,9 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: ExtHandler.pm,v 1.48 2007-09-19 19:17:28 perlstalker Exp $
+# $Id: ExtHandler.pm,v 1.49 2007-09-20 15:20:48 perlstalker Exp $
 
-our $REVISION = (split (' ', '$Revision: 1.48 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.49 $'))[1];
 our $VERSION = "0.3.2";
 
 use lib qw(..);
@@ -397,7 +397,7 @@ sub load_extensions_list {
     $log->log(LOG_DEBUG, "Cfg extensions: ".join(',', @exts));
     foreach my $extension (@exts)
     {
-	eval { $self->load_extension( $extension, %cfg ); };
+	eval { $self->load_extension( $extension, %$cfg ); };
 	$log->log(LOG_DEBUG, "Unable to load %s: %s", $extension, $@) if $@;
     }
 }
