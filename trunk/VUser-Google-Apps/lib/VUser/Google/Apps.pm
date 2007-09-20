@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Apps.pm,v 1.1 2007-09-17 16:13:05 perlstalker Exp $
+# $Id: Apps.pm,v 1.2 2007-09-20 16:54:00 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -81,7 +81,7 @@ sub init {
 	$log = VUser::Log->new(\%cfg, 'vuser');
     }
 
-    my $multi_conf_file = strip_ws($cfg{$c_sec}{'multi-site configuration'});
+    my $multi_conf_file = strip_ws($cfg{$c_sec}{'multi-domain configuration'});
     if ($multi_conf_file) {
 	tie %multi_conf, 'Config::IniFiles', (-file => $multi_conf_file);
 	if (@Config::IniFile::errors) {
@@ -89,8 +89,8 @@ sub init {
 	    foreach my $error (@Config::IniFiles::errors) {
 		warn "$error\n";
 	    }
+	    die "Please correct the errors and try again.\n";
 	}
-	die "Please correct the errors and try again.\n";
     }
 
     if (check_bool($cfg{$c_sec}{'use email keyword'})) {
@@ -639,9 +639,11 @@ sub google_login {
     my $admin_user;
     my $password;
 
+    my $default_domain = strip_ws($cfg->{$c_sec}{'default domain'});
+
     # The default domain is special because the admin credentials can be
     # in the main config file.
-    if ($domain eq strip_ws($cfg->{$c_sec}{'default domain'})) {
+    if ($default_domain and $domain eq $default_domain) {
 	$admin_user = strip_ws($cfg->{$c_sec}{'domain admin'});
 	$password = strip_ws ($cfg->{$c_sec}{'admin password'});
     }
