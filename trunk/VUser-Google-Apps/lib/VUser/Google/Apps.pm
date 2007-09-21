@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Apps.pm,v 1.3 2007-09-21 21:54:37 perlstalker Exp $
+# $Id: Apps.pm,v 1.4 2007-09-21 22:14:22 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -105,6 +105,8 @@ sub init {
 	$eh->register_task('email', 'del', \&email_del);
 	$eh->register_task('email', 'info', \&email_info);
 	$eh->register_task('email', 'list', \&email_list);
+	$eh->register_task('email', 'suspend', \&email_suspend);
+	$eh->register_task('email', 'release', \&email_release);
     }
 
     # gapps
@@ -337,6 +339,52 @@ sub email_del {
 
     # Now run the Google Apps tasks
     $eh->run_tasks('gapps', 'deleteuser', $cfg, %gopts);
+
+    return undef;
+}
+
+sub email_suspend {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    # Split off domain
+    my ($user, $domain);
+    VUser::Email::split_address($cfg, $opts->{'account'}, \$user, \$domain);
+
+    # Try to guess given and family names.
+    my ($givenname, $familyname) = split (/ /, $opts->{'name'});
+    $givenname = 'User' if (not $givenname);
+    $familyname = $user if not $familyname;
+
+    my %gopts = ('username' => $user,
+		 'domain' => $domain,
+		 );
+    $gopts{'quota'} = $opts->{'quota'} if $opts->{'quota'};
+
+    # Now run the Google Apps tasks
+    $eh->run_tasks('gapps', 'suspenduser', $cfg, %gopts);
+
+    return undef;
+}
+
+sub email_release {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    # Split off domain
+    my ($user, $domain);
+    VUser::Email::split_address($cfg, $opts->{'account'}, \$user, \$domain);
+
+    # Try to guess given and family names.
+    my ($givenname, $familyname) = split (/ /, $opts->{'name'});
+    $givenname = 'User' if (not $givenname);
+    $familyname = $user if not $familyname;
+
+    my %gopts = ('username' => $user,
+		 'domain' => $domain,
+		 );
+    $gopts{'quota'} = $opts->{'quota'} if $opts->{'quota'};
+
+    # Now run the Google Apps tasks
+    $eh->run_tasks('gapps', 'restoreuser', $cfg, %gopts);
 
     return undef;
 }
