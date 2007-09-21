@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Email.pm,v 1.6 2007-01-18 20:30:25 perlstalker Exp $
+# $Id: Email.pm,v 1.7 2007-09-21 22:08:44 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log qw(:levels);
@@ -78,6 +78,14 @@ sub init {
     # email-del
     $eh->register_action('email', 'del', 'Delete an email account');
     $eh->register_option('email', 'del', $meta{'account'}, 1);
+
+    # email-suspend
+    $eh->register_action('email', 'suspend', 'Suspend an email account');
+    $eh->register_option('email', 'suspend', $meta{'account'}, 1);
+
+    # email-release
+    $eh->register_action('email', 'release', 'Release (unsuspend) an email account');
+    $eh->register_option('email', 'release', $meta{'account'}, 1);
 
     # email-info
     $eh->register_action('email', 'info', 'Get email account info');
