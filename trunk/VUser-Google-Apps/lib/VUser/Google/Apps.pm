@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Apps.pm,v 1.2 2007-09-20 16:54:00 perlstalker Exp $
+# $Id: Apps.pm,v 1.3 2007-09-21 21:54:37 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -286,7 +286,10 @@ sub email_mod {
 
     my %gopts = ('username' => $user,
 		 'domain' => $domain);
-    $gopts{'new-username'} = $opts->{'newaccount'} if $opts->{'newaccount'};
+    if ($opts->{'newaccount'}
+	and $opts->{'newaccount'} ne opts->{'account'}) {
+	$gopts{'new-username'} = $opts->{'newaccount'};
+    }
 
     # Try to guess given and family names.
     if ($opts->{'name'}) {
