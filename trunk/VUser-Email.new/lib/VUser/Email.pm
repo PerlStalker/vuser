@@ -3,13 +3,13 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Email.pm,v 1.7 2007-09-21 22:08:44 perlstalker Exp $
+# $Id: Email.pm,v 1.8 2007-09-21 22:13:22 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
 
-our $VERSION = '0.3.1';
+our $VERSION = '0.3.2';
 
 use Exporter;
 our @ISA = qw(Exporter);
