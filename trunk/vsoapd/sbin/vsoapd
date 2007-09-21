@@ -7,9 +7,9 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapd,v 1.7 2007-07-03 21:10:57 perlstalker Exp $
+# $Id: vsoapd,v 1.8 2007-09-21 14:18:47 perlstalker Exp $
 
-our $VERSION = "0.4.0";
+our $VERSION = "0.4.1";
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
