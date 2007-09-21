@@ -3,12 +3,12 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: Batch.pm,v 1.3 2006-01-04 21:57:48 perlstalker Exp $
+# $Id: Batch.pm,v 1.4 2007-09-21 20:21:09 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.3 $'))[1];
-our $VERSION = "0.3.0";
+our $REVISION = (split (' ', '$Revision: 1.4 $'))[1];
+our $VERSION = "0.3.1";
 
 use Pod::Usage;
 
@@ -125,7 +125,7 @@ sub process_event_file
     my $dir = shift;
     my $file = shift;
 
-    my ($keyword, $action, $garbage) = split ('-', $file);
+    my ($keyword, $action, $garbage) = split (/[_-]/, $file);
 
     my %opts = ();
     open FILE, "$dir/$file" or die "Unable to open $dir/$file: $!";
@@ -196,7 +196,8 @@ Enables batch mode for vuser. When run as C<vuser batch <dir>>, the files in
 descend into sub-directories, if they exist.
 
 The files are named keyword-action-unique where keyword and action are the
-same as if you had run C<vuser keyword action>. The options for the action
+same as if you had run C<vuser keyword action>. (You may use '_' instead of
+'-'.) The options for the action
 are listed, one per line, in the file as:
 
  option1 => value
