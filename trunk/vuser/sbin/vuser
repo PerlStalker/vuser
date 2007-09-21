@@ -6,14 +6,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.26 2007-09-21 20:21:09 perlstalker Exp $
+# $Id: vuser,v 1.27 2007-09-21 20:40:19 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.26 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.27 $'))[1];
 our $VERSION = "0.4.3";
 
 our $DEBUG = 0;
@@ -99,6 +99,7 @@ if ($debug) {
 our $log = VUser::Log->new(\%cfg, 'vuser');
 my $eh = new VUser::ExtHandler (\%cfg);
 $eh->load_extensions(%cfg);
+$eh->register_task('version', '', \&version, -10);
 
 $log->log(LOG_DEBUG, "Config loaded from $config_file");
 
@@ -140,9 +141,36 @@ eval { $eh->cleanup(%cfg); };
 
 exit;
 
+sub version
+{
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta(VUser::Meta->new('name' => 'extension',
+				   'type' => 'string',
+				   'description' => 'Extension name'));
+    $rs->add_meta(VUser::Meta->new('name' => 'version',
+				   'type' => 'string',
+				   'description' => 'Version number'));
+    $rs->add_data(['vuser', $VERSION]);
+    return $rs;
+}
+
 sub revision
 {
-    print $REVISION;
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta(VUser::Meta->new('name' => 'extension',
+				   'type' => 'string',
+				   'description' => 'Extension name'));
+    $rs->add_meta(VUser::Meta->new('name' => 'version',
+				   'type' => 'string',
+				   'description' => 'Revision number'));
+    $rs->add_data(['vuser', $REVISION]);
+    return $rs;
 }
 
 __END__
