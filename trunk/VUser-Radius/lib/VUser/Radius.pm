@@ -3,14 +3,14 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.10 2007-01-17 15:23:19 perlstalker Exp $
+# $Id: Radius.pm,v 1.11 2007-09-21 14:31:05 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
 use VUser::ResultSet;
 use VUser::ExtLib qw(:config);
 
-our $VERSION = '0.1.0';
+our $VERSION = '0.1.1';
 
 our $c_sec = 'Extension Radius';
 our %meta = ('username' => VUser::Meta->new('name' => 'username',
@@ -67,6 +67,18 @@ sub init {
     $eh->register_option ('radius', 'moduser', $meta{'password'});
     $eh->register_option ('radius', 'moduser', $meta{'realm'}->new('name' => 'newrealm'));
 
+<<<<<<< Radius.pm
+    # radius-listusers
+    $eh->register_action ('radius', 'listusers', 'List RADIUS users');
+    $eh->register_option ('radius', 'listusers', $meta{'username'});
+    $eh->register_option ('radius', 'listusers', $meta{'realm'});
+
+    # radius-userinfo
+    $eh->register_action ('radius', 'userinfo', 'List RADIUS user details');
+    $eh->register_option ('radius', 'userinfo', $meta{'username'}, 'req');
+    $eh->register_option ('radius', 'userinfo', $meta{'realm'});
+
+=======
 	# radius-listusers
 	$eh->register_action ('radius', 'listusers', 'List all user accounts');
 	
@@ -75,6 +87,7 @@ sub init {
 	$eh->register_option ('radius', 'userinfo', $meta{'username'}, 'req');
 	$eh->register_option ('radius', 'userinfo', $meta{'realm'});
 	
+>>>>>>> 1.8
     # radius-addattrib
     $eh->register_action ('radius', 'addattrib', 'Add an attribute to a RADIUS user');
     $eh->register_option ('radius', 'addattrib', $meta{'username'}, 1);
@@ -94,16 +107,28 @@ sub init {
     $eh->register_option ('radius', 'rmattrib', $meta{'username'}, 1);
     $eh->register_option ('radius', 'rmattrib', $meta{'realm'});
     $eh->register_option ('radius', 'rmattrib', $meta{'attribute'}, 1);
+<<<<<<< Radius.pm
+
+    # radius-listattrib
+    $eh->register_action ('radius', 'listattrib', 'List the attribute(s) for a RADIUS user');
+    $eh->register_option ('radius', 'listattrib', $meta{'username'}, 1);
+    $eh->register_option ('radius', 'listattrib', $meta{'realm'});
+    $eh->register_option ('radius', 'listattrib', $meta{'attribute'});
+=======
     
     # radius-listattrib
     $eh->register_action ('radius', 'listattrib', 'List attributes for a RADIUS user');
     $eh->register_option ('radius', 'listattrib', $meta{'username'}, 1);
     $eh->register_option ('radius', 'listattrib', $meta{'realm'});
     $eh->register_option ('radius', 'listattrib', $meta{'type'}, 1);
+<<<<<<< Radius.pm
+>>>>>>> 1.8
+=======
     
     # radius-allowedattribs
     $eh->register_action ('radius', 'allowedattribs', 'List allowed attributes for RADIUS');
     $eh->register_task ('radius', 'allowedattribs', \&radius_allowedattribs);
+>>>>>>> 1.10
 }
 
 sub meta { return %meta; }
