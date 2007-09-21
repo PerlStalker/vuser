@@ -1,3 +1,5 @@
+COPYING
+INSTALL
 lib/VUser/Google/Apps.pm
 lib/VUser/Google/ProvisioningAPI.pm
 lib/VUser/Google/ProvisioningAPI/V1_0.pm
