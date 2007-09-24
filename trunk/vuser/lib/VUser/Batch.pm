@@ -3,11 +3,11 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: Batch.pm,v 1.5 2007-09-21 20:40:19 perlstalker Exp $
+# $Id: Batch.pm,v 1.6 2007-09-24 17:27:37 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.5 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
 our $VERSION = "0.3.1";
 
 use Pod::Usage;
@@ -172,6 +172,7 @@ sub process_event_file
 #    use Data::Dumper; print Dumper \%opts;
 
     # All the data has been read, time to run the task.
+    $log->log(LOG_NOTICE, "Batch running $keyword|$action");
     eval { $eh->run_tasks($keyword, $action, $cfg, %opts); };
     die "$file: ".$@ if $@;
 
