@@ -3,17 +3,20 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: Batch.pm,v 1.6 2007-09-24 17:27:37 perlstalker Exp $
+# $Id: Batch.pm,v 1.7 2007-09-24 19:31:53 perlstalker Exp $
 
 use vars qw(@ISA);
 
-our $REVISION = (split (' ', '$Revision: 1.6 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.7 $'))[1];
 our $VERSION = "0.3.1";
 
+use VUser::Log qw(:levels);
 use Pod::Usage;
 
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
+
+my $log;
 
 sub config_file
 {
@@ -85,6 +88,12 @@ sub init
 {
     my $eh = shift; # ExtHandler
     my %cfg = @_;
+
+    if (defined $main::log) {
+        $log = $main::log;
+    } else {
+        $log = VUser::Log->new(\%cfg, 'vuser')
+    }
 
     $eh->register_task('version', '', \&version);
 
