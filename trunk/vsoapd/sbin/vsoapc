@@ -6,7 +6,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapc,v 1.8 2007-07-03 21:10:57 perlstalker Exp $
+# $Id: vsoapc,v 1.9 2007-12-03 23:45:49 perlstalker Exp $
 our $VERSION = "0.4.0";
 
 use Pod::Usage;
@@ -387,11 +387,41 @@ __END__
 
 =head1 NAME
 
-vsoapd - vuser SOAP daemon.
+vsoapc - vuser SOAP client.
 
 =head1 SYNOPSIS
 
+ vsoapc [--config file] [--username user] [--password pass] [--debug]
+
 =head1 OPTIONS
+
+=over4
+
+=item --config file
+
+Path to an alternate configuration file.
+
+=item --username|u username
+
+The username to authenticate with vsoapd
+
+=item --password|p password
+
+The password to authenticate with vsoapd
+
+=item --version
+
+Print the version and exit
+
+=item --help
+
+Display help information
+
+=item --debug
+
+Turn on debugging
+
+=back
 
 =head1 DESCRIPTION
 
