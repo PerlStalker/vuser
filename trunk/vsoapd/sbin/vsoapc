@@ -6,7 +6,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: vsoapc,v 1.9 2007-12-03 23:45:49 perlstalker Exp $
+# $Id: vsoapc,v 1.10 2007-12-04 21:27:17 perlstalker Exp $
 our $VERSION = "0.4.0";
 
 use Pod::Usage;
@@ -395,7 +395,7 @@ vsoapc - vuser SOAP client.
 
 =head1 OPTIONS
 
-=over4
+=over 4
 
 =item --config file
 
