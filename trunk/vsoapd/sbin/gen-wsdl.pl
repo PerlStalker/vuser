@@ -7,7 +7,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: gen-wsdl.pl,v 1.5 2007-01-15 21:43:50 perlstalker Exp $
+# $Id: gen-wsdl.pl,v 1.6 2007-12-04 17:42:16 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -86,11 +86,16 @@ if (not $debug) {
 }
 
 my $eh = new VUser::ExtHandler (\%cfg);
+$eh->load_extensions(%cfg);
 
 ## Build giant data structure first.
-my %event_tree = ();
+my %event_tree = (%cfg);
 
 @keywords = $eh->get_keywords() unless @keywords;
+
+if ($debug) {
+    print "Keywords: ", join (',', @keywords), "\n";
+}
 
 # Skip a few special keywords.
 foreach my $key (@keywords) {
@@ -241,6 +246,11 @@ print <<'MSGS';
  </wsdl:message>
 MSGS
 
+if ($debug) {
+    print "############# Event tree: ";
+    use Data::Dumper; print Dumper \%event_tree;
+}
+
 foreach my $key (sort keys %event_tree) {
     foreach my $act (sort keys %{$event_tree{$key}{actions}}) {
         printf(" <wsdl:message name=\"%s_%sRequest\">\n", $key, $act);
@@ -292,7 +302,8 @@ foreach my $key (sort keys %event_tree) {
     my $uc_key = ucfirst $key;
     # Documentation? keyword description
     printf(" <wsdl:portType name=\"%sPort\">\n", $uc_key);
-    printf("  <wsdl:documentation>%s</wsdl:documentation>\n", $event_tree{$key}{descr});
+    printf("  <wsdl:documentation>%s</wsdl:documentation>\n",
+	   (defined $event_tree{$key}{descr})? $event_tree{$key}{descr} : '');
         
     foreach my $act (sort keys %{$event_tree{$key}{actions}}) {
         my $uc_act = ucfirst($act);
