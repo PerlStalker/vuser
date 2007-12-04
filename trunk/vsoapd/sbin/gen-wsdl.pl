@@ -7,7 +7,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith
-# $Id: gen-wsdl.pl,v 1.6 2007-12-04 17:42:16 perlstalker Exp $
+# $Id: gen-wsdl.pl,v 1.7 2007-12-04 21:20:47 perlstalker Exp $
 
 our $VERSION = "0.1.0";
 
@@ -89,12 +89,12 @@ my $eh = new VUser::ExtHandler (\%cfg);
 $eh->load_extensions(%cfg);
 
 ## Build giant data structure first.
-my %event_tree = (%cfg);
+my %event_tree = ();
 
 @keywords = $eh->get_keywords() unless @keywords;
 
 if ($debug) {
-    print "Keywords: ", join (',', @keywords), "\n";
+    $log->log(LOG_DEBUG, "Keywords: ", join (',', @keywords), "\n");
 }
 
 # Skip a few special keywords.
