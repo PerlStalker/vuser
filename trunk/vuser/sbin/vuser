@@ -6,14 +6,14 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.27 2007-09-21 20:40:19 perlstalker Exp $
+# $Id: vuser,v 1.28 2007-12-10 17:03:08 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
 
-our $REVISION = (split (' ', '$Revision: 1.27 $'))[1];
+our $REVISION = (split (' ', '$Revision: 1.28 $'))[1];
 our $VERSION = "0.4.3";
 
 our $DEBUG = 0;
@@ -191,23 +191,37 @@ See 'vuser help module' for a list of actions and options.
 
 =head1 CONFIGURATION
 
-[vuser]
-# Enable debugging (Lots of output)
-debug = no
+By default, vuser looks for the file F<vuser.conf> in these locations:
 
-# Space delimited list of extensions to load
-# extensions = Email::Courier Radius::SQL
-extensions = Email
+ "$FindBin::Bin/../etc",
+ "$FindBin::Bin",
+ "$FindBin::Bin/..",
+ "$FindBin::Bin/vuser",
+ "$FindBin::Bin/../vuser",
+ "$FindBin::Bin/../etc/vuser",
+ '/usr/local/etc',
+ '/usr/local/etc/vuser',
+ '/etc',
+ '/etc/vuser',  
 
-#log type = Syslog
-#log level = notice
-log level = debug
+You may specify the path to the configuration file with the C<--config> option. 
 
-show result set = yes
-# Display the result set in a different format.
-# Allowed formats: CSV
-#display format = CSV
-
+ [vuser]
+ # Enable debugging (Lots of output)
+ debug = no
+ 
+ # Space delimited list of extensions to load
+ # extensions = Email::Courier Radius::SQL
+ extensions = Email
+ 
+ #log type = Syslog
+ #log level = notice
+ log level = debug
+ 
+ show result set = yes
+ # Display the result set in a different format.
+ # Allowed formats: CSV
+ #display format = CSV
 
 =head1 BUGS
 
