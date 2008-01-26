@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Radius.pm,v 1.11 2007-09-21 14:31:05 perlstalker Exp $
+# $Id: Radius.pm,v 1.12 2008-01-26 21:55:48 perlstalker Exp $
 
 use VUser::Meta;
 use VUser::Log;
@@ -107,28 +107,16 @@ sub init {
     $eh->register_option ('radius', 'rmattrib', $meta{'username'}, 1);
     $eh->register_option ('radius', 'rmattrib', $meta{'realm'});
     $eh->register_option ('radius', 'rmattrib', $meta{'attribute'}, 1);
-<<<<<<< Radius.pm
 
     # radius-listattrib
     $eh->register_action ('radius', 'listattrib', 'List the attribute(s) for a RADIUS user');
     $eh->register_option ('radius', 'listattrib', $meta{'username'}, 1);
     $eh->register_option ('radius', 'listattrib', $meta{'realm'});
     $eh->register_option ('radius', 'listattrib', $meta{'attribute'});
-=======
-    
-    # radius-listattrib
-    $eh->register_action ('radius', 'listattrib', 'List attributes for a RADIUS user');
-    $eh->register_option ('radius', 'listattrib', $meta{'username'}, 1);
-    $eh->register_option ('radius', 'listattrib', $meta{'realm'});
-    $eh->register_option ('radius', 'listattrib', $meta{'type'}, 1);
-<<<<<<< Radius.pm
->>>>>>> 1.8
-=======
-    
+        
     # radius-allowedattribs
     $eh->register_action ('radius', 'allowedattribs', 'List allowed attributes for RADIUS');
     $eh->register_task ('radius', 'allowedattribs', \&radius_allowedattribs);
->>>>>>> 1.10
 }
 
 sub meta { return %meta; }
