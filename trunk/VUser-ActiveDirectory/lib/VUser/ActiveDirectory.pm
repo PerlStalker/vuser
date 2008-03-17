@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2008 Randy Smith
-# $Id: ActiveDirectory.pm,v 1.1 2008-03-17 20:37:16 perlstalker Exp $
+# $Id: ActiveDirectory.pm,v 1.2 2008-03-17 22:54:28 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -11,6 +11,12 @@ use VUser::ResultSet;
 use VUser::Meta;
 
 our $VERSION = '0.1.0';
+
+use Exporter;
+our @ISA = qw(Exporter);
+our @EXPORT = ();
+our @EXPORT_OK = qw(domain2ldap);
+our %EXPORT_TAGS = (utils => [qw(domain2ldap)]);
 
 our $log;
 our $c_sec = 'Extension ActiveDirectory';
@@ -74,6 +80,36 @@ sub init {
 	$eh->register_option('aduser', 'add', $meta{'ou'});
 	$eh->register_option('aduser', 'add', $meta{'homedir'});
 	$eh->register_option('aduser', 'add', $meta{'homedrive'});
+	# Option to create homedir
+	
+	# aduser del
+	$eh->register_action('aduser', 'del', 'Delete an AD user');
+	$eh->register_option('aduser', 'del', $meta{'user'}, 1);
+	$eh->register_option('aduser', 'del', $meta{'domain'});
+	$eh->register_option('aduser', 'del', $meta{'ou'});
+	# Option to delete homedir
+	
+	# aduser mod
+	$eh->register_action('aduser', 'mod', 'Modify an AD user');
+	$eh->register_action('aduser', 'mod', 'Delete an AD user');
+	$eh->register_option('aduser', 'mod', $meta{'user'}, 1);
+	$eh->register_option('aduser', 'mod', $meta{'domain'});
+	$eh->register_option('aduser', 'mod', $meta{'ou'});
+    # More options
+    
+    # aduser change-password
+    $eh->register_action('aduser', 'change-password', 'Change an AD user\'s password');
+	$eh->register_option('aduser', 'change-password', $meta{'user'}, 1);
+	$eh->register_option('aduser', 'change-password', $meta{'domain'});
+	$eh->register_option('aduser', 'change-password', $meta{'ou'});
+	$eh->register_option('aduser', 'change-password', $meta{'password'}, 1);
+    
+}
+
+sub domain2ldap {
+    my $domain = shift;
+    my $dn = join ',', map { "dn=$_" } split /\./, $domain;
+    return $dn;
 }
 
 1;
@@ -89,6 +125,19 @@ VUser::ActiveDirectory - VUser extension for managing user and groups in Microso
 VUser extension for managing user and groups in Microsoft Active Directory. 
 
 =head1 CONFIGURATION
+
+ [Extension ActiveDirectory]
+ # Your Active Directory domain
+ domain = ad.yourdomain
+ 
+ # Default user OU
+ user ou = CN=Users
+ 
+ # Default group OU
+ group ou = CN=Users
+ 
+ # Address/name of your AD server
+ ad server = ad_server 
 
 =head1 AUTHOR
 

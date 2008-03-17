@@ -1,15 +1,15 @@
-package VUser::ActiveDirecory::OLE;
+package VUser::ActiveDirectory::OLE;
 use warnings;
 use strict;
 
 # Copyright 2008 Randy Smith
-# $Id: OLE.pm,v 1.1 2008-03-17 20:37:16 perlstalker Exp $
+# $Id: OLE.pm,v 1.2 2008-03-17 22:54:28 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
 use VUser::ResultSet;
 use VUser::Meta;
-use VUser::ActiveDirectory;
+use VUser::ActiveDirectory qw(:utils);
 
 use Win32::OLE qw(in);
 
@@ -27,6 +27,13 @@ sub init {
 	my %cfg = @_;
 	
 	$log = VUser::ActiveDirectory::Log();
+	
+	# aduser add
+	$eh->register_task('aduser', 'add', \&aduser_add);
+}
+
+sub aduser_add {
+    my ($cfg, $opts, $action, $eh) = @_;
 }
 
 1;
