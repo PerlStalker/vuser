@@ -6,15 +6,16 @@ use warnings;
 use strict;
 
 # Copyright 2004 Randy Smith
-# $Id: vuser,v 1.28 2007-12-10 17:03:08 perlstalker Exp $
+# $Id: vuser,v 1.29 2008-03-17 17:52:05 perlstalker Exp $
 
 use Pod::Usage;
 use Getopt::Long qw(:config require_order);
 use FindBin;
 use Config::IniFiles;
+use User::pwent;
 
-our $REVISION = (split (' ', '$Revision: 1.28 $'))[1];
-our $VERSION = "0.4.3";
+our $REVISION = (split (' ', '$Revision: 1.29 $'))[1];
+our $VERSION = "0.4.4";
 
 our $DEBUG = 0;
 
@@ -116,7 +117,10 @@ if (defined $action
 $action = '' unless defined $action;
 
 # Ok. Now it's time to do the action.
-my $real_user = getpwuid($<); # Get the user running this.
+my $real_user = 'unknown';
+my $ent;
+eval { $ent = getpwuid($<); }; # Get the user running this.
+$real_user = $ent->name if (defined $ent);
 $log->log(LOG_NOTICE, "%s running %s %s", $real_user, $keyword, $action);
 my @rs;
 eval { @rs = $eh->run_tasks($keyword, $action, \%cfg); };
