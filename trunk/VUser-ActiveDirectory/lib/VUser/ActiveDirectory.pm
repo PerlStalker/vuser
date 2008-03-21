@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2008 Randy Smith
-# $Id: ActiveDirectory.pm,v 1.3 2008-03-21 15:52:35 perlstalker Exp $
+# $Id: ActiveDirectory.pm,v 1.4 2008-03-21 16:05:39 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -144,6 +144,10 @@ sub init {
                                                             'type' => 'boolean',
                                                             'description' => 'Number of says since last logon'));
     $eh->register_option('aduser', 'list', $meta{'recurse'});
+
+    # adgroup help
+    $eh->register_action('aduser', 'help', 'View aduser help');
+    $eh->register_task('aduser', 'help', \&aduser_help);     
     
     ## adgroup
     $eh->register_keyword('adgroup', 'Manage AD groups');
@@ -199,13 +203,25 @@ sub init {
     $eh->register_option('adgroup', 'members', $meta{'domain'});
     $eh->register_option('adgroup', 'members', $meta{'ou'});
     
-    
+    # adgroup help
+    $eh->register_action('adgroup', 'help', 'View adgroup help');
+    $eh->register_task('adgroup', 'help', \&adgroup_help);     
 }
 
 sub domain2ldap {
     my $domain = shift;
     my $dn = join ',', map { "dn=$_" } split /\./, $domain;
     return $dn;
+}
+
+sub aduser_help {
+    my ($cfg, $opts, $action, $eh) = @_;
+    $eh->run_tasks('help', 'aduser', $cfg);
+}
+
+sub adgroup_help {
+    my ($cfg, $opts, $action, $eh) = @_;
+    $eh->run_tasks('help', 'adgroup', $cfg);
 }
 
 1;
