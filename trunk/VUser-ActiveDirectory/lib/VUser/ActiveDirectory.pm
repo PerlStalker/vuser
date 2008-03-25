@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2008 Randy Smith
-# $Id: ActiveDirectory.pm,v 1.4 2008-03-21 16:05:39 perlstalker Exp $
+# $Id: ActiveDirectory.pm,v 1.5 2008-03-25 22:01:45 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -44,6 +44,18 @@ our %meta = (
     'homedrive' => VUser::Meta->new('name' => 'homedrive',
                                  'type' => 'string',
                                  'description' => 'Drive letter to map home directory to; e.g. N:'
+                                 ),
+    'fname' => VUser::Meta->new('name' => 'fname',
+                                 'type' => 'string',
+                                 'description' => 'User\'s given (first) name'
+                                 ),
+    'lname' => VUser::Meta->new('name' => 'lname',
+                                 'type' => 'string',
+                                 'description' => 'User\'s family (last) name'
+                                 ),
+    'email' => VUser::Meta->new('name' => 'email',
+                                 'type' => 'string',
+                                 'description' => 'User\'s email address'
                                  ),
     'group' => VUser::Meta->new('name' => 'group',
                              'type' => 'string',
@@ -89,6 +101,9 @@ sub init {
 	$eh->register_option('aduser', 'add', $meta{'password'});
 	$eh->register_option('aduser', 'add', $meta{'domain'});
 	$eh->register_option('aduser', 'add', $meta{'ou'});
+	$eh->register_option('aduser', 'add', $meta{'fname'});
+	$eh->register_option('aduser', 'add', $meta{'lname'});
+	$eh->register_option('aduser', 'add', $meta{'email'});
 	$eh->register_option('aduser', 'add', $meta{'homedir'});
 	$eh->register_option('aduser', 'add', $meta{'homedrive'});
 	$eh->register_option('aduser', 'add', $meta{'createhome'});
@@ -105,7 +120,10 @@ sub init {
 	$eh->register_option('aduser', 'mod', $meta{'user'}, 1);
 	$eh->register_option('aduser', 'mod', $meta{'domain'});
 	$eh->register_option('aduser', 'mod', $meta{'ou'});
-	$eh->register_option('aduser', 'mod', $meta{'user'}->new('name' => 'useruser'));
+	$eh->register_option('aduser', 'add', $meta{'fname'});
+	$eh->register_option('aduser', 'add', $meta{'lname'});
+	$eh->register_option('aduser', 'add', $meta{'email'});
+	$eh->register_option('aduser', 'mod', $meta{'user'}->new('name' => 'newuser'));
 	# For now, the user cannot change domains
 	# $eh->register_option('aduser', 'mod', $meta{'domain'}->new('name' => 'newdomain'));
 	$eh->register_option('aduser', 'mod', $meta{'ou'}->new('name' => 'newou'));
@@ -208,9 +226,11 @@ sub init {
     $eh->register_task('adgroup', 'help', \&adgroup_help);     
 }
 
+sub unload {}
+
 sub domain2ldap {
     my $domain = shift;
-    my $dn = join ',', map { "dn=$_" } split /\./, $domain;
+    my $dn = join ',', map { "dc=$_" } split /\./, $domain;
     return $dn;
 }
 
