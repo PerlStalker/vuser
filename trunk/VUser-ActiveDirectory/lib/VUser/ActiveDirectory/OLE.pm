@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright 2008 Randy Smith
-# $Id: OLE.pm,v 1.4 2008-03-25 22:14:46 perlstalker Exp $
+# $Id: OLE.pm,v 1.5 2008-03-25 22:19:00 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -247,6 +247,36 @@ sub aduser_enable_disable {
     }
     $user->SetInfo();
     die "OLE Error: ".Win32::OLE->LastError() if Win32::OLE->LastError();
+    
+    return;
+}
+
+sub aduser_changepw {
+    my ($cfg, $opts, $action, $eh) = @_;
+    
+    my $ad_server = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'ad server'});
+    my $domain = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'domain'});
+    my $user_ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'user ou'});
+    
+    $domain = $opts->{'domain'} if $opts->{'domain'};
+    $user_ou = $opts->{'ou'} if $opts->{'ou'};
+    
+    my $dn = domain2ldap($domain);
+    my $ADsPath = "LDAP://";
+    $ADsPath .= "$ad_server/" if $ad_server;
+    $ADsPath .= $dn;
+
+    my $ad = Win32::OLE->GetObject($ADsPath)
+        or die "Unable to get $ADsPath: ".Win32::OLE->LastError()."\n";
+    
+    my $user_path = sprintf("cn=%s,$user_ou,$dn", $opts->{'user'});
+    my $user = Win32::OLE->GetObject("LDAP://$ad_server/$user_path")
+        or die "Unable to get user $user_path: ".Win32::OLE->LastError()."\n";
+        
+    $user->SetPassword($opts->{'password'});
+    die "OLE Error: ".Win32::OLE->LastError() if Win32::OLE->LastError();
+    
+    return;
 }
 
 sub unload {}
