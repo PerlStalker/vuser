@@ -496,14 +496,17 @@ sub CreateUser {
 	return undef;
     }
 
-    my ($username, $given_name, $family_name, $password, $quotaMB) = @_;
+    my ($username, $given_name, $family_name, $password, $quotaMB, $forceChange) = @_;
+    $forceChange = $forceChange? 1 : 0;
 
     my $body = $self->XMLPrefix;
     #LP:changePasswordAtNextLogin (todo)
-    $body .= <<"EOL";
-<atom:category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/apps/2006#user"/>
-<apps:login userName="$username" password="$password" suspended="false" changePasswordAtNextLogin="true"/>
-EOL
+    $body .= '<atom:category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/apps/2006#user"/>';
+    $body .= "<apps:login userName=\"$username\" password=\"$password\" suspended=\"false\"";
+    if ($forceChange) {
+	$body .= ' changePasswordAtNextLogin="true"';
+    }
+    $body .= "/>";
     $body .= "<apps:quota limit=\"$quotaMB\"/>" if defined $quotaMB; 
     $body .= "<apps:name familyName=\"$family_name\" givenName=\"$given_name\"/>";
     $body .= $self->XMLPostfix;
