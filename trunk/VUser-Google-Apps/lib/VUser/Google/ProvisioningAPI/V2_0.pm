@@ -635,7 +635,7 @@ sub RetrievePageOfUsers {
 
     my @entries = ();
     if ($self->Request('GET', $url)) {			   
-	foreach my $entry (@{ $self->{result}{'atom:feed'}{'atom:entry'} }) {
+	foreach my $entry (@{ $self->{result}{'entry'} }) {
 	    push @entries, $self->buildEntry($entry);
 	}
     } else {
