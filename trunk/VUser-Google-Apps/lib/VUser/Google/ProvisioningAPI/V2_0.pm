@@ -1215,8 +1215,6 @@ Get a single page (100 lists) of email lists.
 
 =cut
 
-=cut
-
 sub RetrievePageOfEmailLists {
     my $self = shift;
 
