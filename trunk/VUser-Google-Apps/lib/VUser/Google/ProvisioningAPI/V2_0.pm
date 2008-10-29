@@ -589,14 +589,15 @@ sub RetrieveAllUsers {
 	    # dataset is discarded.
 	    return undef;
 	}
+	$last_page = 1; # gets reset to 0 if there are more pages
 	# Look through the links to see if there's another page.
 	# A link with rel=next means that we have another page to look at.
 	foreach my $link (@{ $self->{result}{'link'} }) {
 	    if ($link->{'rel'} eq 'next') {
 		$url = $link->{'href'};
 		$last_page = 0;
-	    } else {
-		$last_page = 1;
+#	    } else {
+#		$last_page = 1;
 	    }
 	}
     }
