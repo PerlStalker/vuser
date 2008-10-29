@@ -11,6 +11,7 @@ or
 http://code.google.com/apis/apps/gdata_provisioning_api_v2.0_reference.html
 
 VERSION
+   v0.21 Fix bug in RetrieveAllUsers() and some i18n fixes.
    v0.20 Add support for Google Provisioning API 2.0. Moved into VUser:: to
          prevent conflicts with upstream releases.
 
