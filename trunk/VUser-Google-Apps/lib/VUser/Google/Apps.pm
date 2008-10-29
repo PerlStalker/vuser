@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 # Copyright (c) 2006 Randy Smith <perlstalker@vuser.org>
-# $Id: Apps.pm,v 1.5 2007-09-24 16:41:56 perlstalker Exp $
+# $Id: Apps.pm,v 1.6 2008-10-29 05:13:03 perlstalker Exp $
 
 use VUser::Log qw(:levels);
 use VUser::ExtLib qw(:config);
@@ -13,7 +13,7 @@ use VUser::Meta;
 use VUser::Google::ProvisioningAPI;
 use Config::IniFiles;
 
-our $VERSION = '0.1.0';
+our $VERSION = '0.1.1';
 
 our $log;
 our %meta = ('username' => VUser::Meta->new('name' => 'username',
