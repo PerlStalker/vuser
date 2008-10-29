@@ -8,7 +8,7 @@ use strict;
 
 use vars qw($VERSION);
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
 use Carp;
 use LWP::UserAgent qw(:strict);
@@ -592,6 +592,10 @@ sub RetrieveAllUsers {
 	$last_page = 1; # gets reset to 0 if there are more pages
 	# Look through the links to see if there's another page.
 	# A link with rel=next means that we have another page to look at.
+	#
+	# TODO: May be more efficient with a last; in the else but
+	# I had problems with infinite loops while trying to get it
+	# sorted out.
 	foreach my $link (@{ $self->{result}{'link'} }) {
 	    if ($link->{'rel'} eq 'next') {
 		$url = $link->{'href'};
@@ -1217,12 +1221,14 @@ RetrievePageOfEmailLists($startList)
 
 Get a single page (100 lists) of email lists.
 
+=back
+
 =cut
 
 sub RetrievePageOfEmailLists {
     my $self = shift;
 
-    my $start_emaillist;
+    my $start_emaillist = shift;
 
     my $url = GOOGLEBASEURL.$self->{domain}."/emailList/$APIVersion";
     if ($start_emaillist) {

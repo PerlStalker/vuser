@@ -7,7 +7,7 @@ use strict;
 
 use vars qw($VERSION);
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
 use Carp;
 
