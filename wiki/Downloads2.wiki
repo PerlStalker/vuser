@@ -1,0 +1,15 @@
+#summary Download Instructions.
+
+= Google Code =
+
+New releases will be available from [http://code.google.com/p/vuser/downloads/list Google Code].
+
+= CPAN =
+
+New releases will often appear on the CPAN before they are released here.
+Installing from CPAN
+
+{{{
+perl -MCPAN -e shell
+cpan> install <module name>
+}}}
