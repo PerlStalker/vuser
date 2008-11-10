@@ -644,7 +644,7 @@ sub RetrievePageOfUsers {
     my @entries = ();
     if ($self->Request('GET', $url)) {			   
 	foreach my $entry (@{ $self->{result}{'entry'} }) {
-	    push @entries, $self->buildEntry($entry);
+	    push @entries, $self->buildUserEntry($entry);
 	}
     } else {
 	# There was some sort of error which caused the lookup to fail.
