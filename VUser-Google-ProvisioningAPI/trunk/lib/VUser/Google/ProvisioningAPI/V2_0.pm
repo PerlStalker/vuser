@@ -8,7 +8,7 @@ use strict;
 
 use vars qw($VERSION);
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 
 use Carp;
 use LWP::UserAgent qw(:strict);
@@ -20,10 +20,10 @@ use Data::Dumper;
 
 use base qw(VUser::Google::ProvisioningAPI);
 
-use VUser::Google::ProvisioningAPI::EmailListEntry;
-use VUser::Google::ProvisioningAPI::EmailListRecipient;
-use VUser::Google::ProvisioningAPI::NicknameEntry;
-use VUser::Google::ProvisioningAPI::UserEntry;
+use VUser::Google::ProvisioningAPI::V2_0::EmailListEntry;
+use VUser::Google::ProvisioningAPI::V2_0::EmailListRecipientEntry;
+use VUser::Google::ProvisioningAPI::V2_0::NicknameEntry;
+use VUser::Google::ProvisioningAPI::V2_0::UserEntry;
 
 our $APIVersion = '2.0';
 
