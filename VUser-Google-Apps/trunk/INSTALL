@@ -1,14 +1,8 @@
-$Id: INSTALL,v 1.1 2007-09-17 16:13:05 perlstalker Exp $
-
 Required Modules:
 
 VUser-Google-Apps requires the following Perl modules that are not included
 with Perl:
-- Carp
-- LWP::UserAgent
-- HTTP::Request
-- Encode
-- XML::Simple
+- VUser::Google::ProvisioningAPI
 
 Other vuser extensions may require other Perl modules. Please see the
 documentation included with those extensions for additional requirements.

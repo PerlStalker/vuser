@@ -13,7 +13,7 @@ use VUser::Meta;
 use VUser::Google::ProvisioningAPI;
 use Config::IniFiles;
 
-our $VERSION = '0.1.1';
+our $VERSION = '0.2.0';
 
 our $log;
 our %meta = ('username' => VUser::Meta->new('name' => 'username',

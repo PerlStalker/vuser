@@ -16,13 +16,7 @@ WriteMakefile(
 				  'VUser::Extension' => '0.2.0',
 				  'VUser::Log'       => '0.2.0',
 				  'VUser::ExtHandler'=> '0.3.2',
-				  #'VUser::Google::ProvisioningAPI' => '0.20',
-				  'Carp' => 0,
-				  'LWP::UserAgent' => 0,
-				  'HTTP::Request' => 0,
-				  'Encode' => 0,
-				  'XML::Simple' => 0
-				  }, # e.g., Module::Name => 1.1
+				  'VUser::Google::ProvisioningAPI' => '0.22',
 
 	      );
 
