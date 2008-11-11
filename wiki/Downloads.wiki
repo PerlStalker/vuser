@@ -6,10 +6,11 @@ New releases will be available from [http://code.google.com/p/vuser/downloads/li
 
 = CPAN =
 
-New releases will often appear on the CPAN before they are released here.
-Installing from CPAN
+It's usually easier to install the packages from CPAN.
 
 {{{
 perl -MCPAN -e shell
 cpan> install <module name>
 }}}
+
+This will also fetch any dependencies that are missing.
