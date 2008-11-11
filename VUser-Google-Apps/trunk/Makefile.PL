@@ -16,7 +16,8 @@ WriteMakefile(
 				  'VUser::Extension' => '0.2.0',
 				  'VUser::Log'       => '0.2.0',
 				  'VUser::ExtHandler'=> '0.3.2',
-				  'VUser::Google::ProvisioningAPI' => '0.22',
+				  'VUser::Google::ProvisioningAPI' => '0.22'
+				  }
 
 	      );
 
