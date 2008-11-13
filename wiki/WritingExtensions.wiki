@@ -90,7 +90,13 @@ sub init
     ...
 }
 ...
-sub foo_add { ... }
+sub foo_add {
+    my $cfg = shift;    #  A reference to the configuration hash
+    my $opts = shift;   # A reference to a hash of the options passed to the action.
+    my $action = shift; # The name of the action that was run.
+    my $eh = shift;     # The ExtHandler that's dispatching tasks. 
+...
+}
 }}}
 
 = More on Tasks =
