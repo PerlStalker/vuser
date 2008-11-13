@@ -1,6 +1,14 @@
 #summary Getting help for vuser
 
 = Documentation =
+== Usage ==
+Vuser has a built in help system that can be viewed with the _help_ keyword.
+{{{
+vuser help
+vuser help extension_name
+}}}
+
+== Manuals ==
 Vuser, vsoapd and most of the extensions include documentation in the perldoc for the extension. On some systems, you can use `man` instead of `perldoc`.
 
 *Examples:*
@@ -21,13 +29,6 @@ The _man_ keyword will return the manual for the extension.
 {{{
 vuser man Email
 vuser man Google::Apps
-}}}
-
-= Usage =
-Vuser has a built in help system that can be viewed with the _help_ keyword.
-{{{
-vuser help
-vuser help extension_name
 }}}
 
 = Further Help =
