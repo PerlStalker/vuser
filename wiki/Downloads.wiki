@@ -1,4 +1,5 @@
 #summary Download Instructions.
+#labels Featured
 
 = Google Code =
 
