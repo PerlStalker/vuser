@@ -1,4 +1,5 @@
 #summary Getting help for vuser
+#labels Featured
 
 = Documentation =
 == Usage ==
