@@ -35,6 +35,9 @@ vuser man Google::Apps
 == Wiki ==
 The [http://code.google.com/p/vuser/w/list wiki] has additional documentation and tips for using and extending vuser.
 
+== Issue Tracker ==
+Check the [http://code.google.com/p/vuser/issues/list issue tracker] and see if your problem is a known issue.
+
 = Further Help =
 There are a couple of places you can go to get help with vuser or vuser modules.
 
