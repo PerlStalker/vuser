@@ -1,0 +1,4 @@
+#summary Do you want do donate to the vuser project?
+#labels Featured
+
+Vuser is an open source project and is made available in the hopes that it is useful. However, if you would like to drop me a few bucks to say "Thank you", you can [https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick& donate via PayPal].
