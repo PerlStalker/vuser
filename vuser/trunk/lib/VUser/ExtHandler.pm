@@ -6,7 +6,7 @@ use strict;
 # $Id: ExtHandler.pm,v 1.51 2007-09-24 20:16:06 perlstalker Exp $
 
 our $REVISION = (split (' ', '$Revision: 1.51 $'))[1];
-our $VERSION = "0.3.2";
+our $VERSION = "0.5.0";
 
 use lib qw(..);
 use Getopt::Long;
