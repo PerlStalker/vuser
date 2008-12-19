@@ -54,7 +54,7 @@ $eh->register_action('foo', 'add', 'Add a foo');
 
 = Adding Options =
 
-It's quite likely that you will want to pass various options. Here's where things get a little complicated. The nicest way to do this is to create a hash of options. This way you can reuse the option without having to copy and paste code.
+It's quite likely that you will want to pass various options. Here's where things get a little complicated. One to do this is to create a hash of options. This way you can reuse the option without having to copy and paste code.
 
 {{{
 my %meta = ('color' => VUser::Meta->new('name' => 'color',
@@ -68,11 +68,25 @@ sub init
 {
 ...
     $eh->register_option('foo', 'add', $meta{'name'}, 'required');
-    $eh->register_option('foo', 'add', $meta{'shape'}); # optional
+    $eh->register_option('foo', 'add', $meta{'color'}); # optional
 }
 }}}
 
 Now when you run `vuser help foo` you should see all of your actions and their options with descriptions.
+
+Another option for keeping the meta data objects around is to use the `register_meta()` option. This makes the _VUser::Meta_ object easily accessible for other extensions that may want to use them.
+
+{{{
+sub init
+{
+...
+    $eh->register_meta(VUser::Meta->new('name' => 'color',
+                                        'type' => 'string',
+                                        'description' => 'Color'));
+    $eh->register_option('foo', 'add', $eh->get_meta('foo', 'color'), 'req');
+...
+}
+}}}
 
 = Registering Tasks =
 
