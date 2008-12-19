@@ -47,6 +47,11 @@ sub init
 
     $eh->register_keyword('test', 'Test keyword. Don\'t use in production.');
 
+    $eh->register_meta('test', VUser::Meta->new(name => 'bar',
+						description => 'option bar',
+						type => 'string')
+	);
+
     $eh->register_action('test', '*');
     $eh->register_option('test', '*', $meta{foo});
     $eh->register_task('test', '*', \&test_task);
@@ -56,6 +61,7 @@ sub init
     $eh->register_option('test', 'meta', VUser::Meta->new(name => 'keyword',
 							  description => "See meta data for this keyword",
 							  type => 'string'));
+    $eh->register_option('test', 'meta', $eh->get_meta('test', 'bar'));
     $eh->register_task('test', 'meta', \&dump_meta);
 
     $eh->register_action('test', 'rs', 'Test ::ResultSet');

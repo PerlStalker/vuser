@@ -205,6 +205,40 @@ sub add_error {
     }
 }
 
+sub error {
+    my $self = shift;
+
+    if (defined $self->{error_code}) {
+	return {'error_code' => $self->error_code(),
+		'errors' => $self->errors()};
+    } else {
+	return undef;
+    }
+}
+
+sub get_all_errors {
+    my @result_sets = @_;
+
+    my @errors = ();
+
+    # And empty @result_sets skips this preventing
+    # the recursion below from becoming infinite.
+    foreach my $set (@result_sets) {
+	if (eval { $set->isa('VUser::ResultSet') }) {
+	    if (defined $set->error_code) {
+		push (@errors, $set->error);
+	    }
+	} elsif (eval {ref $set eq 'ARRAY' } ) {
+	    # Watch the recursion ...
+	    foreach my $rs (get_all_errors(@{ $set })) {
+		push @errors, $rs;
+	    }
+	}
+    }
+
+    return @errors;
+}
+
 1;
 
 __END__
