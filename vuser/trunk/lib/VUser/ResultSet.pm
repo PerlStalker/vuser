@@ -7,7 +7,7 @@ use strict;
 use Carp;
 use VUser::Meta;
 
-our $VERSION = "0.4.0";
+our $VERSION = "0.5.0";
 
 sub new
 {
