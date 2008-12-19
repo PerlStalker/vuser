@@ -13,7 +13,8 @@ WriteMakefile(
 	      PREREQ_PM       => {'Config::IniFiles' => 0,
 				  'Regexp::Common'   => 0,
 				  'File::Path'       => 0,
-				  'User::pwent'      => 0
+				  'User::pwent'      => 0,
+				  'Carp'             => 0
 				  }
 	      );
 

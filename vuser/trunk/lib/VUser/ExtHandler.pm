@@ -477,7 +477,67 @@ sub run_tasks
 
     my %opts = @_;
 
+    my $wild_action = 0;
+    if (exists $self->{keywords}{$keyword}{$action}) {
+	$wild_action = 0;
+    } elsif (exists $self->{keywords}{$keyword}{'*'}) {
+	$wild_action = 1;
+    } else {
+	die "Unknown action '$action'\n";
+    }
+
     $log->log(LOG_DEBUG,"Keyword: '$keyword' Action: '$action' ARGV: @ARGV");
+
+    eval { %opts = $self->process_options($keyword, $action, $cfg, %opts); };
+    die $@ if $@;
+
+    my @tasks = ();
+    if ($wild_action) {
+	@tasks = @{$self->{keywords}{$keyword}{'*'}{tasks}};
+    } else {
+	@tasks = @{$self->{keywords}{$keyword}{$action}{tasks}};
+    }
+
+    my @results = ();
+    foreach my $priority (@tasks) {
+	foreach my $task (@$priority) {
+	    # Return values?
+	    my $rs = &$task($cfg, \%opts, $action, $self);
+	    if (not defined $rs) {
+	    } elsif (UNIVERSAL::isa($rs, "VUser::ResultSet")) {
+		push @results, $rs;
+	    } elsif (UNIVERSAL::isa($rs, "ARRAY")) {
+		# Someone sent us an array ref. Go through the list
+		# and push any ::ResultSets on to the result list.
+		foreach my $r (@$rs) {
+		    if (UNIVERSAL::isa($r, "VUser::ResultSet")) {
+			push @results, $r;
+		    } elsif (UNIVERSAL::isa($r, 'ARRAY')) {
+			push @results, $r;
+		    }
+		}
+	    }
+	}
+    }
+
+    return \@results;
+}
+
+sub cleanup
+{
+    my $self = shift;
+    my %cfg = @_;
+
+    eval { $self->unload_extensions(%cfg); };
+    warn $@ if $@;
+}
+
+sub process_options {
+    my $self = shift;
+    my $keyword = shift;
+    my $action = shift;
+    my $cfg = shift;
+    my %opts = @_;
 
     if ($main::DEBUG >= 1) {
 	use Data::Dumper;
@@ -601,11 +661,11 @@ sub run_tasks
 	    my $type = $self->{keywords}{$keyword}{$real_action}{options}{$opt}->type;
 	    if ($type eq 'string') {
 		$gopt_type = '=s';
-	    } elsif ($type eq 'integer') {
+	    } elsif ($type eq 'integer' or $type eq 'int') {
 		$gopt_type = '=i';
 	    } elsif ($type eq 'counter') {
 		$gopt_type = '+';
-	    } elsif ($type eq 'boolean') {
+	    } elsif ($type eq 'boolean' or $type eq 'bool') {
 		$gopt_type = '!';
 	    } elsif ($type eq 'float') {
 		$gopt_type = '=f';
@@ -627,45 +687,7 @@ sub run_tasks
 	die "Missing required option '$opt'.\n";
     }
 
-    my @tasks = ();
-    if ($wild_action) {
-	@tasks = @{$self->{keywords}{$keyword}{'*'}{tasks}};
-    } else {
-	@tasks = @{$self->{keywords}{$keyword}{$action}{tasks}};
-    }
-
-    my @results = ();
-    foreach my $priority (@tasks) {
-	foreach my $task (@$priority) {
-	    # Return values?
-	    my $rs = &$task($cfg, \%opts, $action, $self);
-	    if (not defined $rs) {
-	    } elsif (UNIVERSAL::isa($rs, "VUser::ResultSet")) {
-		push @results, $rs;
-	    } elsif (UNIVERSAL::isa($rs, "ARRAY")) {
-		# Someone sent us an array ref. Go through the list
-		# and push any ::ResultSets on to the result list.
-		foreach my $r (@$rs) {
-		    if (UNIVERSAL::isa($r, "VUser::ResultSet")) {
-			push @results, $r;
-		    } elsif (UNIVERSAL::isa($r, 'ARRAY')) {
-			push @results, $r;
-		    }
-		}
-	    }
-	}
-    }
-
-    return \@results;
-}
-
-sub cleanup
-{
-    my $self = shift;
-    my %cfg = @_;
-
-    eval { $self->unload_extensions(%cfg); };
-    warn $@ if $@;
+    return %opts;
 }
 
 1;
