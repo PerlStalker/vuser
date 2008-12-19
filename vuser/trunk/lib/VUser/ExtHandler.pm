@@ -336,7 +336,7 @@ sub load_extensions
     $log->log(LOG_DEBUG, "Cfg extensions: $exts");
 
     my @exts = split / /, $exts;
-    eval { $self->load_extensions_list($cfg, @exts);
+    eval { $self->load_extensions_list($cfg, @exts) };
 }
 
 sub load_extensions_list {
