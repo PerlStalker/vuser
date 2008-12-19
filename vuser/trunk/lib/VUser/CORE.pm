@@ -153,9 +153,9 @@ sub init
     $eh->register_action('config', 'file', 'Print the current config file.');
     $eh->register_task('config', 'file', \&config_file, 0);
 
-    $eh->register_action('config', 'sample', 'Print a sample config file.');
-    $eh->register_task('config', 'sample', \&config_sample, 0);
-    $eh->register_option('config', 'sample', 'file', '=s', 0, 'Write the sample to this file.');
+#    $eh->register_action('config', 'sample', 'Print a sample config file.');
+#    $eh->register_task('config', 'sample', \&config_sample, 0);
+#    $eh->register_option('config', 'sample', 'file', '=s', 0, 'Write the sample to this file.');
 
     # Help
     $eh->register_keyword('help', 'Print help/usage information.');
