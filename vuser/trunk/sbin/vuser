@@ -254,6 +254,8 @@ You may specify the path to the configuration file with the C<--config> option.
 
 =head1 BUGS
 
+Report bugs at http://code.google.com/p/vuser/issues/list.
+
 =head1 SEE ALSO
 
 =head1 AUTHOR
