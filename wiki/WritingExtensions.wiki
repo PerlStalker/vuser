@@ -146,7 +146,7 @@ $rs->add_meta(VUser::Meta->new(name='number',
 3. Finally, you need to add the data to the result set. Each record is an array reference with columns that match the meta data added previously.
 
 {{{
-$rs->add_data(['red', 'big', 4']);
+$rs->add_data(['red', 'big', '4']);
 $rs->add_data(['blue', 'small', '42']);
 }}}
 
