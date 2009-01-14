@@ -123,7 +123,8 @@ Tasks can do just about anything you want. vuser doesn't really care. However, d
     * $eh - The ExtHandler that's dispatching tasks. 
 
 The last two parameters are only needed if you are doing more complicated tasks such as tasks for wildcard actions or tasks that fire off other actions (useful for wrappers around otherwise separate actions).
-Returning Data
+
+= Returning Data =
 
 Any task can return a VUser::ResultSet that will be passed back to the vuser script or SOAP client. Creating a result set takes three steps. Full details are in `perldoc VUser::ResultSet`.
 
