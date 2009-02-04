@@ -15,7 +15,7 @@ use Config::IniFiles;
 use User::pwent;
 
 our $REVISION = (split (' ', '$Revision: 1.29 $'))[1];
-our $VERSION = "0.5.0";
+our $VERSION = "0.5.1";
 
 our $DEBUG = 0;
 
@@ -98,6 +98,23 @@ if ($debug) {
 }
 
 our $log = VUser::Log->new(\%cfg, 'vuser');
+
+## Load extensions
+if ($cfg{'vuser'}{'include paths'}) {
+    my @inc_paths = ();
+    if (ref $cfg{'vuser'}{'include paths'} eq 'ARRAY') {
+	@inc_paths = @{ $cfg{'vuser'}{'include paths'} };
+    } else {
+	@inc_paths = ($cfg{'vuser'}{'include paths'});
+    }
+    my @paths = map { split(/:|$/m) } @inc_paths;
+    foreach my $path (@paths) {
+	my $p = strip_ws($path);
+	$log->log(LOG_INFO, "Adding '$p' to \@INC");
+        push @INC, $p;
+    }
+}
+
 my $eh = new VUser::ExtHandler (\%cfg);
 $eh->load_extensions(\%cfg);
 $eh->register_task('version', '', \&version, -10);
@@ -251,6 +268,14 @@ You may specify the path to the configuration file with the C<--config> option.
  # Display the result set in a different format.
  # Allowed formats: CSV
  #display format = CSV
+ 
+ # Add paths to the include path
+ # This may be ':' or newline delimited in a heredoc or both
+ #include paths = /opt/lib:/home/user/lib
+ #include paths = <<PATHS
+ #/opt/lib:/home/vuser/lib
+ #/opt/vuser/plugins
+ #PATHS
 
 =head1 BUGS
 

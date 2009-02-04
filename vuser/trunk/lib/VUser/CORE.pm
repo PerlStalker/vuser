@@ -54,6 +54,22 @@ CONFIG
     }
 }
 
+sub config_inc {
+    my $cfg = shift;
+    my $opts = shift;
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta(VUser::Meta->new('name' => 'path',
+				   'type' => 'string',
+				   'description' => 'Include path')
+		  );
+    foreach my $path (@INC) {
+	$rs->add_data([$path]);
+    }
+
+    return $rs;
+}
+
 sub version
 {
     my $cfg = shift;
@@ -156,6 +172,9 @@ sub init
 #    $eh->register_action('config', 'sample', 'Print a sample config file.');
 #    $eh->register_task('config', 'sample', \&config_sample, 0);
 #    $eh->register_option('config', 'sample', 'file', '=s', 0, 'Write the sample to this file.');
+
+    $eh->register_action('config', 'inc', 'Get the include paths');
+    $eh->register_task('config', 'inc', \&config_inc, 0);
 
     # Help
     $eh->register_keyword('help', 'Print help/usage information.');
