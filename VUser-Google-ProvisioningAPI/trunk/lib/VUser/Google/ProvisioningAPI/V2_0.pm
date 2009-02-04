@@ -8,7 +8,7 @@ use strict;
 
 use vars qw($VERSION);
 
-our $VERSION = '0.22';
+our $VERSION = '0.24';
 
 use Carp;
 use LWP::UserAgent qw(:strict);
@@ -702,7 +702,7 @@ sub UpdateUser {
 	$body .= ' password="'.$new_entry->Password.'"' if defined $new_entry->Password;
 	$body .= ' suspended="'.($new_entry->isSuspended? 'true' : 'false').'"';
 	#LP:changePasswordAtNextLogin
-	print "too(".$new_entry->changePasswordAtNextLogin.")";
+	#print "too(".$new_entry->changePasswordAtNextLogin.")";
 	$body .= ' changePasswordAtNextLogin="'.($new_entry->changePasswordAtNextLogin? 'true' : 'false').'"';
 	$body .= '/>';
     }
