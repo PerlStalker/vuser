@@ -8,7 +8,7 @@ use strict;
 use vars qw(@ISA);
 
 our $REVISION = (split (' ', '$Revision: 1.26 $'))[1];
-our $VERSION = "0.4.3";
+our $VERSION = "0.4.4";
 
 use Pod::Usage;
 
