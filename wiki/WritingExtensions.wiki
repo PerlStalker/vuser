@@ -134,7 +134,7 @@ Any task can return a VUser::ResultSet that will be passed back to the vuser scr
 my $rs = VUser::ResultSet->new();
 }}}
 
-2. Ok, now you need to add a little meta data to the ResultSet. This meta data will server two functions. First, it will act like column names so the client know which data is which; and second, it provides data type information so the client can choose to render the data differently based on data type. For very common data sets, it's usually easier to create a global VUser::Meta object which you use all over the place, but that is certainly not required.
+2. Ok, now you need to add a little meta data to the ResultSet. This meta data will server two functions. First, it will act like column names so the client knows which data is which; and second, it provides data type information so the client can choose to render the data differently based on data type. For very common data sets, it's usually easier to create a global VUser::Meta object which you use all over the place, but that is certainly not required.
 
 {{{
 $rs->add_meta($meta{'color'});
@@ -156,6 +156,26 @@ $rs->add_data(['blue', 'small', '42']);
 {{{
 return $rs;
 }}}
+
+= Returning Errors =
+
+As of vuser 0.5.0, a VUser::ResultSet can also be used to return an error code and string to vuser.
+
+{{{
+$rs->error_code(42);
+$rs->add_error("Live, the universe and everything failed");
+}}}
+
+The argument to `add_error()` is passed through `sprintf` so, instead of a single string, you can pass a format statement and arguments.
+
+{{{
+my $failed_mod = 'Universe';
+$rs->add_error("Failure in: %s", $failed_mod);
+}}}
+
+`vuser` will exit with the error code from the first ResultSet with an error code. Do not set an error code if you do not have an error.
+
+*Note:* As of this writing, vsoapd does not support error codes. This is forth coming. See issue #4 for details.
 
 = Configuration =
 
