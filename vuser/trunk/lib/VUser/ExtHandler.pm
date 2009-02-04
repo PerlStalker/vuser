@@ -351,7 +351,7 @@ sub load_extensions_list {
     $log->log(LOG_DEBUG, "Cfg extensions: ".join(',', @exts));
     foreach my $extension (@exts)
     {
-	eval { $self->load_extension( $extension, %$cfg ); };
+	eval { $self->load_extension( $extension, $cfg ); };
 	$log->log(LOG_DEBUG, "Unable to load %s: %s", $extension, $@) if $@;
     }
 }
