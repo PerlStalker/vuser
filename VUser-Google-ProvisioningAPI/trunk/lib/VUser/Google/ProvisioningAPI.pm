@@ -120,6 +120,11 @@ L<VUser::Google::ProvisioningAPI::1.0>
 
 L<VUser::Google::ProvisioningAPI::2.0>
 
+=head1 BUGS
+
+Please report bugs or feature requests at
+http://code.google.com/p/vuser/issues/list.
+
 =head1 AUTHORS
 
 Johan Reinalda, johan at reinalda dot net
