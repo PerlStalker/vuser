@@ -1,5 +1,5 @@
 #summary HOWTO write new extensions for vuser.
-#labels Extensions,HOWTO
+#labels Featured,HOWTO
 
 = Getting Started =
 
@@ -288,7 +288,16 @@ License info here...
 vuser is released under version 2 of the GPL. Publicly released Extensions must be licensed under terms compatible with GPL2. 
 
 = Example =
-This is a fully functional example of a vuser extension.
+This is a fully functional example of a vuser extension. Name the file `Hello.pm` and put it in a directory named `VUser` in your perl `@INC` path or add the directory to your `include paths` in `vuser.conf`.
+
+For example, wanted to put the example extension in `/home/user/vuser`, you would `mkdir /home/user/vuser/VUser` then save `Hello.pm` in that directory.
+
+{{{
+[vuser]
+include paths=/home/user/vuser
+}}}
+
+Enable the extension by adding `Hello` to `extensions` in `vuser.conf`.
 
 {{{
 package VUser::Hello;
