@@ -177,6 +177,8 @@ $rs->add_error("Failure in: %s", $failed_mod);
 
 *Note:* As of this writing, vsoapd does not support error codes. This is forth coming. See issue #4 for details.
 
+You can always use `die()` to return errors as well. The exit code will not be set in that case.
+
 = Configuration =
 
 Everytime an Extention function is called by the ExtHandler (init(), tasks, etc.), a hash (or hashref) is passed to the function that contains the system configuration. The configuration is open to any Extension to read from, which means that any Extension can read configuration options from vuser.conf. In order to keep things from getting messy and to keep extensions from stepping on each other, configuration options for each extention have their own section named 'Extension extname' (where extname is the name of the extension, e.g. an extension named VUser::Foo what use a section named Extension Foo). Some older extensions use 'Extension`_`extname'. This is nothing to worry about. At some point those extensions will be updated to use 'Extension extname'.
