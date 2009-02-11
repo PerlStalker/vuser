@@ -28,6 +28,15 @@ our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
 our $VERSION = '0.1.0';
 }}}
 
+== Running the Example ==
+{{{
+vuser hello world --greeting
+vuser hello world --greeting --name Bob
+}}}
+
+{{{
+vuser hello error
+}}}
 Now you're ready to get into the meat of your extension. Adding New Keywords
 
 All the work of initializing your extension happens in init(). init() gets two parameters. The first is a reference to the VUser::ExtHandler that will dispatch tasks. The second is a tied hash from Config::IniFiles that represents the main config file, vuser.conf.
@@ -277,3 +286,136 @@ License info here...
 = A Note on Licensing =
 
 vuser is released under version 2 of the GPL. Publicly released Extensions must be licensed under terms compatible with GPL2. 
+
+= Example =
+This is a fully functional example of a vuser extension.
+
+{{{
+package VUser::Hello;
+use warnings;
+use strict;
+
+
+use vars ('@ISA');
+
+use VUser::Log qw(:levels);
+use VUser::ExtLib qw(:config);
+use VUser::Meta;
+use VUser::ResultSet;
+use VUser::Extension;
+push @ISA, 'VUser::Extension';
+
+my $c_sec = 'Extension Hello';
+
+our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $VERSION = '0.1.0';
+
+our %meta = ('name', VUser::Meta->new(name => 'name',
+				      type => 'string',
+				      description => 'Who to greet'),
+	     'greeting', VUser::Meta->new(name => 'greeting',
+					  type => 'string',
+					  description => 'Greeting')
+    );
+
+our $log;
+
+sub init
+{
+    my $eh = shift;
+    my %cfg = @_;
+
+    $log = $main::log;
+
+    $eh->register_keyword('hello', 'Say hello');
+
+    ## hello|world
+    $eh->register_action('hello', 'world', 'Greet a person');
+
+    # greeting is a required option
+    $eh->register_option('hello', 'world', $meta{'greeting'}, 'required');
+
+    # name is optional
+    $eh->register_option('hello', 'world', $meta{'name'});
+
+    $eh->register_task('hello', 'world', \&hello_world);
+
+    ## hello|error
+    $eh->register_action('hello', 'error', 'Generate an error');
+    $eh->register_task('hello', 'error', \&hello_error);
+}
+
+sub hello_world {
+    my $cfg = shift;    # A reference to the configuration hash
+    my $opts = shift;   # A reference to a hash of the options passed to the action.
+    my $action = shift; # The name of the action that was run.
+    my $eh = shift;     # The ExtHandler that's dispatching tasks.
+
+    # Get the 'greeting' option
+    my $greeting = $opts->{greeting};
+
+    # Get the 'name' option but default to the 'default name' setting
+    # in the configuration file.
+    my $name = $opts->{name} || strip_ws($cfg->{$c_sec}{'default name'});
+
+    # This creates an entry in the vuser logs.
+    $log->log(LOG_NOTICE, "$greeting, '$name'");
+
+    if (check_bool($cfg->{$c_sec}{'say more'})) {
+	# If you leave out the log level, it will default to LOG_NOTICE
+	$log->log("Saying more ...");
+    }
+
+    # Return the information in a way that vuser can display the data
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($meta{'greeting'});
+    $rs->add_meta($meta{'name'});
+
+    $rs->add_data([$greeting, $name]);
+
+    return $rs;
+}
+
+sub hello_error {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($meta{'greeting'});
+    $rs->add_meta($meta{'name'});
+
+    $rs->error_code(97); # Set the return code
+
+    # Set the error string. Uses sprintf formats.
+    $rs->add_error("foo: %s", "bar");
+
+    return $rs;
+}
+
+sub unload {}
+
+1;
+
+__END__
+
+=head1 NAME
+
+VUser::Hello - descr
+
+=head1 SYNOPSIS
+
+ vuser hello world --greeting greeting [--name name]
+
+=head1 CONFIGURATION
+
+ [Extension Hello]
+ say more = no
+ default name = Fred
+ 
+}}}
+
+== Running the Example ==
+{{{
+vuser hello world --greeting Hello
+vuser hello world --greeting "Howdy pardner" --name Tex
+vuser hello error
+}}}
