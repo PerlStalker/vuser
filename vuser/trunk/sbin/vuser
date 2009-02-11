@@ -19,20 +19,23 @@ our $VERSION = "0.5.0";
 
 our $DEBUG = 0;
 
+use vars qw(%ENV);
+
 BEGIN {
 
     our @etc_dirs = (
-		             "$FindBin::Bin/../etc",
-		             "$FindBin::Bin",
-		             "$FindBin::Bin/..",
-                     "$FindBin::Bin/vuser",
-                     "$FindBin::Bin/../vuser",
-                     "$FindBin::Bin/../etc/vuser",
-                     '/usr/local/etc',
-		             '/usr/local/etc/vuser',
-		             '/etc',
-		             '/etc/vuser',
-                     );
+	"$FindBin::Bin/../etc",
+	"$FindBin::Bin",
+	"$FindBin::Bin/..",
+	"$FindBin::Bin/vuser",
+	"$FindBin::Bin/../vuser",
+	"$FindBin::Bin/../etc/vuser",
+	'/usr/local/etc',
+	'/usr/local/etc/vuser',
+	'/etc',
+	'/etc/vuser',
+	"$ENV{'HOME'}/.vuser"
+	);
 }
 
 use vars qw(@etc_dirs);
