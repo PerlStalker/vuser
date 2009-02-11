@@ -1,5 +1,5 @@
 #summary HOWTO write new extensions for vuser.
-#labels Featured,HOWTO
+#labels Featured,HOWTO,Extensions
 
 = Getting Started =
 
