@@ -378,7 +378,7 @@ sub Request
 	$req->header('Accept' => 'application/atom+xml');
 	$req->header('Content-Type' => 'application/atom+xml');
 	if ($body) {
-	    $req->header('Content-Lenght' => length($body) );
+	    $req->header('Content-Length' => length($body) );
 	}
 	$req->header('Connection' => 'Keep-Alive');
 	$req->header('Host' => GOOGLEHOST);
