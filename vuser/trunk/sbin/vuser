@@ -22,7 +22,6 @@ our $DEBUG = 0;
 use vars qw(%ENV);
 
 BEGIN {
-
     our @etc_dirs = (
 	"$FindBin::Bin/../etc",
 	"$FindBin::Bin",
@@ -34,8 +33,8 @@ BEGIN {
 	'/usr/local/etc/vuser',
 	'/etc',
 	'/etc/vuser',
-	"$ENV{'HOME'}/.vuser"
 	);
+    push @etc_dirs, "$ENV{'HOME'}/.vuser" if defined $ENV{'HOME'};
 }
 
 use vars qw(@etc_dirs);
@@ -108,11 +107,12 @@ if ($cfg{'vuser'}{'include paths'}) {
     if (ref $cfg{'vuser'}{'include paths'} eq 'ARRAY') {
 	@inc_paths = @{ $cfg{'vuser'}{'include paths'} };
     } else {
-	@inc_paths = ($cfg{'vuser'}{'include paths'});
+	@inc_paths = ($cfg{'vuser'}{'include\ paths'});
     }
     my @paths = map { split(/:|$/m) } @inc_paths;
     foreach my $path (@paths) {
 	my $p = strip_ws($path);
+	$p =~ s/\|/:/;
 	$log->log(LOG_INFO, "Adding '$p' to \@INC");
         push @INC, $p;
     }
@@ -274,6 +274,8 @@ You may specify the path to the configuration file with the C<--config> option.
  
  # Add paths to the include path
  # This may be ':' or newline delimited in a heredoc or both
+ # Windows users can replace the : in C: with a |.
+ #include paths = c|/vuser/lib
  #include paths = /opt/lib:/home/user/lib
  #include paths = <<PATHS
  #/opt/lib:/home/vuser/lib
