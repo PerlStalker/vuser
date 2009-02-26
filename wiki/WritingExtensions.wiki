@@ -24,7 +24,6 @@ use VUser::ResultSet;
 use VUser::Extension;
 push @ISA, 'VUser::Extension';
 
-our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
 our $VERSION = '0.1.0';
 }}}
 
