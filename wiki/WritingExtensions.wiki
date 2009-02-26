@@ -294,7 +294,29 @@ For example, wanted to put the example extension in `/home/user/vuser`, you woul
 
 {{{
 [vuser]
+# Enable debugging (Lots of output)
+debug = no
+
+# Space delimited list of extensions to load
+# extensions = Email::Courier Radius::SQL
+extensions = Hello
+
+#log type = Syslog
+log level = notice
+#log level = debug
+
+# The default is not show the result set
+show result set = yes
+
+# Display the result set in a different format.
+# Allowed formats: CSV
+#display format = CSV
+
 include paths=/home/user/vuser
+
+[Extension Hello]
+say more = no
+default name = Fred
 }}}
 
 Enable the extension by adding `Hello` to `extensions` in `vuser.conf`.
