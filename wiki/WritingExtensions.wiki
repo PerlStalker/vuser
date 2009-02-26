@@ -28,15 +28,6 @@ our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
 our $VERSION = '0.1.0';
 }}}
 
-== Running the Example ==
-{{{
-vuser hello world --greeting
-vuser hello world --greeting --name Bob
-}}}
-
-{{{
-vuser hello error
-}}}
 Now you're ready to get into the meat of your extension. Adding New Keywords
 
 All the work of initializing your extension happens in init(). init() gets two parameters. The first is a reference to the VUser::ExtHandler that will dispatch tasks. The second is a tied hash from Config::IniFiles that represents the main config file, vuser.conf.
