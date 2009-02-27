@@ -71,7 +71,37 @@ override 'CreateFilter' => sub {
     return $self->google->Request('POST', $url, $post);
 };
 
-override 'CreateSendAsAlias' => sub {};
+override 'CreateSendAsAlias' => sub {
+    my $self = shift;
+    my $name = shift;
+    my $address = shift;
+    my $reply_to = shift;
+    my $make_default = shift;
+
+    $self->google()->Login();
+    my $url = $self->base_url().$self->google->domain().'/'.$self->user().'/sendas';
+    my $post = '<?xml version="1.0" encoding="utf-8"?>
+<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">';
+
+    $post .= "<apps:property name='name' value='$name' />";
+    $post .= "<apps:property name='address' value='$address' />";
+
+    if (defined $reply_to) {
+	$post .= "<apps:property name='replyTo' value='$reply_to' />";
+    }
+
+    if (defined $make_default) {
+	$post .= sprintf("<apps:property name='makeDefault' value='%s' />",
+			 $make_default? 'true' : 'false'
+			 );
+    }
+
+    $post .= '</atom:entry>';
+
+    return $self->google->Request('POST', $url, $post);
+
+};
+
 override 'UpdateForwarding' => sub {};
 override 'UpdatePOP' => sub {};
 override 'UpdateIMAP' => sub {};
