@@ -80,6 +80,18 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 	     'should-archive' => VUser::Meta->new('name' => 'should-archive',
 						  'type' => 'boolean',
 						  'description' => 'Archive the message'),
+	     'from-name' => VUser::Meta->new('name' => 'from-name',
+					     'type' => 'string',
+					     'description' => 'The name that will appear in the "From" field'),
+	     'address' => VUser::Meta->new('name' => 'address',
+					   'type' => 'string',
+					   'description' => 'The email address that appears as the "From" address'),
+	     'reply_to' => VUser::Meta->new('name' => 'reply-to',
+					    'type' => 'string',
+					    'description' => 'This address will be included as the reply-to address'),
+	     'make_default' => VUser::Meta->new('name' => 'make-default',
+						'type' => 'boolean',
+						'description' => 'Make this the default to send-as')
 	     );
 
 our %mail_meta;
@@ -309,6 +321,15 @@ sub init {
     $eh->register_option('gapps', 'create-filter', $meta{'label'});
     $eh->register_task('gapps', 'create-filter', \&gapps_create_filter);
 
+    # gapps create-sendas
+    $eh->register_action('gapps', 'create-sendas', "Create send-as alias");
+    $eh->register_option('gapps', 'create-sendas', $meta{'username'}, 'req');
+    $eh->register_option('gapps', 'create-sendas', $meta{'domain'});
+    $eh->register_option('gapps', 'create-sendas', $meta{'from-name'}, 'req');
+    $eh->register_option('gapps', 'create-sendas', $meta{'address'}, 'req');
+    $eh->register_option('gapps', 'create-sendas', $meta{'reply_to'});
+    $eh->register_option('gapps', 'create-sendas', $meta{'make_default'});
+    $eh->register_task('gapps', 'create-sendas', \&gapps_create_sendas);
 }
 
 ## Email actions
@@ -786,6 +807,26 @@ sub gapps_create_filter {
     $settings->debug(1) if $debug;
 
     $settings->CreateFilter(\%criteria, \%actions);
+
+    return undef;
+}
+
+sub gapps_create_sendas {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+
+    $settings->debug(1) if $debug;
+
+    $settings->CreateSendAsAlias($opts->{'from-name'},
+				 $opts->{'address'},
+				 $opts->{'reply-to'},
+				 $opts->{'make-default'});
 
     return undef;
 }
