@@ -11,9 +11,11 @@ use VUser::ResultSet;
 use VUser::Meta;
 
 use VUser::Google::ProvisioningAPI;
+use VUser::Google::ApiProtocol::V2_0;
+use VUser::Google::EmailSettings::V2_0;
 use Config::IniFiles;
 
-our $VERSION = '0.2.0';
+our $VERSION = '0.2.1';
 
 our $log;
 our %meta = ('username' => VUser::Meta->new('name' => 'username',
@@ -48,11 +50,43 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 					 'description' => 'Email address'),
 	     'active' => VUser::Meta->new('name' => 'active',
 					  'type' => 'boolean',
-					  'description' => 'Is account active')
+					  'description' => 'Is account active'),
+	     'label' => VUser::Meta->new('name' => 'label',
+					 'type' => 'string',
+					 'description' => 'Name of label'),
+	     'crit-from' => VUser::Meta->new('name' => 'from',
+					     'type' => 'string',
+					     'description' => 'Pattern of "From" address'),
+	     'crit-to' => VUser::Meta->new('name' => 'to',
+					   'type' => 'string',
+					   'description' => 'Pattern of "To" address'),
+	     'crit-subject' => VUser::Meta->new('name' => 'subject',
+						'type' => 'string',
+						'description' => 'Pattern of subject'),
+	     'has-the-word' => VUser::Meta->new('name' => 'has-the-word',
+						'type' => 'string',
+						'description' => 'Message contains the word'),
+	     'does-not-have-the-word'
+	     => VUser::Meta->new('name' => 'does-not-have-the-word',
+				 'type' => 'string',
+				 'description' => 'Message does not contain the word'),
+	     'has-attachment' => VUser::Meta->new('name' => 'has-attachment',
+						  'type' => 'boolean',
+						  'description' => 'Message contains an attachment'),
+	     'should-mark-as-read'
+	     => VUser::Meta->new('name' => 'should-mark-as-read',
+				 'type' => 'boolean',
+				 'description' => 'Mark the message as read'),
+	     'should-archive' => VUser::Meta->new('name' => 'should-archive',
+						  'type' => 'boolean',
+						  'description' => 'Archive the message'),
 	     );
+
 our %mail_meta;
 our $c_sec = 'Extension Google::Apps';
 our %multi_conf;
+
+my $debug;
 
 sub c_sec { return $c_sec; }
 
@@ -80,6 +114,8 @@ sub init {
     } else {
 	$log = VUser::Log->new(\%cfg, 'vuser');
     }
+
+    $debug = $main::DEBUG;
 
     my $multi_conf_file = strip_ws($cfg{$c_sec}{'multi-domain configuration'});
     if ($multi_conf_file) {
@@ -248,6 +284,31 @@ sub init {
     $eh->register_option('gapps', 'removelistsub', $meta{'email'}, 1);
     $eh->register_option('gapps', 'removelistsub', $meta{'domain'});
     $eh->register_task('gapps', 'removelistsub', \&gapps_removelistsub);
+
+    # gapps create-label
+    $eh->register_action('gapps', 'create-label', 'Create a label');
+    $eh->register_option('gapps', 'create-label', $meta{'username'}, 1);
+    $eh->register_option('gapps', 'create-label', $meta{'domain'});
+    $eh->register_option('gapps', 'create-label', $meta{'label'}, 1);
+    $eh->register_task('gapps', 'create-label', \&gapps_create_label);
+
+    # gapps create-filter
+    $eh->register_action('gapps', 'create-filter', 'Create a filter');
+    $eh->register_option('gapps', 'create-filter', $meta{'username'}, 1);
+    $eh->register_option('gapps', 'create-filter', $meta{'domain'});
+    # criteria
+    $eh->register_option('gapps', 'create-filter', $meta{'crit-from'});
+    $eh->register_option('gapps', 'create-filter', $meta{'crit-to'});
+    $eh->register_option('gapps', 'create-filter', $meta{'crit-subject'});
+    $eh->register_option('gapps', 'create-filter', $meta{'has-the-word'});
+    $eh->register_option('gapps', 'create-filter', $meta{'does-not-have-the-word'});
+    $eh->register_option('gapps', 'create-filter', $meta{'has-attachment'});
+    # actions
+    $eh->register_option('gapps', 'create-filter', $meta{'should-mark-as-read'});
+    $eh->register_option('gapps', 'create-filter', $meta{'should-archive'});
+    $eh->register_option('gapps', 'create-filter', $meta{'label'});
+    $eh->register_task('gapps', 'create-filter', \&gapps_create_filter);
+
 }
 
 ## Email actions
@@ -664,6 +725,71 @@ sub gapps_removelistsub {
     my ($cfg, $opts, $action, $eh) = @_;
 }
 
+## Email settings
+sub gapps_create_label {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+    $settings->debug(1) if $debug;
+
+    $settings->CreateLabel($opts->{label});
+
+    return undef;
+}
+
+sub gapps_create_filter {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    ## Validate criteria
+    if (not $opts->{'from'}
+	and not $opts->{'to'}
+	and not $opts->{'subject'}
+	and not $opts->{'has-the-word'}
+	and not $opts->{'does-not-have-the-word'}
+	and not $opts->{'has-attachment'})
+    {
+	die "No filter criteria specified.";
+    }
+
+    my %criteria = (from               => $opts->{'from'},
+		    to                 => $opts->{'to'},
+		    subject            => $opts->{'subject'},
+		    hasTheWord         => $opts->{'has-the-word'},
+		    doesNotHaveTheWord => $opts->{'does-not-have-the-word'},
+		    hasAttachment      => $opts->{'has-attachment'}
+		    );
+
+    ## Validate actions
+    if (not defined $opts->{'should-mark-as-read'}
+	and not defined $opts->{'should-archive'}
+	and not $opts->{'label'})
+    {
+	die "No filter action specified.";
+    }
+
+    my %actions = (shouldMarkAsRead => $opts->{'should-mark-as-read'},
+		   shouldArchive    => $opts->{'should-archive'},
+		   label            => $opts->{'label'}
+		   );
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+    $settings->debug(1) if $debug;
+
+    $settings->CreateFilter(\%criteria, \%actions);
+
+    return undef;
+}
+
 ## Util functions
 
 sub get_domain {
@@ -713,6 +839,40 @@ sub google_login {
 					      $admin_user,
 					      $password,
 					      '2.0');
+    return $google;
+}
+
+## Login function for new google framework.
+# TODO: make google protocol version configurable.
+sub google_login2 {
+    my $cfg = shift;
+    my $domain = shift;
+
+    my $admin_user;
+    my $password;
+
+    my $default_domain = strip_ws($cfg->{$c_sec}{'default domain'});
+    if ($default_domain and $domain eq $default_domain) {
+	$admin_user = strip_ws($cfg->{$c_sec}{'domain admin'});
+	$password = strip_ws ($cfg->{$c_sec}{'admin password'});
+    }
+
+    # Now check the multi-domain config
+    $admin_user = strip_ws($multi_conf{$domain}{'domain admin'}) unless defined $admin_user;
+    $password = strip_ws($multi_conf{$domain}{'admin password'}) unless defined $password;
+
+    die "No admin user set for $domain.\n" unless $admin_user;
+    die "No password set for $domain.\n" unless $password;
+
+    $log->log(LOG_DEBUG, "Logging in to G.Apps as $admin_user\@$domain");
+
+    ## Login to google.
+    my $google = VUser::Google::ApiProtocol::V2_0->new
+	(domain => $domain,
+	 admin => $admin_user,
+	 password => $password
+	 );
+    $google->debug(1) if $debug;
     return $google;
 }
 
