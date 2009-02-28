@@ -95,6 +95,12 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 	     'enabled' => VUser::Meta->new('name' => 'enabled',
 					   'type' => 'boolean',
 					   'description' => 'Enable this setting. Use --no-enabled to disable'),
+	     'fwd-to' => VUser::Meta->new('name' => 'forward-to',
+					  'type' => 'string',
+					  'description' => 'Email address to forward to'),
+	     'fwd-action' => VUser::Meta->new('name' => 'action',
+					      'type' => 'string',
+					      'description' => 'What to do with email after forwarding. (KEEP, ARCHIVE, DELETE)')
 	     );
 
 our %mail_meta;
@@ -340,6 +346,16 @@ sub init {
     $eh->register_option('gapps', 'update-webclip', $meta{'domain'});
     $eh->register_option('gapps', 'update-webclip', $meta{'enabled'}, "req");
     $eh->register_task('gapps', 'update-webclip', \&gapps_update_webclip);
+
+    # gapps update-forwarding
+    $eh->register_action('gapps', 'update-forwarding', "Update fowarding");
+    $eh->register_option('gapps', 'update-forwarding', $meta{'username'}, 'req');
+    $eh->register_option('gapps', 'update-forwarding', $meta{'domain'});
+    $eh->register_option('gapps', 'update-forwarding', $meta{'enabled'}, 'req');
+    $eh->register_option('gapps', 'update-forwarding', $meta{'fwd-to'});
+    $eh->register_option('gapps', 'update-forwarding', $meta{'fwd-action'});
+    $eh->register_task('gapps', 'update-forwarding', \&gapps_update_forwarding);
+
 }
 
 ## Email actions
@@ -854,6 +870,26 @@ sub gapps_update_webclip {
     $settings->debug(1) if $debug;
 
     $settings->UpdateWebClip($opts->{'enabled'});
+
+    return undef;
+}
+
+sub gapps_update_forwarding {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+
+    $settings->debug(1) if $debug;
+
+    $settings->UpdateForwarding($opts->{'enabled'},
+				$opts->{'forward-to'},
+				$opts->{'action'}
+				);
 
     return undef;
 }
