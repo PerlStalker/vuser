@@ -119,7 +119,47 @@ override 'UpdateWebClip' => sub {
     return $self->google->Request('PUT', $url, $post);
 };
 
-override 'UpdateForwarding' => sub {};
+override 'UpdateForwarding' => sub {
+    my $self = shift;
+    my $enable = shift;
+    my $forward_to = shift;
+    my $action = shift;
+
+    $action = uc($action);
+
+    $self->google()->Login();
+    my $url = $self->base_url().$self->google->domain().'/'.$self->user().'/forwarding';
+
+    my $post = '<?xml version="1.0" encoding="utf-8"?>';
+    $post .= '<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">';
+
+    if (defined $enable) {
+	$post .= sprintf('<apps:property name="enable" value="%s" />',
+			 $enable ? 'true' : 'false');
+    }
+
+    if ($enable) {
+	if ($forward_to) {
+	    $post .= "<apps:property name='forwardTo' value='$forward_to' />";
+	}
+
+	if ($action) {
+	    if ($action ne 'KEEP'
+		and $action ne 'ARCHIVE'
+		and $action ne 'DELETE'
+		) {
+		die "action must be KEEP, ARCHIVE or DELETE";
+	    }
+
+	    $post .= "<apps:property name='action' value='$action' />";
+	}
+    }
+
+    $post .= '</atom:entry>';
+
+    return $self->google->Request('PUT', $url, $post);
+};
+
 override 'UpdatePOP' => sub {};
 override 'UpdateIMAP' => sub {};
 override 'UpdateVacationResponder' => sub {};
