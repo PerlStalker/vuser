@@ -91,7 +91,10 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 					    'description' => 'This address will be included as the reply-to address'),
 	     'make_default' => VUser::Meta->new('name' => 'make-default',
 						'type' => 'boolean',
-						'description' => 'Make this the default to send-as')
+						'description' => 'Make this the default to send-as'),
+	     'enabled' => VUser::Meta->new('name' => 'enabled',
+					   'type' => 'boolean',
+					   'description' => 'Enable this setting. Use --no-enabled to disable'),
 	     );
 
 our %mail_meta;
@@ -330,6 +333,13 @@ sub init {
     $eh->register_option('gapps', 'create-sendas', $meta{'reply_to'});
     $eh->register_option('gapps', 'create-sendas', $meta{'make_default'});
     $eh->register_task('gapps', 'create-sendas', \&gapps_create_sendas);
+
+    # gapps update-webclip
+    $eh->register_action('gapps', 'update-webclip', "Update WebClip");
+    $eh->register_option('gapps', 'update-webclip', $meta{'username'}, 'req');
+    $eh->register_option('gapps', 'update-webclip', $meta{'domain'});
+    $eh->register_option('gapps', 'update-webclip', $meta{'enabled'}, "req");
+    $eh->register_task('gapps', 'update-webclip', \&gapps_update_webclip);
 }
 
 ## Email actions
@@ -827,6 +837,23 @@ sub gapps_create_sendas {
 				 $opts->{'address'},
 				 $opts->{'reply-to'},
 				 $opts->{'make-default'});
+
+    return undef;
+}
+
+sub gapps_update_webclip {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+
+    $settings->debug(1) if $debug;
+
+    $settings->UpdateWebClip($opts->{'enabled'});
 
     return undef;
 }
