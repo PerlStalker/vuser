@@ -35,6 +35,9 @@ sub CreateFilter {
 sub CreateSendAsAlias {
 }
 
+sub UpdateWebClip {
+}
+
 sub UpdateForwarding {
 }
 

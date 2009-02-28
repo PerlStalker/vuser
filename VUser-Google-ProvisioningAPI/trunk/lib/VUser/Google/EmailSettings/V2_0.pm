@@ -102,6 +102,23 @@ override 'CreateSendAsAlias' => sub {
 
 };
 
+override 'UpdateWebClip' => sub {
+    my $self = shift;
+    my $enable = shift;
+
+    $self->google()->Login();
+    my $url = $self->base_url().$self->google->domain().'/'.$self->user().'/webclip';
+
+    my $post = '<?xml version="1.0" encoding="utf-8"?>';
+    $post .= '<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">';
+    $post .= sprintf('<apps:property name="enable" value="%s" />',
+		     $enable ? 'true' : 'false'
+		     );
+    $post .= '</atom:entry>';
+
+    return $self->google->Request('PUT', $url, $post);
+};
+
 override 'UpdateForwarding' => sub {};
 override 'UpdatePOP' => sub {};
 override 'UpdateIMAP' => sub {};
