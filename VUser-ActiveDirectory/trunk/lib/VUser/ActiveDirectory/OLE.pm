@@ -22,26 +22,28 @@ our $c_sec = 'Extension ActiveDirectory';
 sub c_sec { return $c_sec; };
 sub depends { qw(ActiveDirectory); }
 
+sub unload {}
+
 sub init {
-	my $eh = shift;
-	my %cfg = @_;
-	
-	$log = VUser::ActiveDirectory::Log();
-	
-	## aduser
-	$eh->register_task('aduser', 'add', \&aduser_add);
-	$eh->register_task('aduser', 'del', \&aduser_del);
-	$eh->register_task('aduser', 'mod', \&aduser_mod);
-	$eh->register_task('aduser', 'enable', \&aduser_enable_disable);
-	$eh->register_task('aduser', 'disable', \&aduser_enable_disable);
-	$eh->register_task('aduser', 'change-password', \&aduser_changepw);
+    my $eh = shift;
+    my %cfg = @_;
+        
+    $log = VUser::ActiveDirectory::Log();
+    
+    ## aduser
+    $eh->register_task('aduser', 'add', \&aduser_add);
+    $eh->register_task('aduser', 'del', \&aduser_del);
+    $eh->register_task('aduser', 'mod', \&aduser_mod);
+    $eh->register_task('aduser', 'enable', \&aduser_enable_disable);
+    $eh->register_task('aduser', 'disable', \&aduser_enable_disable);
+    $eh->register_task('aduser', 'change-password', \&aduser_changepw);
     $eh->register_task('aduser', 'list', \&aduser_list);
     
     ## adgroup
     $eh->register_task('adgroup', 'add', \&adgroup_add);
     $eh->register_task('adgroup', 'del', \&adgroup_del);
     $eh->register_task('adgroup', 'mod', \&adgroup_mod);
-    $eh->register_task('adgroup', 'adduser', \&adgroup_aduser);
+    $eh->register_task('adgroup', 'adduser', \&adgroup_adduser);
     $eh->register_task('adgroup', 'rmuser', \&adgroup_rmuser);
     $eh->register_task('adgroup', 'list', \&adgroup_list);
     $eh->register_task('adgroup', 'members', \&adgroup_members);
@@ -279,7 +281,144 @@ sub aduser_changepw {
     return;
 }
 
-sub unload {}
+sub aduser_list {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($VUser::ActiveDirectory::meta{'user'}); # username
+    $rs->add_meta(VUser::Meta->new('name' => 'cn',
+				   'description' => 'User\'s canonical name',
+				   'type' => 'string')); # cn
+    if ($opts->{dayssincelogon}) {
+	$rs->add_meta(VUser::Meta->new('name' => 'lastlogintime',
+				       'description' => 'Posix timestamp of last log in time',
+				       'type' => 'integer'))
+    }
+
+    my $ole_conn = Win32::OLE->new('ADODB.Connection');
+    $ole_conn->{Provider} = 'ADsDSOObject';
+    $ole_conn->Open;
+
+    my $ole_comm = Win32::OLE->new('ADODB.Command');
+    $ole_comm->{ActiveConnection} = $ole_conn;
+    $ole_comm->Properties->{'Page Size'} = 100;
+
+    my $ad_server = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'ad server'});
+    my $domain = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'domain'});
+    my $ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'user ou'});
+
+    $domain = $opts->{'domain'} if $opts->{'domain'};
+    $ou = $opts->{'ou'} if $opts->{'ou'};
+    my $dn = domain2ldap($domain);
+
+    my $ADsPath = "LDAP://";
+    if ($ad_server) {
+	$ADsPath .= "$ad_server/";
+    } elsif ($domain) {
+	$ADsPath .= "$domain/";
+    }
+    $ADsPath .= "$ou,$dn";
+
+    my $query = "<$ADsPath>;";
+    $query .= "(&(objectclass=user)";
+    $query .= "(objectcategory=Person)";
+
+    if ($opts->{onlydisabled}) {
+	$query .= "(useraccountcontrol:1.2.840.113556.1.4.803:=2)";
+    } elsif ($opts->{showdisabled}) {
+	# noop
+    } else {
+	$query .= "(!useraccountcontrol:1.2.840.113556.1.4.803:=2)";
+    }
+
+    if ($opts->{dayssincelogon}) {
+	my $past_secs = time - 86400 * $opts->{dayssincelogon};
+	my $bi_lastlogon = VUser::ActiveDirectory::PosixTimestamp2msTimestamp($past_secs);
+	$query .= "(lastLogonTimestamp<=$bi_lastlogon)";
+    }
+
+    $query .= ");";
+    $query .= "lastLogonTimestamp,cn,distinguishedName;";
+    $query .= "subtree";
+
+    $log->log(LOG_DEBUG, "AD Query: $query");
+
+    $ole_comm->{CommandText} = $query;
+    my $res = $ole_comm->Execute($query);
+    die Win32::OLE->LastError() if Win32::OLE->LastError();
+    while (not $res->EOF) {
+	# pull out fields
+	my %data = ('user' => $res->Fields('distinguishedName')->value,
+		    'cn' => $res->Fields('cn')->value
+	    );
+
+	#$log->log(LOG_DEBUG, "Found user: %s", $data{'cn'});
+
+	if ($opts->{dayssincelogon}) {
+	    $data{'lastlogintime'} = undef;
+	    $Win32::OLE::Warn = 3;
+
+	    my $dom = defined $ad_server ? $ad_server : $domain;
+
+	    my $user = Win32::OLE->GetObject("LDAP://$dom/$data{user}");
+	    
+	    my $timestamp = VUser::ActiveDirectory::msTimestamp2PosixTimestamp($user->{'lastlogontimestamp'});
+	    #print "time:".$timestamp;
+	    #print " ", scalar localtime($timestamp);
+	    #print "\n";
+
+	    $log->log(LOG_DEBUG, "User %s last logged in at %s",
+		      $data{'user'},
+		      $timestamp);
+
+	    $data{'lastlogintime'} = $timestamp;
+	}
+
+	$rs->add_data(\%data); # Add user to result set
+
+	#last;
+	$res->MoveNext; # proceed to next record
+    }
+
+    return $rs;
+}
+
+## adgroup
+
+sub adgroup_add {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $ad_server = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'ad server'});
+    my $domain = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'domain'});
+    my $group_ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'group ou'});
+    
+    $domain = $opts->{'domain'} if $opts->{'domain'};
+    $group_ou = $opts->{'ou'} if $opts->{'ou'};
+}
+
+sub adgroup_del {
+    my ($cfg, $opts, $action, $eh) = @_;
+}
+
+sub adgroup_mod {
+    my ($cfg, $opts, $action, $eh) = @_;
+}
+
+sub adgroup_adduser {
+    my ($cfg, $opts, $action, $eh) = @_;
+}
+
+sub adgroup_rmuser {
+    my ($cfg, $opts, $action, $eh) = @_;
+}
+
+sub adgroup_list {
+    my ($cfg, $opts, $action, $eh) = @_;
+}
+
+sub adgroup_members {
+    my ($cfg, $opts, $action, $eh) = @_;
+}
 
 1;
 

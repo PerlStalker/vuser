@@ -9,11 +9,13 @@ WriteMakefile(
 	      NAME            => 'vuser',
 	      VERSION_FROM    => 'lib/VUser/ActiveDirectory',
 	      INSTALLSCRIPT   => '$(PREFIX)/sbin',
-	      PREREQ_PM       => {'Win320::OLE' => 0,
+	      PREREQ_PM       => {'Win32::OLE' => 0,
 	      					  'VUser::ExtLib' => 0,
 	      					  'VUser::Log' => 0,
 	      					  'VUser::Meta' => 0,
-	      					  'VUser::ResultSet' => 0
+	      					  'VUser::ResultSet' => '0.5.0',
+				  'VUser::ExtHandler' => '0.5.0',
+				  'Math::BigInt' => 0
 				  }
 	      );
 

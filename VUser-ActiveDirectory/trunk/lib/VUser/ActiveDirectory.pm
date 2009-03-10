@@ -87,66 +87,66 @@ sub Log {
 }
 
 sub init {
-	my $eh = shift;
-	my %cfg = @_;
+    my $eh = shift;
+    my %cfg = @_;
+    
+    $log = Log();
+    
+    # aduser
+    $eh->register_keyword('aduser', 'Manage AD users');
+    
+    # aduser add
+    $eh->register_action('aduser', 'add', 'Add an AD user');
+    $eh->register_option('aduser', 'add', $meta{'user'}, 1);
+    $eh->register_option('aduser', 'add', $meta{'password'});
+    $eh->register_option('aduser', 'add', $meta{'domain'});
+    $eh->register_option('aduser', 'add', $meta{'ou'});
+    $eh->register_option('aduser', 'add', $meta{'fname'});
+    $eh->register_option('aduser', 'add', $meta{'lname'});
+    $eh->register_option('aduser', 'add', $meta{'email'});
+    $eh->register_option('aduser', 'add', $meta{'homedir'});
+    $eh->register_option('aduser', 'add', $meta{'homedrive'});
+    $eh->register_option('aduser', 'add', $meta{'createhome'});
+    
+    # aduser del
+    $eh->register_action('aduser', 'del', 'Delete an AD user');
+    $eh->register_option('aduser', 'del', $meta{'user'}, 1);
+    $eh->register_option('aduser', 'del', $meta{'domain'});
+    $eh->register_option('aduser', 'del', $meta{'ou'});
+    $eh->register_option('aduser', 'del', $meta{'deletehome'});
 	
-	$log = Log();
-	
-	# aduser
-	$eh->register_keyword('aduser', 'Manage AD users');
-	
-	# aduser add
-	$eh->register_action('aduser', 'add', 'Add an AD user');
-	$eh->register_option('aduser', 'add', $meta{'user'}, 1);
-	$eh->register_option('aduser', 'add', $meta{'password'});
-	$eh->register_option('aduser', 'add', $meta{'domain'});
-	$eh->register_option('aduser', 'add', $meta{'ou'});
-	$eh->register_option('aduser', 'add', $meta{'fname'});
-	$eh->register_option('aduser', 'add', $meta{'lname'});
-	$eh->register_option('aduser', 'add', $meta{'email'});
-	$eh->register_option('aduser', 'add', $meta{'homedir'});
-	$eh->register_option('aduser', 'add', $meta{'homedrive'});
-	$eh->register_option('aduser', 'add', $meta{'createhome'});
-	
-	# aduser del
-	$eh->register_action('aduser', 'del', 'Delete an AD user');
-	$eh->register_option('aduser', 'del', $meta{'user'}, 1);
-	$eh->register_option('aduser', 'del', $meta{'domain'});
-	$eh->register_option('aduser', 'del', $meta{'ou'});
-	$eh->register_option('aduser', 'del', $meta{'deletehome'});
-	
-	# aduser mod
-	$eh->register_action('aduser', 'mod', 'Modify an AD user');
-	$eh->register_option('aduser', 'mod', $meta{'user'}, 1);
-	$eh->register_option('aduser', 'mod', $meta{'domain'});
-	$eh->register_option('aduser', 'mod', $meta{'ou'});
-	$eh->register_option('aduser', 'add', $meta{'fname'});
-	$eh->register_option('aduser', 'add', $meta{'lname'});
-	$eh->register_option('aduser', 'add', $meta{'email'});
-	$eh->register_option('aduser', 'mod', $meta{'user'}->new('name' => 'newuser'));
-	# For now, the user cannot change domains
-	# $eh->register_option('aduser', 'mod', $meta{'domain'}->new('name' => 'newdomain'));
-	$eh->register_option('aduser', 'mod', $meta{'ou'}->new('name' => 'newou'));
+    # aduser mod
+    $eh->register_action('aduser', 'mod', 'Modify an AD user');
+    $eh->register_option('aduser', 'mod', $meta{'user'}, 1);
+    $eh->register_option('aduser', 'mod', $meta{'domain'});
+    $eh->register_option('aduser', 'mod', $meta{'ou'});
+    $eh->register_option('aduser', 'add', $meta{'fname'});
+    $eh->register_option('aduser', 'add', $meta{'lname'});
+    $eh->register_option('aduser', 'add', $meta{'email'});
+    $eh->register_option('aduser', 'mod', $meta{'user'}->new('name' => 'newuser'));
+    # For now, the user cannot change domains
+    # $eh->register_option('aduser', 'mod', $meta{'domain'}->new('name' => 'newdomain'));
+    $eh->register_option('aduser', 'mod', $meta{'ou'}->new('name' => 'newou'));
     # More options
     
     # aduser enable
-	$eh->register_action('aduser', 'enable', 'Enable an AD user');
-	$eh->register_option('aduser', 'enable', $meta{'user'}, 1);
-	$eh->register_option('aduser', 'enable', $meta{'domain'});
-	$eh->register_option('aduser', 'enable', $meta{'ou'});
-
+    $eh->register_action('aduser', 'enable', 'Enable an AD user');
+    $eh->register_option('aduser', 'enable', $meta{'user'}, 1);
+    $eh->register_option('aduser', 'enable', $meta{'domain'});
+    $eh->register_option('aduser', 'enable', $meta{'ou'});
+    
     # aduser disable
-	$eh->register_action('aduser', 'disable', 'Disable an AD user');
-	$eh->register_option('aduser', 'disable', $meta{'user'}, 1);
-	$eh->register_option('aduser', 'disable', $meta{'domain'});
-	$eh->register_option('aduser', 'disable', $meta{'ou'});
+    $eh->register_action('aduser', 'disable', 'Disable an AD user');
+    $eh->register_option('aduser', 'disable', $meta{'user'}, 1);
+    $eh->register_option('aduser', 'disable', $meta{'domain'});
+    $eh->register_option('aduser', 'disable', $meta{'ou'});
     
     # aduser change-password
     $eh->register_action('aduser', 'change-password', 'Change an AD user\'s password');
-	$eh->register_option('aduser', 'change-password', $meta{'user'}, 1);
-	$eh->register_option('aduser', 'change-password', $meta{'domain'});
-	$eh->register_option('aduser', 'change-password', $meta{'ou'});
-	$eh->register_option('aduser', 'change-password', $meta{'password'}, 1);
+    $eh->register_option('aduser', 'change-password', $meta{'user'}, 1);
+    $eh->register_option('aduser', 'change-password', $meta{'domain'});
+    $eh->register_option('aduser', 'change-password', $meta{'ou'});
+    $eh->register_option('aduser', 'change-password', $meta{'password'}, 1);
 
     # aduser list
     $eh->register_action('aduser', 'list', 'List AD users');
@@ -159,7 +159,7 @@ sub init {
                                                             'type' => 'boolean',
                                                             'description' => 'Only show disabled accounts'));
     $eh->register_option('aduser', 'list', VUser::Meta->new('name' => 'dayssincelogon',
-                                                            'type' => 'boolean',
+                                                            'type' => 'integer',
                                                             'description' => 'Number of says since last logon'));
     $eh->register_option('aduser', 'list', $meta{'recurse'});
 
@@ -230,7 +230,7 @@ sub unload {}
 
 sub domain2ldap {
     my $domain = shift;
-    my $dn = join ',', map { "dc=$_" } split /\./, $domain;
+    my $dn = join ',', map { "dc=$_" } split m!\.!, $domain;
     return $dn;
 }
 
@@ -242,6 +242,30 @@ sub aduser_help {
 sub adgroup_help {
     my ($cfg, $opts, $action, $eh) = @_;
     $eh->run_tasks('help', 'adgroup', $cfg);
+}
+
+## Utils
+sub msTimestamp2PosixTimestamp {
+    my $timestamp = shift;
+    my $secs = (( unpack('L', pack ('L', $timestamp->{LowPart}))
+		  + (unpack ('L', pack ('L', $timestamp->{HighPart}))
+		     * (2 ** 32))) / 10_000_000) - 11_644_473_600;
+    return $secs;
+}
+
+sub PosixTimestamp2msTimestamp {
+    my $timestamp = shift;
+
+    use Math::BigInt lib => 'GMP';
+
+    my $bi_lastlogon = Math::BigInt->new($timestamp);
+    #$log->log(LOG_DEBUG, "Step 1: $bi_lastlogon");
+    # Convert to unix timestamp
+    $bi_lastlogon = $bi_lastlogon->bmul('10_000_000');
+    #$log->log(LOG_DEBUG, "Step 2: $bi_lastlogon");
+    $bi_lastlogon = $bi_lastlogon->badd('116_444_736_000_000_000');
+    #$log->log(LOG_DEBUG, "Step 3: $bi_lastlogon");
+    return $bi_lastlogon;
 }
 
 1;
