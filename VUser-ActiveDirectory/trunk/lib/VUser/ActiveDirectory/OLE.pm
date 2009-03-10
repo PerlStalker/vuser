@@ -394,6 +394,23 @@ sub adgroup_add {
     
     $domain = $opts->{'domain'} if $opts->{'domain'};
     $group_ou = $opts->{'ou'} if $opts->{'ou'};
+
+    my $group = $opts->{'group'};
+
+    my $ad_str = defined $ad_server ? $ad_server : $domain;
+
+    my $dn = domain2ldap($domain);
+    my $ADsPath = "LDAP://$ad_str/$group_ou,$dn";
+
+    my $ou_obj = Win32::OLE->GetObject("$ADsPath")
+        or die "Unable to get $ADsPath: ".Win32::OLE->LastError()."\n";
+
+    my $group_obj = $ou_obj->Create('group', "cn=$group");
+    #$group_obj->Put("groupType", ADS_GROUP_TYPE_SECURITY_GROUP
+    $group_obj->Put('sAMAccountName', $group);
+    $group_obj->SetInfo();
+
+    return undef;
 }
 
 sub adgroup_del {

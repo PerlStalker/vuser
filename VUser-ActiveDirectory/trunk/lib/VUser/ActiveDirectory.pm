@@ -161,7 +161,7 @@ sub init {
     $eh->register_option('aduser', 'list', VUser::Meta->new('name' => 'dayssincelogon',
                                                             'type' => 'integer',
                                                             'description' => 'Number of says since last logon'));
-    $eh->register_option('aduser', 'list', $meta{'recurse'});
+    #$eh->register_option('aduser', 'list', $meta{'recurse'});
 
     # adgroup help
     $eh->register_action('aduser', 'help', 'View aduser help');
