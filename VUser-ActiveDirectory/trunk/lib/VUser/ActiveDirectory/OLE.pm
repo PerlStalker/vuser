@@ -415,6 +415,28 @@ sub adgroup_add {
 
 sub adgroup_del {
     my ($cfg, $opts, $action, $eh) = @_;
+
+    my $ad_server = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'ad server'});
+    my $domain = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'domain'});
+    my $group_ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'group ou'});
+    
+    $domain = $opts->{'domain'} if $opts->{'domain'};
+    $group_ou = $opts->{'ou'} if $opts->{'ou'};
+    
+    my $dn = domain2ldap($domain);
+    my $ADsPath = "LDAP://";
+    $ADsPath .= "$ad_server/" if $ad_server;
+    $ADsPath .= $dn;
+
+    my $ad = Win32::OLE->GetObject($ADsPath)
+        or die "Unable to get $ADsPath: ".Win32::OLE->LastError()."\n";
+
+    my $group = $opts->{'group'};
+
+    $ad->Delete('group', "cn=$group,$group_ou");
+    die "OLE Error: ".Win32::OLE->LastError() if Win32::OLE->LastError();
+    
+    return undef;
 }
 
 sub adgroup_mod {
