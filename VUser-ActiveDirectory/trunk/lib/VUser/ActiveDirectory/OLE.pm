@@ -514,6 +514,50 @@ sub adgroup_list {
 
 sub adgroup_members {
     my ($cfg, $opts, $action, $eh) = @_;
+
+    my $ad_server = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'ad server'});
+    my $domain = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'domain'});
+    my $group_ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'group ou'});
+    
+    $domain = $opts->{'domain'} if $opts->{'domain'};
+    $group_ou = $opts->{'ou'} if $opts->{'ou'};
+
+    my $dn = domain2ldap($domain);
+    my $ADsPath = "LDAP://";
+    if ($ad_server) {
+	$ADsPath .= "$ad_server";
+    } elsif ($domain) {
+	$ADsPath .= $domain;
+    }
+    $ADsPath .= '/';
+    #$ADsPath .= $dn;
+
+    my $group = $opts->{'group'};
+
+    my $group_obj = Win32::OLE->GetObject($ADsPath."cn=$group,$group_ou,$dn")
+        or die "Unable to get ${ADsPath}cn=$group,$group_ou,$dn: ".Win32::OLE->LastError()."\n";
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta(VUser::Meta->new('name' => 'class',
+				   'description' => 'Object class',
+				   'type' => 'string'));
+    $rs->add_meta(VUser::Meta->new('name' => 'account-name',
+				   'description' => 'Account name',
+				   'type' => 'string'));
+    $rs->add_meta(VUser::Meta->new('name' => 'ads-path',
+				   'description' => 'Active Directory path',
+				   'type' => 'string'));
+
+    foreach my $obj (in $group_obj->Members) {
+	$log->log(LOG_DEBUG, "Found class: %s name: %s path: %s",
+		  $obj->Class,
+		  $obj->sAMAccountName,
+		  $obj->ADsPath
+	    );
+	$rs->add_data([$obj->Class, $obj->sAMAccountName, $obj->ADsPath]);
+    }
+
+    return $rs;
 }
 
 1;
