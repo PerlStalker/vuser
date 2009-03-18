@@ -445,10 +445,67 @@ sub adgroup_mod {
 
 sub adgroup_adduser {
     my ($cfg, $opts, $action, $eh) = @_;
+
+    my $ad_server = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'ad server'});
+    my $domain = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'domain'});
+    my $group_ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'group ou'});
+    my $user_ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'user ou'});
+    
+    $domain = $opts->{'domain'} if $opts->{'domain'};
+    $group_ou = $opts->{'ou'} if $opts->{'ou'};
+    $user_ou = $opts->{'userou'} if $opts->{'userou'};
+
+    my $dn = domain2ldap($domain);
+    my $ADsPath = "LDAP://";
+    if ($ad_server) {
+	$ADsPath .= "$ad_server";
+    } elsif ($domain) {
+	$ADsPath .= $domain;
+    }
+    $ADsPath .= '/';
+    #$ADsPath .= $dn;
+
+    my $group = $opts->{'group'};
+    my $user = $opts->{'user'};
+
+    my $group_obj = Win32::OLE->GetObject($ADsPath."cn=$group,$group_ou,$dn")
+        or die "Unable to get ${ADsPath}cn=$group,$group_ou,$dn: ".Win32::OLE->LastError()."\n";
+
+    $group_obj->Add($ADsPath."cn=$user,$user_ou,$dn");
+
+    return;
 }
 
 sub adgroup_rmuser {
     my ($cfg, $opts, $action, $eh) = @_;
+    my $ad_server = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'ad server'});
+    my $domain = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'domain'});
+    my $group_ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'group ou'});
+    my $user_ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'user ou'});
+    
+    $domain = $opts->{'domain'} if $opts->{'domain'};
+    $group_ou = $opts->{'ou'} if $opts->{'ou'};
+    $user_ou = $opts->{'userou'} if $opts->{'userou'};
+
+    my $dn = domain2ldap($domain);
+    my $ADsPath = "LDAP://";
+    if ($ad_server) {
+	$ADsPath .= "$ad_server";
+    } elsif ($domain) {
+	$ADsPath .= $domain;
+    }
+    $ADsPath .= '/';
+    #$ADsPath .= $dn;
+
+    my $group = $opts->{'group'};
+    my $user = $opts->{'user'};
+
+    my $group_obj = Win32::OLE->GetObject($ADsPath."cn=$group,$group_ou,$dn")
+        or die "Unable to get ${ADsPath}cn=$group,$group_ou,$dn: ".Win32::OLE->LastError()."\n";
+
+    $group_obj->Remove($ADsPath."cn=$user,$user_ou,$dn");
+
+    return;
 }
 
 sub adgroup_list {

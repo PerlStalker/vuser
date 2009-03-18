@@ -197,7 +197,7 @@ sub init {
     $eh->register_option('adgroup', 'adduser', $meta{'user'}, 1);
     $eh->register_option('adgroup', 'adduser', $meta{'domain'});
     $eh->register_option('adgroup', 'adduser', $meta{'ou'});
-    $eh->register_option('adgroup', 'adduser', $meta{'domain'}->new('name' => 'userdomain'));
+    #$eh->register_option('adgroup', 'adduser', $meta{'domain'}->new('name' => 'userdomain'));
     $eh->register_option('adgroup', 'adduser', $meta{'ou'}->new('name' => 'userou'));
 
     # adgroup rmuser
@@ -206,7 +206,7 @@ sub init {
     $eh->register_option('adgroup', 'rmuser', $meta{'user'}, 1);
     $eh->register_option('adgroup', 'rmuser', $meta{'domain'});
     $eh->register_option('adgroup', 'rmuser', $meta{'ou'});
-    $eh->register_option('adgroup', 'rmuser', $meta{'domain'}->new('name' => 'userdomain'));
+    #$eh->register_option('adgroup', 'rmuser', $meta{'domain'}->new('name' => 'userdomain'));
     $eh->register_option('adgroup', 'rmuser', $meta{'ou'}->new('name' => 'userou'));
     
     # adgroup list
