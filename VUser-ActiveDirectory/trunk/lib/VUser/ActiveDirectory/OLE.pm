@@ -510,6 +510,43 @@ sub adgroup_rmuser {
 
 sub adgroup_list {
     my ($cfg, $opts, $action, $eh) = @_;
+    my $ad_server = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'ad server'});
+    my $domain = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'domain'});
+    my $group_ou = strip_ws($cfg->{VUser::ActiveDirectory::c_sec()}{'group ou'});
+    
+    $domain = $opts->{'domain'} if $opts->{'domain'};
+    $group_ou = $opts->{'ou'} if $opts->{'ou'};
+
+    my $dn = domain2ldap($domain);
+    my $ADsPath = "LDAP://";
+    if ($ad_server) {
+	$ADsPath .= "$ad_server";
+    } elsif ($domain) {
+	$ADsPath .= $domain;
+    }
+    $ADsPath .= '/';
+
+    my $ad = Win32::OLE->GetObject($ADsPath."$group_ou,$dn")
+        or die "Unable to get ${ADsPath}$group_ou,$dn: ".Win32::OLE->LastError()."\n";
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta(VUser::Meta->new('name' => 'group-name',
+				   'description' => 'Group name',
+				   'type' => 'string'));
+    $rs->add_meta(VUser::Meta->new('name' => 'ads-path',
+				   'description' => 'Active Directory path',
+				   'type' => 'string'));
+
+    foreach my $obj (in $ad) {
+	if ($obj->Class eq 'group') {
+	    $log->log(LOG_DEBUG, "Found group: %s path %s",
+		      $obj->sAMAccountName,
+		      $obj->ADsPath);
+	    $rs->add_data([$obj->sAMAccountName, $obj->ADsPath]);
+	}
+    }
+
+    return $rs;
 }
 
 sub adgroup_members {
