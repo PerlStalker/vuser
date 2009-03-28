@@ -100,7 +100,13 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 					  'description' => 'Email address to forward to'),
 	     'fwd-action' => VUser::Meta->new('name' => 'action',
 					      'type' => 'string',
-					      'description' => 'What to do with email after forwarding. (KEEP, ARCHIVE, DELETE)')
+					      'description' => 'What to do with email after forwarding. (KEEP, ARCHIVE, DELETE)'),
+	     'pop-enable-for' => VUser::Meta->new('name' => 'enable-for',
+						  'type' => 'string',
+						  'description' => 'Enable for all mail or from now on. (ALL, NOWON)'),
+	     'pop-action' => VUser::Meta->new('name' => 'action',
+					      'type' => 'string',
+					      'description' => 'What to do with email after retrieval. (KEEP, ARCHIVE, DELETE)')
 	     );
 
 our %mail_meta;
@@ -356,6 +362,14 @@ sub init {
     $eh->register_option('gapps', 'update-forwarding', $meta{'fwd-action'});
     $eh->register_task('gapps', 'update-forwarding', \&gapps_update_forwarding);
 
+    # gapps | update-pop
+    $eh->register_action('gapps', 'update-pop', 'Update POP settings');
+    $eh->register_option('gapps', 'update-pop', $meta{'username'}, 'req');
+    $eh->register_option('gapps', 'update-pop', $meta{'domain'});
+    $eh->register_option('gapps', 'update-pop', $meta{'enabled'}, 'req');
+    $eh->register_option('gapps', 'update-pop', $meta{'pop-enable-for'});
+    $eh->register_option('gapps', 'update-pop', $meta{'pop-action'});
+    $eh->register_task('gapps', 'update-pop', \&gapps_update_pop);
 }
 
 ## Email actions
@@ -890,6 +904,33 @@ sub gapps_update_forwarding {
 				$opts->{'forward-to'},
 				$opts->{'action'}
 				);
+
+    return undef;
+}
+
+sub gapps_update_pop {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+
+    $settings->debug(1) if $debug;
+
+    my $for;
+    if (uc($opts->{'enable-for'}) eq 'ALL') {
+	$for = 'ALL_MAIL';
+    } elsif (uc($opts->{'enable-for'}) eq 'NOWON') {
+	$for = 'MAIL_FROM_NOW_ON';
+    }
+
+    $settings->UpdatePOP($opts->{'enabled'},
+			 $for,
+			 $opts->{'action'}
+			 );
 
     return undef;
 }
