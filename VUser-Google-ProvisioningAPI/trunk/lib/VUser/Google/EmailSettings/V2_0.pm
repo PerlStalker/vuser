@@ -166,7 +166,6 @@ override 'UpdatePOP' => sub {
     my $enable_for = shift;
     my $action = shift;
 
-
     $action = uc($action);
 
     $self->google()->Login();
@@ -203,7 +202,26 @@ override 'UpdatePOP' => sub {
 
 };
 
-override 'UpdateIMAP' => sub {};
+override 'UpdateIMAP' => sub {
+    my $self = shift;
+    my $enable = shift;
+
+    $self->google()->Login();
+    my $url = $self->base_url().$self->google->domain().'/'.$self->user().'/imap';
+
+    my $post = '<?xml version="1.0" encoding="utf-8"?>';
+    $post .= '<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">';
+
+    if (defined $enable) {
+	$post .= sprintf('<apps:property name="enable" value="%s" />',
+			 $enable ? 'true' : 'false');
+    }
+
+    $post .= '</atom:entry>';
+
+    return $self->google->Request('PUT', $url, $post);
+
+};
 override 'UpdateVacationResponder' => sub {};
 override 'UpdateSignature' => sub {};
 override 'UpdateLanguage' => sub {};
