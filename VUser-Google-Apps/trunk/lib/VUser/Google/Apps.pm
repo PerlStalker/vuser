@@ -370,6 +370,13 @@ sub init {
     $eh->register_option('gapps', 'update-pop', $meta{'pop-enable-for'});
     $eh->register_option('gapps', 'update-pop', $meta{'pop-action'});
     $eh->register_task('gapps', 'update-pop', \&gapps_update_pop);
+
+    # gapps | update-imap
+    $eh->register_action('gapps', 'update-imap', 'Update IMAP settings');
+    $eh->register_option('gapps', 'update-imap', $meta{'username'}, 'req');
+    $eh->register_option('gapps', 'update-imap', $meta{'domain'});
+    $eh->register_option('gapps', 'update-imap', $meta{'enabled'}, 'req');
+    $eh->register_task('gapps', 'update-imap', \&gapps_update_imap);
 }
 
 ## Email actions
@@ -931,6 +938,24 @@ sub gapps_update_pop {
 			 $for,
 			 $opts->{'action'}
 			 );
+
+    return undef;
+}
+
+sub gapps_update_imap {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+
+    $settings->debug(1) if $debug;
+
+
+    $settings->UpdateIMAP($opts->{'enabled'});
 
     return undef;
 }
