@@ -20,6 +20,7 @@ use Regexp::Common qw /number/;
 sub DEFAULT_PRIORITY { 10; }
 
 my $log;
+my $DEBUG = 0;
 
 sub new
 {
@@ -53,6 +54,8 @@ sub new
     bless $me, $class;
 
     #$me->load_extensions(%$cfg);
+
+    $DEBUG = $main::DEBUG if (defined $main::DEBUG);
 
     return $me;
 }
@@ -493,7 +496,7 @@ sub process_options {
     my $cfg = shift;
     my %opts = @_;
 
-    if ($main::DEBUG >= 1) {
+    if ($DEBUG >= 1) {
 	use Data::Dumper;
 	$log->log(LOG_DEBUG, 'Options: '. Dumper(\%opts));
     }
@@ -641,7 +644,7 @@ sub process_options {
 	die "Missing required option '$opt'.\n";
     }
 
-    if ($main::DEBUG >= 1) {
+    if ($DEBUG >= 1) {
 	use Data::Dumper;
 	$log->log(LOG_DEBUG, 'Real Options: '. Dumper(\%opts));
     }
