@@ -753,7 +753,7 @@ A description for this keyword that will be displayed by C<vuser help>
 Register a VUser::Meta object with the ExtHandler. Other extensions
 can access the object with C<get_meta()>.
 
-=over4
+=over
 
 =item $keyword
 
