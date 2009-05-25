@@ -116,6 +116,9 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 	     'vac-contacts' => VUser::Meta->new('name' => 'contacts-only',
 						'type' => 'bool',
 						'description' => 'Only send to known contacts. Use --no-contacts-only to disable.'),
+	     'signature' => VUser::Meta->new('name' => 'signature',
+					     'type' => 'string',
+					     'description' => 'New signature. Use empty string to unset'),
 	     );
 
 our %mail_meta;
@@ -396,6 +399,14 @@ sub init {
     $eh->register_option('gapps', 'vacation', $meta{'vac-msg'});
     $eh->register_option('gapps', 'vacation', $meta{'vac-contacts'});
     $eh->register_task('gapps', 'vacation', \&gapps_vacation);
+
+    # gapps | signature
+    $eh->register_action('gapps', 'signature', 'Update signature');
+    $eh->register_option('gapps', 'signature', $meta{'username'}, 1);
+    $eh->register_option('gapps', 'signature', $meta{'domain'});
+    $eh->register_option('gapps', 'signature', $meta{'signature'});
+    $eh->register_task('gapps', 'signature', \&gapps_signature);
+
 }
 
 ## Email actions
@@ -997,6 +1008,25 @@ sub gapps_vacation {
 	$opts->{'subject'},
 	$opts->{'message'},
 	$opts->{'contacts-only'}
+    );
+
+    return undef;
+}
+
+sub gapps_signature {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+
+    $settings->debug(1) if $debug;
+
+    $settings->UpdateSignature(
+	$opts->{'signature'},
     );
 
     return undef;
