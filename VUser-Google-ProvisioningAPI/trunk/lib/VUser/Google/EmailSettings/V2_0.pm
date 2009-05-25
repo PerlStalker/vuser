@@ -275,7 +275,29 @@ override 'UpdateSignature' => sub {
 
 };
 
-override 'UpdateLanguage' => sub {};
+override 'UpdateLanguage' => sub {
+    my $self = shift;
+    my $lang = shift;
+
+    $self->google->Login();
+    my $url = $self->base_url().$self->google->domain.'/'.$self->user.'/language';
+
+    if ($lang !~ /^\w\w(?:-\w\w)?/i) {
+	$lang = 'en-US';
+    }
+
+    my $post = '<?xml version="1.0" encoding="utf-8"?>';
+    $post .= '<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">';
+
+    $post .= sprintf('<apps:property name="language" value="%s" />',
+		     $lang ? $lang : '');
+
+    $post .= '</atom:entry>';
+
+    return $self->google->Request('PUT', $url, $post);
+
+};
+
 override 'UpdateGeneral' => sub {};
 
 no Moose;
