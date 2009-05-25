@@ -256,7 +256,25 @@ override 'UpdateVacationResponder' => sub {
     return $self->google->Request('PUT', $url, $post);
 };
 
-override 'UpdateSignature' => sub {};
+override 'UpdateSignature' => sub {
+    my $self = shift;
+    my $sig = shift;
+
+    $self->google->Login();
+    my $url = $self->base_url().$self->google->domain.'/'.$self->user.'/signature';
+
+    my $post = '<?xml version="1.0" encoding="utf-8"?>';
+    $post .= '<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">';
+
+    $post .= sprintf('<apps:property name="signature" value="%s" />',
+		     $sig ? $sig : '');
+
+    $post .= '</atom:entry>';
+
+    return $self->google->Request('PUT', $url, $post);
+
+};
+
 override 'UpdateLanguage' => sub {};
 override 'UpdateGeneral' => sub {};
 
