@@ -106,7 +106,16 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 						  'description' => 'Enable for all mail or from now on. (ALL, NOWON)'),
 	     'pop-action' => VUser::Meta->new('name' => 'action',
 					      'type' => 'string',
-					      'description' => 'What to do with email after retrieval. (KEEP, ARCHIVE, DELETE)')
+					      'description' => 'What to do with email after retrieval. (KEEP, ARCHIVE, DELETE)'),
+	     'vac-sub' => VUser::Meta->new('name' => 'subject',
+					   'type' => 'string',
+					   'description' => 'Subject for the vacation message'),
+	     'vac-msg' => VUser::Meta->new('name' => 'message',
+					   'type' => 'string',
+					   'description' => 'Message for the vacation message'),
+	     'vac-contacts' => VUser::Meta->new('name' => 'contacts-only',
+						'type' => 'bool',
+						'description' => 'Only send to known contacts. Use --no-contacts-only to disable.'),
 	     );
 
 our %mail_meta;
@@ -377,6 +386,16 @@ sub init {
     $eh->register_option('gapps', 'update-imap', $meta{'domain'});
     $eh->register_option('gapps', 'update-imap', $meta{'enabled'}, 'req');
     $eh->register_task('gapps', 'update-imap', \&gapps_update_imap);
+
+    # gapps | vacation
+    $eh->register_action('gapps', 'vacation', 'Update vacation message settings');
+    $eh->register_option('gapps', 'vacation', $meta{'username'}, 1);
+    $eh->register_option('gapps', 'vacation', $meta{'domain'});
+    $eh->register_option('gapps', 'vacation', $meta{'enabled'}, 'req');
+    $eh->register_option('gapps', 'vacation', $meta{'vac-sub'});
+    $eh->register_option('gapps', 'vacation', $meta{'vac-msg'});
+    $eh->register_option('gapps', 'vacation', $meta{'vac-contacts'});
+    $eh->register_task('gapps', 'vacation', \&gapps_vacation);
 }
 
 ## Email actions
@@ -956,6 +975,29 @@ sub gapps_update_imap {
 
 
     $settings->UpdateIMAP($opts->{'enabled'});
+
+    return undef;
+}
+
+sub gapps_vacation {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+
+    $settings->debug(1) if $debug;
+
+
+    $settings->UpdateVacationResponder(
+	$opts->{'enabled'},
+	$opts->{'subject'},
+	$opts->{'message'},
+	$opts->{'contacts-only'}
+    );
 
     return undef;
 }
