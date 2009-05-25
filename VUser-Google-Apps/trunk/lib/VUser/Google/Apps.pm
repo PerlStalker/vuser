@@ -119,6 +119,9 @@ our %meta = ('username' => VUser::Meta->new('name' => 'username',
 	     'signature' => VUser::Meta->new('name' => 'signature',
 					     'type' => 'string',
 					     'description' => 'New signature. Use empty string to unset'),
+	     'language' => VUser::Meta->new('name' => 'language',
+					    'type' => 'string',
+					    'description' => 'Language code'),
 	     );
 
 our %mail_meta;
@@ -406,6 +409,13 @@ sub init {
     $eh->register_option('gapps', 'signature', $meta{'domain'});
     $eh->register_option('gapps', 'signature', $meta{'signature'});
     $eh->register_task('gapps', 'signature', \&gapps_signature);
+
+    # gapps | language
+    $eh->register_action('gapps', 'language', 'Update language');
+    $eh->register_option('gapps', 'language', $meta{'username'}, 1);
+    $eh->register_option('gapps', 'language', $meta{'domain'});
+    $eh->register_option('gapps', 'language', $meta{'language'});
+    $eh->register_task('gapps', 'language', \&gapps_language);
 
 }
 
@@ -1031,6 +1041,26 @@ sub gapps_signature {
 
     return undef;
 }
+
+sub gapps_language {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $domain = get_domain($cfg, $opts);
+
+    my $settings = VUser::Google::EmailSettings::V2_0->new
+	(user => $opts->{username},
+	 google => google_login2($cfg, $domain)
+	 );
+
+    $settings->debug(1) if $debug;
+
+    $settings->UpdateLanguage(
+	$opts->{'language'},
+    );
+
+    return undef;
+}
+
 
 ## Util functions
 
