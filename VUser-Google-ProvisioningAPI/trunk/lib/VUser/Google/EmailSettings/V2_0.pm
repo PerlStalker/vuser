@@ -222,7 +222,40 @@ override 'UpdateIMAP' => sub {
     return $self->google->Request('PUT', $url, $post);
 
 };
-override 'UpdateVacationResponder' => sub {};
+
+override 'UpdateVacationResponder' => sub {
+    my $self = shift;
+    my $enable = shift;
+    my $subject = shift;
+    my $message = shift;
+    my $contacts = shift;
+
+    $self->google->Login();
+    my $url = $self->base_url().$self->google->domain.'/'.$self->user.'/vacation';
+
+    my $post = '<?xml version="1.0" encoding="utf-8"?>';
+    $post .= '<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">';
+
+    $post .= sprintf('<apps:property name="enable" value="%s" />',
+		     $enable ? 'true' : 'false');
+
+    if (defined $enable) {
+	$post .= sprintf('<apps:property name="subject" value="%s" />',
+			 defined $subject ? $subject : '');
+
+	$post .= sprintf('<apps:property name="message" value="%s" />',
+			 defined $message ? $message : '');
+
+	$post .= sprintf('<apps:property name="contactsOnly" value="%s" />',
+			 $contacts ? 'true' : 'false');
+
+    }
+
+    $post .= '</atom:entry>';
+
+    return $self->google->Request('PUT', $url, $post);
+};
+
 override 'UpdateSignature' => sub {};
 override 'UpdateLanguage' => sub {};
 override 'UpdateGeneral' => sub {};
