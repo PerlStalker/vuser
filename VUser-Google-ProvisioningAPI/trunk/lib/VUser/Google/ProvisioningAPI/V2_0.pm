@@ -501,7 +501,7 @@ sub CreateUser {
 	return undef;
     }
 
-    my ($username, $given_name, $family_name, $password, $quotaMB, $forceChange) = @_;
+    my ($username, $given_name, $family_name, $password, $quotaMB, $forceChange, $hash_name) = @_;
     $forceChange = $forceChange? 1 : 0;
     if(defined $hash_name) {
       if(lc($hash_name) eq "sha-1") {
