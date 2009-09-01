@@ -495,7 +495,7 @@ the request was successful and C<undef> otherwise.
 sub CreateUser {
     my $self = shift;
 
-    if (@_ != 4 and @_ != 5) {
+    if (@_ >= 4 and @_ <= 6) {
 	$self->dprint("CreateUser method requires 4 or 5 arguments\n");
 	$self->{result}->{reason} = "CreateUser method requires 4 or 5 arguments";
 	return undef;
