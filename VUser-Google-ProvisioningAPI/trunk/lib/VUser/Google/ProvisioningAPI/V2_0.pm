@@ -495,19 +495,29 @@ the request was successful and C<undef> otherwise.
 sub CreateUser {
     my $self = shift;
 
-    if (@_ >= 4 and @_ <= 6) {
-	$self->dprint("CreateUser method requires 4 or 5 arguments\n");
-	$self->{result}->{reason} = "CreateUser method requires 4 or 5 arguments";
+    if (@_ >= 4 and @_ <= 7) {
+	$self->dprint("CreateUser method requires 4 to 7 arguments\n");
+	$self->{result}->{reason} = "CreateUser method requires 4 to 7 arguments";
 	return undef;
     }
 
     my ($username, $given_name, $family_name, $password, $quotaMB, $forceChange) = @_;
     $forceChange = $forceChange? 1 : 0;
+    if(defined $hash_name) {
+      if(lc($hash_name) eq "sha-1") {
+        $hash_name = "SHA-1";
+      } elsif (lc($hash_name) eq 'md5') {
+        $hash_name = "MD5";
+      }
+    }
 
     my $body = $self->XMLPrefix;
     #LP:changePasswordAtNextLogin (todo)
     $body .= '<atom:category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/apps/2006#user"/>';
     $body .= "<apps:login userName=\"$username\" password=\"$password\" suspended=\"false\"";
+    if(defined $hash_name) {
+      $body .= " hashFunctionName=\"$hash_name\"";
+    }
     if ($forceChange) {
 	$body .= ' changePasswordAtNextLogin="true"';
     }
@@ -698,6 +708,9 @@ sub UpdateUser {
 	or defined ($new_entry->changePasswordAtNextLogin)
 	) {
 	$body .= '<apps:login';
+	if(defined $new_entry->{hashFunctionName}) {
+	    $body .= ' hashFunctionName="'.$new_entry->{hashFunctionName}.'"';
+	}
 	$body .= ' userName="'.$new_entry->User.'"' if defined $new_entry->User;
 	$body .= ' password="'.$new_entry->Password.'"' if defined $new_entry->Password;
 	$body .= ' suspended="'.($new_entry->isSuspended? 'true' : 'false').'"';
