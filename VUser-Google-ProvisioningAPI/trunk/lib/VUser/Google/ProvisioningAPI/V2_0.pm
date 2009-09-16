@@ -485,6 +485,9 @@ Creates a user in your Google Apps domain. The first four arguments are
 required. The C<$quota> argument is optional and may not do anything unless
 your agreement with Google allows you to change quotas.
 
+If C<$forceChange> is true, the user will be required to change their
+password after log in.
+
 C<$hashName>, if set, must be I<sha-1> or I<md5>.
 
 CreateUser() returns a C<VUser::Google::ProvisioningAPI::V2_0::UserEntry> object if
