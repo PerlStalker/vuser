@@ -8,7 +8,7 @@ use strict;
 
 use vars qw($VERSION);
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 use Carp;
 use LWP::UserAgent qw(:strict);
@@ -477,13 +477,15 @@ library methods described for the .Net and Java libraries.
 
 =pod
 
-CreateUser($userName, $givenName, $familyName, $password, $quota)
+CreateUser($userName, $givenName, $familyName, $password, $quota, $forceChange, $hashName)
 
 =over
 
 Creates a user in your Google Apps domain. The first four arguments are
 required. The C<$quota> argument is optional and may not do anything unless
 your agreement with Google allows you to change quotas.
+
+C<$hashName>, if set, must be I<sha-1> or I<md5>.
 
 CreateUser() returns a C<VUser::Google::ProvisioningAPI::V2_0::UserEntry> object if
 the request was successful and C<undef> otherwise.
@@ -495,7 +497,7 @@ the request was successful and C<undef> otherwise.
 sub CreateUser {
     my $self = shift;
 
-    if (@_ >= 4 and @_ <= 7) {
+    if (@_ < 4 and @_ > 7) {
 	$self->dprint("CreateUser method requires 4 to 7 arguments\n");
 	$self->{result}->{reason} = "CreateUser method requires 4 to 7 arguments";
 	return undef;
