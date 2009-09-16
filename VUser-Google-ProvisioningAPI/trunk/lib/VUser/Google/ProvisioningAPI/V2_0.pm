@@ -511,6 +511,10 @@ sub CreateUser {
       } elsif (lc($hash_name) eq 'md5') {
         $hash_name = "MD5";
       }
+      else {
+	  # Unset $hash_name if it's not a valid hash type
+	  $hash_name = undef;
+      }
     }
 
     my $body = $self->XMLPrefix;
