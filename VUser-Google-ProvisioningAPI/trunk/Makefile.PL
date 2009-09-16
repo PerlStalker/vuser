@@ -15,7 +15,7 @@ WriteMakefile(
 				  'HTTP::Request' => 0,
 				  'Encode' => 0,
 				  'XML::Simple' => 0,
-				  'Net::SSLeay' => 0,
+				  'Crypt::SSLeay' => 0,
 				  }, # e.g., Module::Name => 1.1
 
 	      );
