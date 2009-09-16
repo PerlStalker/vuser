@@ -13,7 +13,7 @@ use Data::Dumper;
 use Moose;
 extends 'VUser::Google::ApiProtocol';
 
-our $VERSION = '0.5.0';
+our $VERSION = '0.5.1';
 
 has 'google_host' => (is => 'ro',
 		     default => 'www.google.com'
@@ -279,9 +279,77 @@ override 'Request' => sub {
 };
 
 no Moose;
-
+__PACKAGE__->meta->make_immutable;
 1;
 
 __END__
 
 =head1 NAME
+
+VUser::Google::ApiProtocol::V2_0 - Implements version 2.0 of the Google APIs.
+
+=head1 SYSNOPSIS
+
+ use VUser::Google::ApiProtocol::V2_0;
+ 
+ ## Create a new connection
+ my $google = VUser::Google::ApiProtocol::V2_0->new(
+     domain   => 'your.google-apps-domain.com',
+     admin    => 'admin_user',
+     password => 'admin_user password',
+ );
+ 
+ ## Login to the Google Apps API
+ # Login() uses the credentials provided in new()
+ $google->Login();
+ 
+ ## Create a new request
+ # Create the URL to send to API request to.
+ # See the API docs for the valid URLs
+ my $url = "https://apps-apis.google.com/a/feeds/emailsettings/2.0/"
+ $url   .= "your.google-apps-domain.com/username/label";
+ 
+ # Create XML message to send to Google
+ # See the API docs for the valid XML to send
+ my $xml = '<?xml version="1.0" encoding="utf-8"?>...';
+ 
+ # NB: The method (POST here) may be different depending on API call
+ my $success = $google->Request('POST', $url, $xml);
+ 
+ # Get the parsed response
+ if ($success) {
+     # $result is the XML reply parsed by XML::Simple
+     my $result = $google->get_result;
+ }
+ else {
+     # $result is the error message from google
+     # parsed by XML::Simple with the addition of a
+     # 'reason' key which contains the error.
+     my $result = $google->get_result;
+     die "Error: $result->{reason}";
+ }
+
+=head1 DESCRIPTION
+
+=head1 SEE ALSO
+
+L<VUser::Google::ApiProtocol>, L<XML::Simple>
+
+=head1 AUTHOR
+
+Randy Smith <perlstalker@vuser.org>
+
+Adapted from code from Johan Reinalda <johan@reinalda.net>
+
+=head1 LICENSE
+
+Copyright (C) 2006 by Johan Reinalda, johan at reinalda dot net
+Copyright (C) 2009 by Randy Smith, perlstalker at vuser dot org
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.5 or,
+at your option, any later version of Perl 5 you may have available.
+
+If you make useful modification, kindly consider emailing then to me for inclusion in a future version of this module.
+
+=cut

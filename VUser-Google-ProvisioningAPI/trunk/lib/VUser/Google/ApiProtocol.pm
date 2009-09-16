@@ -130,7 +130,40 @@ sub dprint
 }
 
 no Moose;
-
+__PACKAGE__->meta->make_immutable;
 1;
 
 __END__
+
+=head1 NAME
+
+VUser::Google::ApiProtocol - Base class for implementation of the Google APIs
+
+=head1 SYNOPSIS
+
+This class is not meant to be used directly. Instead use
+L<VUser::Google::ApiProtocol::V2_0>.
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=head2 Login
+
+=head2 IsAuthenticated
+
+=head2 Request
+
+=head2 dprint
+
+=head1 SEE ALSO
+
+L<XML::Simple>
+
+=head1 AUTHOR
+
+Randy Smith <perlstalker@vuser.org>
+
+=head1 LICENSE
+
+
