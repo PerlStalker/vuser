@@ -331,6 +331,9 @@ VUser::Google::ApiProtocol::V2_0 - Implements version 2.0 of the Google APIs.
 
 =head1 DESCRIPTION
 
+Implements version 2.0 of the Google API. See L<VUser::Google::ApiProtocol>
+for a list of members and methods.
+
 =head1 SEE ALSO
 
 L<VUser::Google::ApiProtocol>, L<XML::Simple>

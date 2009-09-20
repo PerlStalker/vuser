@@ -146,15 +146,133 @@ L<VUser::Google::ApiProtocol::V2_0>.
 
 =head1 DESCRIPTION
 
+=head1 MEMBERS
+
+These are the members of the ApiProtocol class. You get and set the values
+by using the method of the same name. For example:
+
+ # Get the domain from the ApiProtocol object
+ my $domain = $google->domain;
+ 
+ # Set the domain
+ $google->domain('myappsdomain.com');
+
+Most of the member can be set when the object is created with C<new()>.
+
+ my $google = VUser::ApiProtocol->new(
+     domain => 'myappsdomain.com'
+ );
+
+B<Note:> VUser::Google::ApiProtocol is not meant to be used directly.
+Please see the version specific subclasses, such as
+L<VUser::Google::ApiProtocol::V2_0>, to create a usable object.
+
+=head2 Read-write Members
+
+=over
+
+=item admin
+
+The administrative user. This user must have be set as an admin in the
+Google Apps control panel. Also, be sure to log into the Google Apps control
+panel once with this user to accept all of the legal garbage or you will
+see intermittent auth errors.
+
+=item debug
+
+Turn on debugging output.
+
+=item domain
+
+The Google Apps domain to work on.
+
+=item password
+
+The plain text password of the admin user.
+
+=item refresh_token
+
+If set to a true value, C<Login()> will refresh the authentication token
+even if it's not necessary.
+=back
+
+=head2 Read-only members
+
+=over
+
+=item authtime
+
+The unix timestamp of the last authentication.
+
+=item authtoken
+
+The authentication token retrieved from Google on a successful login.
+The token is only valid for 24 hours.
+
+=item reply_headers
+
+The HTTP headers of the last reply
+
+=item reply_content
+
+The HTTP content of the last reply
+
+=item result
+
+The resulting hash from the last reply data as parsed by XML::Simple
+
+=item useragent
+
+The user agent VUser::Google::ApiProtocol uses when talking to Google. It
+is set to the I<classname/version>. For example,
+I<VUser::Google::ApiProtocol::V2_0/0.25>.
+
+=back
+
 =head1 METHODS
+
+=head2 new (%defaults)
+
+Create a new ApiProtocol object. Any read-write member may be set in the
+call to C<new()>.
 
 =head2 Login
 
+Login to the Google API. C<Login()> takes no parameters. Instead, you
+must set the C<domain>, C<admin>, and C<password> members, then call
+C<Login()>.
+
+C<Login()> will use the existing authentication token if it exists and
+hasn't yet timed out. You may force it to do a full re-authentication by
+setting C<refresh_token> to a true value before calling C<Login()>.
+
 =head2 IsAuthenticated
 
-=head2 Request
+Returns true if the B<object> thinks that it has already authenticated and
+the token hasn't timed out and a false value otherwise.
 
-=head2 dprint
+B<Note:> C<IsAuthenticated()> only knows if there's an authtoken and if
+it's still fresh. It may be possible for Google to decide that a token
+is not valid which C<IsAuthenticated()> cannot check.
+
+=head2 Request ($method, $url[, $body])
+
+Sends an API request to Google.
+
+C<$method> is the HTTP method to use, e.g. I<GET>, I<POST>, etc. B<Note:>
+Many of the API calls use different methods. Double check the API docs to
+make sure you are using the correct method.
+
+C<$url> is the url to use to make the API call. The URLs are defined in 
+the API docs.
+
+C<$body> is the XML specific action. Again, see the API docs for the
+specific format for each API call. C<$body> is not needed when the method
+is I<GET> or I<DELETE>.
+
+=head2 dprint ($message)
+
+Prints C<$message> to STDERR if C<debug> is set to a true value.
 
 =head1 SEE ALSO
 
