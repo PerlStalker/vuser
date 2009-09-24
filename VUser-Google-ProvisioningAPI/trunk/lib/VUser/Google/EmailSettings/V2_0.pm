@@ -19,7 +19,9 @@ sub BUILD {}
 
 override 'CreateLabel' => sub {
     my $self = shift;
-    my $label = shift;
+    my %options = @_;
+
+    my $label = $options{'label'};
 
     $self->google()->Login();
     my $url = $self->base_url().$self->google()->domain().'/'.$self->user().'/label';
@@ -34,8 +36,7 @@ override 'CreateLabel' => sub {
 
 override 'CreateFilter' => sub {
     my $self = shift;
-    my $criteria = shift;
-    my $actions = shift;
+    my %options = @_;
 
     $self->google()->Login();
     my $url = $self->base_url().$self->google->domain().'/'.$self->user().'/filter';
@@ -43,26 +44,26 @@ override 'CreateFilter' => sub {
 <atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">';
 
     ## Add criteria
-    if (defined $criteria->{hasAttachment}) {
-	$criteria->{hasAttachment} = $criteria->{hasAttachment}? 'true':'false';
+    if (defined $options{hasAttachment}) {
+	$options{hasAttachment} = $options{hasAttachment}? 'true':'false';
     }
 
     foreach my $crit qw(from to subject hasTheWord doesNotHaveTheWord hasAttachment) {
-	if (defined $criteria->{$crit}) {
+	if (defined $options{$crit}) {
 	    $post .= sprintf ("<apps:property name=\"%s\" value=\"%s\" />",
-			      $crit, $criteria->{$crit});
+			      $crit, $options{$crit});
 	}
     }
 
     ## Add actions
     foreach my $act qw(shouldMarkAsRead shouldArchive) {
-	$actions->{$act} = $criteria->{$act}? 'true':'false';
+	$options{$act} = $options{$act}? 'true':'false';
     }
 
     foreach my $act qw(label shouldMarkAsRead shouldArchive) {
-	if (defined $actions->{$act}) {
+	if (defined $options{$act}) {
 	    $post .= sprintf ("<apps:property name=\"%s\" value=\"%s\" />",
-			      $act, $actions->{$act});
+			      $act, $options{$act});
 	}
     }
 
@@ -73,10 +74,12 @@ override 'CreateFilter' => sub {
 
 override 'CreateSendAsAlias' => sub {
     my $self = shift;
-    my $name = shift;
-    my $address = shift;
-    my $reply_to = shift;
-    my $make_default = shift;
+    my %options = @_;
+
+    my $name         = $options{'name'};
+    my $address      = $options{'address'};
+    my $reply_to     = $options{'replyTo'};
+    my $make_default = $options{'makeDefault'};
 
     $self->google()->Login();
     my $url = $self->base_url().$self->google->domain().'/'.$self->user().'/sendas';
@@ -104,7 +107,9 @@ override 'CreateSendAsAlias' => sub {
 
 override 'UpdateWebClip' => sub {
     my $self = shift;
-    my $enable = shift;
+    my $options = @_;
+
+    my $enable = $options{'enable'};
 
     $self->google()->Login();
     my $url = $self->base_url().$self->google->domain().'/'.$self->user().'/webclip';
@@ -121,9 +126,11 @@ override 'UpdateWebClip' => sub {
 
 override 'UpdateForwarding' => sub {
     my $self = shift;
-    my $enable = shift;
-    my $forward_to = shift;
-    my $action = shift;
+    my %options = @_;
+
+    my $enable     = $options{'enable'};
+    my $forward_to = $options{'forwardTo'};
+    my $action     = $options{'action'};
 
     $action = uc($action);
 
@@ -162,9 +169,11 @@ override 'UpdateForwarding' => sub {
 
 override 'UpdatePOP' => sub {
     my $self = shift;
-    my $enable = shift;
-    my $enable_for = shift;
-    my $action = shift;
+    my %options = @_;
+
+    my $enable     = $options{'enable'};
+    my $enable_for = $options{'enableFor'};
+    my $action     = $options{'action'};
 
     $action = uc($action);
 
@@ -204,7 +213,9 @@ override 'UpdatePOP' => sub {
 
 override 'UpdateIMAP' => sub {
     my $self = shift;
-    my $enable = shift;
+    my %options = shift;
+
+    my $enable = $options{'enable'};
 
     $self->google()->Login();
     my $url = $self->base_url().$self->google->domain().'/'.$self->user().'/imap';
@@ -225,10 +236,12 @@ override 'UpdateIMAP' => sub {
 
 override 'UpdateVacationResponder' => sub {
     my $self = shift;
-    my $enable = shift;
-    my $subject = shift;
-    my $message = shift;
-    my $contacts = shift;
+    my %options = @_;
+
+    my $enable   = $options{'enable'};
+    my $subject  = $options{'subject'};
+    my $message  = $options{'message'};
+    my $contacts = $options{'contactsOnly'};
 
     $self->google->Login();
     my $url = $self->base_url().$self->google->domain.'/'.$self->user.'/vacation';
@@ -258,7 +271,9 @@ override 'UpdateVacationResponder' => sub {
 
 override 'UpdateSignature' => sub {
     my $self = shift;
-    my $sig = shift;
+    my %options = shift;
+
+    my $sig = $options{'signature'};
 
     $self->google->Login();
     my $url = $self->base_url().$self->google->domain.'/'.$self->user.'/signature';
@@ -277,7 +292,9 @@ override 'UpdateSignature' => sub {
 
 override 'UpdateLanguage' => sub {
     my $self = shift;
-    my $lang = shift;
+    my %options = shift;
+
+    my $lang = $options{'language'};
 
     $self->google->Login();
     my $url = $self->base_url().$self->google->domain.'/'.$self->user.'/language';
@@ -298,7 +315,29 @@ override 'UpdateLanguage' => sub {
 
 };
 
-override 'UpdateGeneral' => sub {};
+override 'UpdateGeneral' => sub {
+    my $self    = shift;
+    my %options = @_;
+
+    $self->google->Login();
+    my $url = $self->base_url().$self->google->domain.'/'.$self->user.'/general';
+
+    foreach my $opt qw(shortcuts arrows snippets unicode) {
+	$options{$opt} = $options{$opt}? 'true':'false';
+    }
+
+    foreach my $opt (keys %options) {
+	if (defined $options{$opt}) {
+	    $post .= sprintf ("<apps:property name=\"%s\" value=\"%s\" />",
+			      $opt, $options{$opt});
+	}
+    }
+
+    $post .= '</atom:entry>';
+
+    return $self->google->Request('PUT', $url, $post);
+
+};
 
 no Moose;
 1;
@@ -307,6 +346,35 @@ __END__
 
 =head1 NAME
 
-VUser::Google::EmailSettings::V2_0 -
+VUser::Google::EmailSettings::V2_0 - Support version 2.0 of the Google Email Settings API
 
+=head1 SEE ALSO
 
+L<VUser::Google::EmailSettings>, L<VUser::Google::ApiProtocol>,
+L<VUser::Google::ApiProtocol::V2_0>
+
+=over 4
+
+=item Google Email Settings API
+
+http://code.google.com/apis/apps/email_settings/developers_guide_protocol.html
+
+=back
+
+=head1 BUGS
+
+Report bugs at http://code.google.com/p/vuser/issues/list.
+
+=head1 AUTHOR
+
+Randy Smith, perlstalker at vuser dot net
+
+=head1 COPYRIGHT AND LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.5 or,
+at your option, any later version of Perl 5 you may have available.
+
+If you make useful modification, kindly consider emailing then to me for inclusion in a future version of this module.
+
+=cut
