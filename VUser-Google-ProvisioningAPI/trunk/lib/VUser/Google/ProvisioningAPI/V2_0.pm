@@ -721,7 +721,16 @@ sub UpdateUser {
 	    $body .= ' hashFunctionName="'.$new_entry->{hashFunctionName}.'"';
 	}
 	$body .= ' userName="'.$new_entry->User.'"' if defined $new_entry->User;
-	$body .= ' password="'.$new_entry->Password.'"' if defined $new_entry->Password;
+
+	if (defined $new_entry->Password) {
+	    my $passwd = $new_entry->Password;
+	    # escape quotes
+	    # See section 2.4 of http://www.w3.org/TR/xml/
+	    #$passwd ~= s/\"/\\"/;
+	    $passwd ~= s/\"/&quot;/;
+	    $body .= ' password="'.$new_entry->Password.'"';
+	}
+
 	$body .= ' suspended="'.($new_entry->isSuspended? 'true' : 'false').'"';
 	#LP:changePasswordAtNextLogin
 	#print "too(".$new_entry->changePasswordAtNextLogin.")";
