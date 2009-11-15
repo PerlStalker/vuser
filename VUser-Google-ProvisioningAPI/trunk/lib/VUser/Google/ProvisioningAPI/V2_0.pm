@@ -128,7 +128,7 @@ Delete a user:
 
 =head1 CONSTRUCTOR
 
-new ($comain, $admin, $adminpasswd)
+new ($domain, $admin, $adminpasswd)
 
 This is the constructor for a new VUser::Google::ProvisioningAPI object.
 $domain is the domain name registered with Google Apps For Your Domain,
@@ -726,9 +726,9 @@ sub UpdateUser {
 	    my $passwd = $new_entry->Password;
 	    # escape quotes
 	    # See section 2.4 of http://www.w3.org/TR/xml/
-	    #$passwd ~= s/\"/\\"/;
-	    $passwd ~= s/\"/&quot;/;
-	    $body .= ' password="'.$new_entry->Password.'"';
+	    #$passwd =~ s/\"/\\"/;
+	    $passwd =~ s/\"/&quot;/;
+	    $body .= ' password="'.$passwd.'"';
 	}
 
 	$body .= ' suspended="'.($new_entry->isSuspended? 'true' : 'false').'"';
