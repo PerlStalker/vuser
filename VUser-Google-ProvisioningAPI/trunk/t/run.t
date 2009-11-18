@@ -8,7 +8,7 @@ use FindBin;
 use lib ("$FindBin::Bin/../lib");
 
 my $gapps_domain = $ENV{GAPPS_DOMAIN};
-my $gapps_user   = $ENV{GAPPS_USER};
+my $gapps_user   = $ENV{GAPPS_ADMIN};
 my $gapps_passwd = $ENV{GAPPS_PASSWD};
 
 if (not $gapps_domain
