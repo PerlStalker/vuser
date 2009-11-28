@@ -37,7 +37,8 @@ sub new {
 	'Email' => $email,
 	'Quota' => $quota,
     #LP: changePasswordAtNextLogin
-	'changePasswordAtNextLogin' => $changePasswordAtNextLogin
+	'changePasswordAtNextLogin' => $changePasswordAtNextLogin,
+	'hashFunctionName' => $hashFunctionName,
     };
         
     bless $self, $class;
