@@ -27,7 +27,7 @@ sub create_google {
 	domain => $ENV{GAPPS_DOMAIN},
 	admin  => $ENV{GAPPS_ADMIN},
 	password => $ENV{GAPPS_PASSWD},
-#	debug => 1
+	debug => 1
     );
 
     return $google;

@@ -138,6 +138,9 @@ override 'Request' => sub {
 
     $self->dprint( "*** REQUEST ***" );
 
+    # relogin if needed
+    $self->Login;
+
     # clear last results
     $self->_set_reply_headers('');
     $self->_set_reply_content('');

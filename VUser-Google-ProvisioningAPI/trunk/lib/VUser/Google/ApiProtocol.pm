@@ -125,7 +125,12 @@ sub dprint
     my $text = shift;
     my @args = @_;
     if( $self->debug and defined ($text) ) {
-	print STDERR sprintf ("$text\n", @args);
+	if (@_) {
+	    print STDERR sprintf ("$text\n", @args);
+	}
+	else {
+	    print STDERR "$text\n";
+	}
     }
 }
 

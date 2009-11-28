@@ -90,7 +90,7 @@ sub CreateUser {
     else {
 	## ERROR!
 	$self->dprint('CreateUser failed: '.$self->google->result->{reason});
-	return undef;
+	die "Error creating user: ".$self->google->result->{'reason'}."\n";
     }
 }
 
@@ -101,14 +101,94 @@ sub RetrieveUser {
     my $url = $self->base_url.$self->google->domain.'/user/2.0/'.$username;
 
     if ($self->google->Request('GET', $url)) {
-	return $self->_build_user_entry($self->google->get_result);
+	return $self->_build_user_entry($self->google->result);
     }
     else {
-	return undef;
+	if ($self->google->result->{'reason'} =~ 'EntityDoesNotExist') {
+	    return undef;
+	}
+	else {
+	    die "Error retrieving user: ".$self->google->result->{'reason'}."\n";
+	}
     }
 }
 
+# Retrieve one page of users.
+# How to return the next page?
+# Returns (
+#   entries => \@entries, # list of UserEntry objects
+#   next    => $next      # the next username if another page exists
+#                         # undef otherwise
+#   )
+sub RetrieveUsers {
+    my $self       = shift;
+    my $start_user = shift;
+
+    my @entries = ();
+    my $next_user;
+
+    my $url = $self->base_url.$self->google->domain.'/user/2.0';
+    if ($start_user) {
+	$url .= "?startUsername=$start_user";
+    }
+
+    if ($self->google->Request('GET', $url)) {
+	foreach my $entry (@{ $self->google->result->{'entry'} }) {
+	    ## Create UserEntry object
+	    my $user = $self->_build_user_entry($entry);
+	    push @entries, $user;
+	}
+    }
+    else {
+	## There was an error
+	die "Error fetching users: ".$self->google->result->{'reason'}."\n";
+    }
+
+    # Look for the a link tag that says there should be more results
+    # A link tag with rel=next means there is another page
+    foreach my $link (@{ $self->google->result->{'link'} }) {
+	if ($link->{'rel'} eq 'next') {
+	    $url = $link->{'href'};
+	    if ($url =~ /startUsername=([^\"]+)/) {
+		$next_user = $1;
+	    }
+	}
+    }
+
+    return ( entries => \@entries, next => $next_user );
+}
+
+# Alias for RetrieveUsers
+sub RetrievePageOfUsers {
+    $_[0]->RetrieveUsers(@_);
+}
+
+# Returns a list of UserEntry objects
 sub RetrieveAllUsers {
+    my $self = shift;
+
+    my @entries = ();
+    my $next;
+
+    my %results;
+
+    eval {
+	%results = $self->RetrieveUsers;
+	push @entries, @{ $results{'entries'} };
+	$next = $results{'next'};
+    };
+    die $@ if $@;
+
+    while ($next) {
+	eval {
+	    %results = $self->RetrieveUsers($next);
+	    push @entries, @{ $results{'entries'} };
+	    $next = $results{'next'};
+	};
+	die $@ if $@;
+    }
+
+    return @entries;
 }
 
 sub UpdateUser {
