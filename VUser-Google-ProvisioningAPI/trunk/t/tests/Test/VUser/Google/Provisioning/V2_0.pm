@@ -66,50 +66,148 @@ sub RetrieveUsers : Tests(5) {
     my $api = $class->new(google => $test->create_google);
 
     can_ok $api, 'RetrieveUsers';
-
     can_ok $api, 'RetrieveAllUsers';
 
     my $num_users = 110;
 
-    ## Create 110 test users
-    note "Creating $num_users test users. This will take a while.";
+  SKIP: {
+	print STDERR "\nRetrieve tests require that $num_users test users be created and deleted.\n";
+	print STDERR "These tests can take a long time.\n";
+	print STDERR "Would you like to skip these tests? [y/N]: ";
+	my $response = <STDIN>;
+	skip "Skipping long tests at user request.", 3 if $response =~ /^y/i;
+
+	## Create 110 test users
+	note "Creating $num_users test users. This will take a while.";
+	my $user = $test->get_test_user;
+	print STDERR "Creating test users: ";
+	foreach my $i (1 .. $num_users) {
+	    print STDERR "." if $i%10 == 0;
+	    my $res = $api->CreateUser(
+		userName   => $user.".$i",
+		givenName  => 'Test',
+		familyName => 'User',
+		password   => 'testing',
+		quota      => 2048,
+		changePasswordAtNextLogin => 1,
+	    );
+	}
+	print "\n";
+
+	## Fetch first page of users
+	my %results = $api->RetrieveUsers;
+	is @{ $results{'entries'} }, 100,
+	    '... and we have 100 users';
+	my $next = $results{next};
+
+
+	## Fetch second page of users
+	%results = $api->RetrieveUsers($next);
+	is $results{'entries'}[0]->UserName, $next,
+	    '... and the first result of the second page is the "next" from the first page';
+
+	## Retrieve all users
+	my @entries = $api->RetrieveAllUsers;
+      TODO: {
+	    local $TODO = 'How many users already existed?';
+	    ok @entries >= $num_users+1,
+		'... and there are the expected number of users';
+	}
+
+	## Delete test users
+	note "Deleting $num_users test users. This will also take a while.";
+	print STDERR "\nDeleting test users: ";
+	foreach my $i (1 .. $num_users) {
+	    print STDERR "." if $i%10 == 0;
+	    my $rc = $api->DeleteUser($user.".$i");
+	}
+    } # END SKIP
+}
+
+sub UpdateUser : Tests(7) {
+    my $test = shift;
+    my $class = $test->class;
+
+    my $api = $class->new(google => $test->create_google);
+
+    can_ok $api, 'UpdateUser';
+
     my $user = $test->get_test_user;
-    foreach my $i (1 .. $num_users) {
-	my $res = $api->CreateUser(
-	    userName   => $user.".$i",
-	    givenName  => 'Test',
-	    familyName => 'User',
-	    password   => 'testing',
-	    quota      => 2048,
-	    changePasswordAtNextLogin => 1,
+
+    my $entry = $api->CreateUser(
+	userName   => $user,
+	givenName  => 'Test',
+	familyName => 'User',
+	password   => 'testing',
+	quota      => 2048,
+	changePasswordAtNextLogin => 1,
+    );
+
+    my $updated = $api->UpdateUser(
+	userName   => $user,
+	givenName  => 'GName'
+    );
+
+    is $updated->GivenName, 'GName',
+	'... and given name matches';
+
+    $updated = $api->UpdateUser(
+	userName   => $user,
+	familyName => 'Fname',
+    );
+
+    is $updated->FamilyName, 'Fname',
+	'... and family name matches';
+
+    $updated = $api->UpdateUser(
+	userName   => $user,
+	suspended  => 1,
+    );
+
+    is $updated->Suspended, 1,
+	'... and suspended matches';
+
+    $updated = $api->UpdateUser(
+	userName   => $user,
+	quota      => 1024,
+    );
+
+  TODO: {
+	local $TODO = 'May not be allowed to change quotas.';
+	is $updated->Quota, 1024,
+	    '... and quota matches';
+    }
+
+    $updated = $api->UpdateUser(
+	userName   => $user,
+	changePasswordAtNextLogin => 0,
+    );
+
+    is $updated->ChangePasswordAtNextLogin, 0,
+	'... and changePasswordAtNextLogin matches';
+
+    can_ok $api, 'ChangePassword';
+
+  TODO: {
+	local $TODO = 'How can we test if setting the password actually worked?';
+
+	# Use ClientLogin API to test Auth?
+	# http://code.google.com/apis/accounts/docs/AuthForInstalledApps.html
+
+	$updated = $api->ChangePassword(
+	    $user, 'new-password',
+	);
+
+	$updated = $api->ChangePassword(
+	    $user, 'd27117a019717502efe307d110f5eb3d', 'MD5'
+	);
+
+	$updated = $api->ChangePassword(
+	    $user, '51eea05d46317fadd5cad6787a8f562be90b4446', 'SHA-1'
 	);
     }
 
-    ## Fetch first page of users
-    my %results = $api->RetrieveUsers;
-    is @{ $results{'entries'} }, 100,
-	'... and we have 100 users';
-    my $next = $results{next};
-
-
-    ## Fetch second page of users
-    %results = $api->RetrieveUsers($next);
-    is $results{'entries'}[0]->UserName, $next,
-	'... and the first result of the second page is the "next" from the first page';
-
-    ## Retrieve all users
-    my @entries = $api->RetrieveAllUsers;
-  TODO: {
-	local $TODO = 'How many users already existed?';
-	ok @entries >= $num_users+1,
-	    '... and there are the expected number of users';
-    }
-
-    ## Delete test users
-    note "Deleting $num_users test users. This will also take a while.";
-    foreach my $i (1 .. $num_users) {
-	my $rc = $api->DeleteUser($user.".$i");
-    }
+    my $rc = $api->DeleteUser($user);
 }
 
 1;

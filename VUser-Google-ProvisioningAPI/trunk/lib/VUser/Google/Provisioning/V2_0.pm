@@ -191,7 +191,94 @@ sub RetrieveAllUsers {
     return @entries;
 }
 
+# %options
+#   userName*
+#   givenName
+#   familyName
+#   password
+#   hashFunctioName (SHA-1|MD5)
+#   suspended       (bool)
+#   quota           (in MB)
+#   changePasswordAtNextLogin (bool)
 sub UpdateUser {
+    my $self = shift;
+
+    my %options = ();
+
+    if (ref $_[0]
+	    and $_[0]->isa('VUser::Google::Provisioning::UserEntry')) {
+	%options = $_[0]->as_hash;
+    }
+    else {
+	%options = @_;
+    }
+
+    die "Can't update user: userName not set\n" unless $options{'userName'};
+
+    my $url = $self->base_url.$self->google->domain
+	."/user/2.0/$options{userName}";
+
+    my $post = '<?xml version="1.0" encoding="UTF-8"?>
+<atom:entry xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:apps="http://schemas.google.com/apps/2006">
+    <atom:category scheme="http://schemas.google.com/g/2005#kind" 
+        term="http://schemas.google.com/apps/2006#user"/>
+';
+
+    ## update user info (login tag)
+    if ($options{password}
+	    or defined $options{suspended}
+            or defined $options{changePasswordAtNextLogin}
+	) {
+	$post .= '<apps:login';
+
+	if (defined $options{password}) {
+	    $post .= ' password="';
+	    $post .= $self->_escape_quotes($options{'password'});
+	    $post .= '"';
+
+	    if (defined $options{hashFunctionName}) {
+		$post .= ' hashFunctionName="';
+		$post .= $options{hashFunctionName};
+		$post .= '"';
+	    }
+	}
+
+	if (defined $options{suspended}) {
+	    $post .= ' suspended="'.$self->_as_bool($options{suspended}).'"';
+	}
+
+	if (defined $options{changePasswordAtNextLogin}) {
+	    $post .= ' changePasswordAtNextLogin="'
+		.$self->_as_bool($options{changePasswordAtNextLogin}).'"';
+	}
+
+	$post .= '/>';
+    }
+
+    ## Quota
+    if ($options{quota}) {
+	$post .= "<apps:quota limit=\"$options{quota}\"/>";
+    }
+
+    ## Name
+    if ($options{givenName} or $options{familyName}) {
+	$post .= '<apps:name';
+	$post .= " familyName=\"$options{familyName}\"" if $options{familyName};
+	$post .= " givenName=\"$options{givenName}\"" if $options{givenName};
+	$post .= '/>';
+    }
+
+    $post .= '</atom:entry>';
+
+    if ($self->google->Request('PUT', $url, $post)) {
+	$self->dprint('Updated user');
+	my $entry = $self->_build_user_entry($self->google->result);
+	return $entry;
+    }
+    else {
+	die "Error updating user: ".$self->google->result->{'reason'}."\n";
+    }
 }
 
 sub RenameUser {
@@ -219,6 +306,22 @@ sub DeleteUser {
 }
 
 sub ChangePassword {
+    my $self          = shift;
+    my $username      = shift;
+    my $password      = shift;
+    my $hash_function = shift;
+
+    if (not $username or not $password) {
+	die "Can't change password: username or password not set.\n";
+    }
+
+    my $entry = $self->UpdateUser(
+	userName         => $username,
+	password         => $password,
+	hashFunctionName => $hash_function,
+    );
+
+    return $entry;
 }
 
 ## Nicknames

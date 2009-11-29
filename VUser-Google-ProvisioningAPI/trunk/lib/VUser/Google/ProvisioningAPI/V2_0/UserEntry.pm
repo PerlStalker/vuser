@@ -14,7 +14,7 @@ sub new {
 
 
     #LP: changePasswordAtNextLogin
-    my ($user, $password, $family_name, $given_name, $quota, $email, $isSuspended, $changePasswordAtNextLogin);
+    my ($user, $password, $family_name, $given_name, $quota, $email, $isSuspended, $changePasswordAtNextLogin, $hashFunctionName);
 
     if (defined $isSuspended) {
 	$isSuspended = ($isSuspended)? '1' : '0';
