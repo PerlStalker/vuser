@@ -5,6 +5,8 @@ use strict;
 use Test::Most;
 use base 'Test::VUser::Google::Provisioning';
 
+use vars qw($SKIP_LONG_TESTS);
+
 sub CreateUser : Tests(12) {
     my $test = shift;
     my $class = $test->class;
@@ -71,11 +73,9 @@ sub RetrieveUsers : Tests(5) {
     my $num_users = 110;
 
   SKIP: {
-	print STDERR "\nRetrieve tests require that $num_users test users be created and deleted.\n";
-	print STDERR "These tests can take a long time.\n";
-	print STDERR "Would you like to skip these tests? [y/N]: ";
-	my $response = <STDIN>;
-	skip "Skipping long tests at user request.", 3 if $response =~ /^y/i;
+	if ($Test::VUser::Google::SKIP_LONG_TESTS) {
+	    skip "Skipping long tests at user request.", 3;
+	}
 
 	## Create 110 test users
 	note "Creating $num_users test users. This will take a while.";
