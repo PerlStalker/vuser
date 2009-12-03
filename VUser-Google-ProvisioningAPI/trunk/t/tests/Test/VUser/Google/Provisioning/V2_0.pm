@@ -210,4 +210,42 @@ sub UpdateUser : Tests(7) {
     my $rc = $api->DeleteUser($user);
 }
 
+sub RenameUser : Tests(6) {
+    my $test = shift;
+    my $class = $test->class;
+
+    my $api = $class->new(google => $test->create_google);
+
+    can_ok $api, 'RenameUser';
+
+    my $user = $test->get_test_user;
+
+    my $old_user = $api->CreateUser(
+	userName    => $user,
+	givenName   => 'Test',
+	familyName  => 'User',
+	password    => 'testing',
+    );
+
+    my $new_user = $api->RenameUser($user, $user.'.new');
+
+    isa_ok $new_user, 'VUser::Google::Provisioning::UserEntry',
+	'... and the account was renamed';
+
+    is $new_user->UserName, $user.'.new',
+	'... and the user name has been updated';
+
+    ## Double-check that settings match
+    is $new_user->GivenName, $old_user->GivenName,
+	'... and the given names match';
+
+    is $new_user->FamilyName, $old_user->FamilyName,
+	'... and the family names match';
+
+    is $new_user->Quota, $old_user->Quota,
+	'... and the quotas match';
+
+    my $rc = $api->DeleteUser($user.'.new');
+}
+
 1;

@@ -11,9 +11,11 @@ has 'GivenName' => (is => 'rw', isa => 'Str');
 has 'FamilyName' => (is => 'rw', isa => 'Str');
 has 'Password' => (is => 'rw', isa => 'Str');
 has 'HashFunctionName' => (is => 'rw', isa => 'Str');
-has 'Suspended' => (is => 'rw', isa => 'Bool');
+has 'Suspended' => (is => 'rw', isa => 'Bool', default => 0);
 has 'Quota' => (is => 'rw', isa => 'Int');
-has 'ChangePasswordAtNextLogin' => (is => 'rw', isa => 'Bool');
+has 'ChangePasswordAtNextLogin' => (is => 'rw', isa => 'Bool', default => 0);
+has 'Admin' => (is => 'rw', isa => 'Bool', default => 0);
+has 'AgreedToTerms' => (is => 'rw', isa => 'Bool', default => 0);
 
 sub as_hash {
     my $self = shift;
@@ -27,6 +29,7 @@ sub as_hash {
 	suspended  => $self->Suspended,
 	quota      => $self->Quota,
 	changePasswordAtNextLogin => $self->ChangePasswordAtNextLogin,
+	admin      => $self->Admin,
     );
 
     return %hash;

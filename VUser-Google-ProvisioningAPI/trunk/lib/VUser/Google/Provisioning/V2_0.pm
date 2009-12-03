@@ -23,6 +23,7 @@ has '+base_url' => (default => 'https://apps-apis.google.com/a/feeds/');
 #   suspended       (bool)
 #   quota           (in MB)
 #   changePasswordAtNextLogin (bool)
+#   admin           (bool)
 sub CreateUser {
     my $self    = shift;
 
@@ -64,6 +65,10 @@ sub CreateUser {
     if ($options{changePasswordAtNextLogin}) {
 	$post .= ' changePasswordAtNextLogin="'
 	    .$self->_as_bool($options{changePasswordAtNextLogin}).'"';
+    }
+
+    if ($options{admin}) {
+	$post .= ' admin="'.$self->_as_bool($options{admin}).'"';
     }
 
     $post .= '/>';
@@ -200,6 +205,7 @@ sub RetrieveAllUsers {
 #   suspended       (bool)
 #   quota           (in MB)
 #   changePasswordAtNextLogin (bool)
+#   admin           (admin)
 sub UpdateUser {
     my $self = shift;
 
@@ -229,6 +235,7 @@ sub UpdateUser {
     if ($options{password}
 	    or defined $options{suspended}
             or defined $options{changePasswordAtNextLogin}
+	    or defined $options{admin}
 	) {
 	$post .= '<apps:login';
 
@@ -251,6 +258,10 @@ sub UpdateUser {
 	if (defined $options{changePasswordAtNextLogin}) {
 	    $post .= ' changePasswordAtNextLogin="'
 		.$self->_as_bool($options{changePasswordAtNextLogin}).'"';
+	}
+
+	if (defined $options{admin}) {
+	    $post .= ' admin="'.$self->_as_bool($options{admin}).'"';
 	}
 
 	$post .= '/>';
@@ -282,6 +293,53 @@ sub UpdateUser {
 }
 
 sub RenameUser {
+    my $self    = shift;
+    my $oldname = shift;
+    my $newname = shift;
+
+    die "Can't rename user: old userName not set\n" unless $oldname;
+    die "Can't rename user: new userName not set\n" unless $newname;
+
+    my $url = $self->base_url.$self->google->domain
+	."/user/2.0/$oldname";
+
+    my $user = $self->RetrieveUser($oldname)
+	or die "Unknown user: $oldname\n";
+
+    my $post = '<?xml version="1.0" encoding="UTF-8"?>
+<atom:entry xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:apps="http://schemas.google.com/apps/2006">
+    <atom:category scheme="http://schemas.google.com/g/2005#kind" 
+        term="http://schemas.google.com/apps/2006#user"/>
+';
+
+    $post .= '<atom:title type="text">$oldname</atom:title>';
+    $post .= '<atom:link rel="self" type="application/atom+xml"';
+    $post .= " href=\"".$self->base_url.
+	$self->google->domain."/user/2.0/$oldname\"/>";
+    $post .= '<atom:link rel="edit" type="application/atom+xml"';
+    $post .= " href=\"".$self->base_url.
+	$self->google->domain."/user/2.0/$oldname\"/>";
+
+    $post .= "<apps:login";
+    $post .= " userName='$newname'";
+    $post .= ' suspended="'.$self->_as_bool($user->Suspended).'"';
+    $post .= ' admin="'.$self->_as_bool($user->Admin).'"';
+    $post .= ' changePasswordAtNextLogin="'
+	.$self->_as_bool($user->ChangePasswordAtNextLogin).'"';
+    # $post .= ' agreedToTerms="'.$self->_as_bool($user->AgreedToTerms).'"';
+    $post .= "/>";
+
+    $post .= '</atom:entry>';
+
+    if ($self->google->Request('PUT', $url, $post)) {
+	$self->dprint("Renamed $oldname to $newname");
+	my $entry = $self->_build_user_entry($self->google->result);
+	return $entry;
+    }
+    else {
+	die "Error rename user: ".$self->google->result->{'reason'}."\n";
+    }
 }
 
 sub DeleteUser {
@@ -364,6 +422,24 @@ sub _build_user_entry {
 	}
 	else {
 	    $entry->ChangePasswordAtNextLogin(0);
+	}
+    }
+
+    if ($xml->{'apps:login'}[0]{'admin'}) {
+	if ($xml->{'apps:login'}[0]{'admin'} eq 'true') {
+	    $entry->Admin(1);
+	}
+	else {
+	    $entry->Admin(0);
+	}
+    }
+
+    if ($xml->{'apps:login'}[0]{'agreedToTerms'}) {
+	if ($xml->{'apps:login'}[0]{'agreedToTerms'} eq 'true') {
+	    $entry->AgreedToTerms(1);
+	}
+	else {
+	    $entry->AgreedToTerms(0);
 	}
     }
 
@@ -509,6 +585,12 @@ If set to a true value, e.g. C<1>, the user will be required to
 change their password the next time they login in. This is the default.
 You may turn this off by setting changePasswordAtNextLogin to C<0>.
 
+=item admin
+
+If set to a true value, e.g. C<1>, the user will be granted
+administrative privileges. A false value, e.g. C<0>, admin rights will
+be revoked. By default, users will not be granted admin rights.
+
 =back
 
 =head3 RetrieveUser
@@ -581,7 +663,11 @@ UpdateUser() cannot be used to rename an account. See RenameUser().
 
 =head3 RenameUser
 
-This has not yet been implemented.
+ my $user_user = $api->RenameUser($oldname, $newname);
+
+Rename an account. The first parameter is the old user name; the
+second is the new user name. RenameUser() will die if the old name
+does not exist.
 
 =head3 DeleteUser
 
