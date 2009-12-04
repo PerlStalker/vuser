@@ -1,4 +1,4 @@
-package Test::VUser::Google::Provisioning;
+package Test::VUser::Google::Groups;
 use warnings;
 use strict;
 
@@ -17,13 +17,13 @@ sub constructor : Tests(3) {
     isa_ok $api, $class, '... and the object it returns';
 }
 
-sub get_test_user {
+sub get_test_group {
     my $self = shift;
 
     if (1 || not defined $acct) {
 	my @time = localtime;
 	$acct = sprintf (
-	    'test.%04d.%02d.%02d.%02d.%02d.%02d',
+	    'test.group.%04d.%02d.%02d.%02d.%02d.%02d',
 	    $time[5]+1900,
 	    $time[4]+1,
 	    $time[3],

@@ -1,4 +1,4 @@
-use VUser::Google::Groups;
+package VUser::Google::Groups;
 use warnings;
 use strict;
 
@@ -7,8 +7,8 @@ our $VERSION = '0.2.0';
 use Moose;
 
 has 'google' => (
-    is => 'rw',
-    isa => 'VUser::Google::ApiProtocol',
+    is       => 'rw',
+    isa      => 'VUser::Google::ApiProtocol',
     required => 1
 );
 
@@ -17,7 +17,7 @@ has base_url => (is => 'rw', isa => 'Str');
 # Turn on deugging
 has 'debug' => (is => 'rw', default => 0);
 
-#### Methods
+#### Methods ####
 
 ## Util
 #print out debugging to STDERR if debug is set
