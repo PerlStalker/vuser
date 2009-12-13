@@ -12,6 +12,11 @@ use VUser::Google::Groups::GroupEntry;
 has '+base_url' => (default => 'https://apps-apis.google.com/a/feeds/group/2.0/');
 
 #### Methods ####
+# %options
+#   groupId*
+#   groupName*
+#   description
+#   emailPermission* (Owner | Member | Domain | Anyone)
 sub CreateGroup {
     my $self = shift;
     my %options = ();
@@ -49,16 +54,88 @@ sub CreateGroup {
     }
 }
 
+# Cannot be used to rename the group
+# %options
+#   groupId*
+#   newGroupId --- no
+#   groupName*
+#   description
+#   emailPermission*
 sub UpdateGroup {
+    my $self    = shift;
+    my %options = ();
+
+    if (ref $_[0]
+	    and $_[0]->isa('VUser::Google::Groups::GroupEntry')) {
+	%options = $_[0]->as_hash;
+    }
+    else {
+	%options = @_;
+    }
+
+    my $url = $self->base_url.$self->google->domain."/$options{groupId}";
+
+    my $post = '<?xml version="1.0" encoding="UTF-8"?>
+<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006" xmlns:gd="http://schemas.google.com/g/2005">';
+
+    if (0 and $options{newGroupId}) {
+	$post .= '<apps:property name="groupId" value="'
+	    .$options{newGroupId}.'"/>';
+    }
+
+    if ($options{groupName}) {
+	$post .= '<apps:property name="groupName" value="'
+	    .$options{groupName}.'"/>';
+    }
+
+    if ($options{description}) {
+	$post .= '<apps:property name="description" value="'
+	    .$options{description}.'"/>';
+    };
+
+    if ($options{emailPermission}) {
+	$post .= '<apps:property name="emailPermission" value="'
+	    .$options{emailPermission}.'"/>';
+    };
+
+    $post .= '</atom:entry>';
+
+
+    if ($self->google->Request('PUT', $url, $post)) {
+	my $entry = $self->_build_group_entry($self->google->result);
+	return $entry;
+    }
+    else {
+	die "Unable to create group: ".$self->google->result->{'reason'}."\n";
+    }
 }
 
 sub RetrieveGroup {
+    my $self    = shift;
+    my $groupid = shift;
+
+    my $url = $self->base_url.$self->google->domain."/$groupid";
+
+    if ($self->google->Request('GET', $url)) {
+	return $self->_build_group_entry($self->google->result);
+    }
+    else {
+	if ($self->google->result->{'reason'} =~ /EntityDoesNotExist/) {
+	    return undef;
+	}
+	else {
+	    die "Error retrieving group: ".$self->google->result->{'reason'}."\n";
+	}
+    }
 }
 
 sub RetrieveAllGroupsInDomain {
+    my $self = shift;
 }
 
 sub RetrieveAllGroupsForMember {
+    my $self   = shift;
+    my $member = shift;
 }
 
 sub DeleteGroup {
@@ -73,7 +150,7 @@ sub DeleteGroup {
 	return 1;
     }
     else {
-	die "Cannot delete group: ".$self->google->result->{'reason'};
+	die "Cannot delete group ($groupId): ".$self->google->result->{'reason'};
     }
 }
 
@@ -104,20 +181,10 @@ sub _build_group_entry {
 
     my $entry = VUser::Google::Groups::GroupEntry->new();
 
-    foreach my $property (@{ $xml->{'apps:property'} }) {
-	if ($property->{'name'} eq 'groupId') {
-	    $entry->GroupId($property->{'value'});
-	}
-	elsif ($property->{'name'} eq 'groupName') {
-	    $entry->GroupName($property->{'value'});
-	}
-	elsif ($property->{'name'} eq 'description') {
-	    $entry->Description($property->{'value'});
-	}
-	elsif ($property->{'name'} eq 'emailPermission') {
-	    $entry->EmailPermission($property->{'value'});
-	}
-    }
+    $entry->GroupId($xml->{'apps:property'}{'groupId'}{'value'});
+    $entry->GroupName($xml->{'apps:property'}{'groupName'}{'value'});
+    $entry->Description($xml->{'apps:property'}{'description'}{'value'});
+    $entry->EmailPermission($xml->{'apps:property'}{'emailPermission'}{'value'});
 
     return $entry;
 }

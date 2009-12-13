@@ -6,10 +6,10 @@ our $VERSION = '0.2.0';
 
 use Moose;
 
-has 'GroupId'         => (is => 'rw', isa => 'Str');
-has 'GroupName'       => (is => 'rw', isa => 'Str');
-has 'Description'     => (is => 'rw', isa => 'Str');
-has 'emailPermission' => (is => 'rw', isa => 'Str');
+has 'GroupId'         => (is => 'rw', isa => 'Str | Undef');
+has 'GroupName'       => (is => 'rw', isa => 'Str | Undef');
+has 'Description'     => (is => 'rw', isa => 'Str | Undef');
+has 'EmailPermission' => (is => 'rw', isa => 'Str | Undef');
 
 sub as_hash {
     my $self = shift;

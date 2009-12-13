@@ -109,7 +109,7 @@ sub RetrieveUser {
 	return $self->_build_user_entry($self->google->result);
     }
     else {
-	if ($self->google->result->{'reason'} =~ 'EntityDoesNotExist') {
+	if ($self->google->result->{'reason'} =~ /EntityDoesNotExist/) {
 	    return undef;
 	}
 	else {
