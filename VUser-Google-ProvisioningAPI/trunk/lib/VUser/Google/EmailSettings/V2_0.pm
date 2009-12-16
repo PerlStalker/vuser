@@ -107,7 +107,7 @@ override 'CreateSendAsAlias' => sub {
 
 override 'UpdateWebClip' => sub {
     my $self = shift;
-    my $options = @_;
+    my %options = @_;
 
     my $enable = $options{'enable'};
 
@@ -325,6 +325,9 @@ override 'UpdateGeneral' => sub {
     foreach my $opt qw(shortcuts arrows snippets unicode) {
 	$options{$opt} = $options{$opt}? 'true':'false';
     }
+
+    my $post = '<?xml version="1.0" encoding="utf-8"?>';
+    $post .= '<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">';
 
     foreach my $opt (keys %options) {
 	if (defined $options{$opt}) {
