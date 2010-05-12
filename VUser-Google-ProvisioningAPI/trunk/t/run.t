@@ -15,7 +15,7 @@ if (not $gapps_domain
 	and not $gapps_user
 	    and not $gapps_passwd
 	) {
-    warn "GAPPS_DOMAIN, GAPPS_USER or GAPPS_PASSWD not set\n";
+    warn "GAPPS_DOMAIN, GAPPS_ADMIN or GAPPS_PASSWD not set\n";
     exit;
 }
 
