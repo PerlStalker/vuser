@@ -81,6 +81,8 @@ C<XML::Simple>
 
 =head1 DESCRIPTION
 
+B<VUser::Google::ProvisioningAPI::* is depricated in favor of VUser::Google::ApiProtocol and VUser::Google::Provisioning.>
+
 VUser::Google::ProvisioningAPI provides a simple interface to the Google Apps for Your Domain Provisioning API.
 It uses the C<LWP::UserAgent> module for the HTTP transport, and the C<HTTP::Request> module for the HTTP request and response.
 

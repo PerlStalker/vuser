@@ -131,11 +131,51 @@ sub RetrieveGroup {
 
 sub RetrieveAllGroupsInDomain {
     my $self = shift;
+
+    return $self->RetrieveAllGroupsForMember();
+
+#     my $url = $self->base_url.$self->google->domain;
+
+#     my @groups = ();
+
+#     if ($self->google->Request('GET', $url)) {
+# 	foreach my $entry_xml (@{ $self->google->result->{'entry'} }) {
+# 	    my $entry = $self->_build_group_entry($entry_xml);
+# 	    push @groups, $entry;
+# 	}
+#     }
+#     else {
+# 	die "Cannot retrieve all groups in domain: ".
+# 	    $self->google->result->{'reason'};
+#     }
+
+#     return @groups;
 }
 
 sub RetrieveAllGroupsForMember {
     my $self   = shift;
     my $member = shift;
+
+    my $url = $self->base_url.$self->google->domain;
+    if ($member) {
+	$url = '?member='.$member;
+    }
+
+    my @groups = ();
+
+    if ($self->google->Request('GET', $url)) {
+	foreach my $entry_xml (@{ $self->google->result->{'entry'} }) {
+	    my $entry = $self->_build_group_entry($entry_xml);
+	    push @groups, $entry;
+	}
+    }
+    else {
+	die "Cannot retrieve all groups in domain: ".
+	    $self->google->result->{'reason'};
+    }
+
+    return @groups;
+
 }
 
 sub DeleteGroup {
@@ -155,6 +195,29 @@ sub DeleteGroup {
 }
 
 sub AddMemberToGroup {
+    my $self    = shift;
+    my %options = @_;
+
+    die "Cannot add member to group: No member specified\n" if not $options{'member'};
+    die "Cannot add member to group: No group specified\n" if not $options{'group'};
+
+    my $url = $self->base_url.$self->google->domain
+	.'/'.$options{group}.'/member';
+
+    my $post = '<?xml version="1.0" encoding="UTF-8"?>
+<atom:entry xmlns:atom="http://www.w3.org/2005/Atom"
+    xmlns:apps="http://schemas.google.com/apps/2006"
+    xmlns:gd="http://schemas.google.com/g/2005">';
+
+    $post .= "<apps:property name=\"memberId\" value=\"$options{'member'}\"/>";
+    $post .= '</atom:entry>';
+
+    if ($self->google->Request('POST', $url, $post)) {
+	return 1;
+    }
+    else {
+	die "Cannot add member to group: ".$self->google->result->{'reason'}."\n";
+    }
 }
 
 sub RetrieveAllMembersOfGroup {
