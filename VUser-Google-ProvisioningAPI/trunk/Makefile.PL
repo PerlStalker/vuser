@@ -6,7 +6,7 @@
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-	      NAME            => 'VUser-Google-ProvisioningAPI',
+	      NAME            => 'VUser-Google-Api',
 	      VERSION_FROM    => 'lib/VUser/Google/ApiProtocol.pm',
 	      INSTALLSCRIPT   => '$(PREFIX)/sbin',
 	      PREREQ_PM       => {
