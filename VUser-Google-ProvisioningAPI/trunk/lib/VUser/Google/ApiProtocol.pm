@@ -4,7 +4,7 @@ use strict;
 
 use Moose;
 
-our $VERSION = '0.5.0';
+our $VERSION = '1.0.0';
 
 ## Members
 # The Google hosted domain we are accessing
