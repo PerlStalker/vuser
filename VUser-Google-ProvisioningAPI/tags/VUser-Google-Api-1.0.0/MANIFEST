@@ -1,0 +1,16 @@
+COPYING
+INSTALL
+lib/VUser/Google/ProvisioningAPI.pm
+lib/VUser/Google/ProvisioningAPI/V1_0.pm
+lib/VUser/Google/ProvisioningAPI/V2_0.pm
+lib/VUser/Google/ProvisioningAPI/V2_0/EmailListEntry.pm
+lib/VUser/Google/ProvisioningAPI/V2_0/EmailListRecipientEntry.pm
+lib/VUser/Google/ProvisioningAPI/V2_0/NicknameEntry.pm
+lib/VUser/Google/ProvisioningAPI/V2_0/UserEntry.pm
+lib/VUser/Google/ApiProtocol.pm
+lib/VUser/Google/ApiProtocol/V2_0.pm
+lib/VUser/Google/EmailSettings.pm
+lib/VUser/Google/EmailSettings/V2_0.pm
+Makefile.PL
+MANIFEST			This list of files
+README.Google-ProvisioningAPI
