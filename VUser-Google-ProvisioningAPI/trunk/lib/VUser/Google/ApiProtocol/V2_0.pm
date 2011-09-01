@@ -13,7 +13,7 @@ use Data::Dumper;
 use Moose;
 extends 'VUser::Google::ApiProtocol';
 
-our $VERSION = '0.5.1';
+our $VERSION = '0.5.2';
 
 has 'google_host' => (is => 'ro',
 		     default => 'www.google.com'
@@ -70,6 +70,8 @@ override 'Login' => sub {
     my $lwp = LWP::UserAgent->new;
 
     if (defined $lwp) {
+	# TODO: add proxy support here
+
 	$lwp->agent($self->useragent);
 	$lwp->from($self->admin.'@'.$self->domain);
 

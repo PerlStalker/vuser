@@ -2,7 +2,7 @@ package VUser::Google::Provisioning;
 use warnings;
 use strict;
 
-our $VERSION = '0.2.0';
+our $VERSION = '0.2.1';
 
 use Moose;
 
@@ -32,11 +32,13 @@ sub dprint
 }
 
 # Escape " with &quot; for XML
+#        & with &amp;
 sub _escape_quotes {
     my $self = shift;
     my $text = shift;
 
-    $text =~ s/\"/&quot;/;
+    $text =~ s/\"/&quot;/g;
+    $text =~ s/\&/&amp;/g;
 
     return $text;
 }
