@@ -20,7 +20,7 @@ sub CreateUser : Tests(12) {
 	userName   => $user,
 	givenName  => 'Test',
 	familyName => 'User',
-	password   => 'testing',
+	password   => 'testing1',
 	quota      => 2048,
 	changePasswordAtNextLogin => 1,
     );
@@ -87,7 +87,7 @@ sub RetrieveUsers : Tests(5) {
 		userName   => $user.".$i",
 		givenName  => 'Test',
 		familyName => 'User',
-		password   => 'testing',
+		password   => 'testing1',
 		quota      => 2048,
 		changePasswordAtNextLogin => 1,
 	    );
@@ -138,7 +138,7 @@ sub UpdateUser : Tests(7) {
 	userName   => $user,
 	givenName  => 'Test',
 	familyName => 'User',
-	password   => 'testing',
+	password   => 'testing1',
 	quota      => 2048,
 	changePasswordAtNextLogin => 1,
     );
@@ -210,6 +210,35 @@ sub UpdateUser : Tests(7) {
     my $rc = $api->DeleteUser($user);
 }
 
+sub ChangePassword : Tests(2) {
+    my $test = shift;
+    my $class = $test->class;
+
+    my $api = $class->new(google => $test->create_google);
+
+    can_ok $api, 'ChangePassword';
+
+    my $user = $test->get_test_user;
+
+    my $entry = $api->CreateUser(
+	userName   => $user,
+	givenName  => 'Test',
+	familyName => 'User',
+	password   => 'testing1',
+	quota      => 2048,
+	changePasswordAtNextLogin => 1,
+    );
+
+    lives_ok {
+	my $updated = $api->ChangePassword(
+	    $user, 'HasAn&InIt'
+	);
+    } '... and can set a password with an & in it';
+
+    # clean up
+    my $rc = $api->DeleteUser($user);
+}
+
 sub RenameUser : Tests(6) {
     my $test = shift;
     my $class = $test->class;
@@ -224,7 +253,7 @@ sub RenameUser : Tests(6) {
 	userName    => $user,
 	givenName   => 'Test',
 	familyName  => 'User',
-	password    => 'testing',
+	password    => 'testing1',
     );
 
     my $new_user = $api->RenameUser($user, $user.'.new');

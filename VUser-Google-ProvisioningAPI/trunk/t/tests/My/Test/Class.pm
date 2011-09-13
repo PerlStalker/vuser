@@ -5,15 +5,16 @@ use strict;
 use Test::Most;
 use base qw(Test::Class Class::Data::Inheritable);
 
-use vars qw($gapps_domain $gapps_admin $gapps_passwd);
+use vars qw($gapps_domain $gapps_admin $gapps_passwd $gapps_debug);
 
 BEGIN {
 
     $gapps_domain = $ENV{GAPPS_DOMAIN};
     $gapps_admin  = $ENV{GAPPS_ADMIN};
     $gapps_passwd = $ENV{GAPPS_PASSWD};
+    $gapps_debug  = $ENV{GAPPS_DEBUG};
 
-    print STDERR "Domain: $gapps_domain\n";
+    #print STDERR "Domain: $gapps_domain\n";
 
     if (not $gapps_domain
 	    and not $gapps_admin
