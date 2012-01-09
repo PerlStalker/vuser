@@ -33,12 +33,14 @@ sub dprint
 
 # Escape " with &quot; for XML
 #        & with &amp;
+#        > with &lt;
 sub _escape_quotes {
     my $self = shift;
     my $text = shift;
 
     $text =~ s/\"/&quot;/g;
     $text =~ s/\&/&amp;/g;
+    $text =~ s/>/&lt;/g;
 
     return $text;
 }
