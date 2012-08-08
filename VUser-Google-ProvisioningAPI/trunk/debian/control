@@ -1,0 +1,13 @@
+Source: libvuser-google-api-perl
+Section: perl
+Priority: optional
+Maintainer: Joenio Costa <joenio@colivre.coop.br>
+Build-Depends: debhelper (>= 8)
+Build-Depends-Indep: perl, libtest-most-perl, libmoose-perl
+Standards-Version: 3.9.3
+Homepage: http://search.cpan.org/dist/VUser-Google-Api/
+
+Package: libvuser-google-api-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}
+Description: Perl module that implements the Google Apps for Your Domain Provisioning API

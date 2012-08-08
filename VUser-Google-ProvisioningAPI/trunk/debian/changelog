@@ -1,0 +1,5 @@
+libvuser-google-api-perl (1.0.1-1) unstable; urgency=low
+
+  * Initial Release. (Closes: #679161)
+
+ -- Joenio Costa <joenio@colivre.coop.br>  Tue, 19 Jun 2012 16:33:46 -0300
