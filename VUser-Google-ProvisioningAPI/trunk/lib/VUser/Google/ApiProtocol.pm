@@ -199,6 +199,7 @@ The plain text password of the admin user.
 
 If set to a true value, C<Login()> will refresh the authentication token
 even if it's not necessary.
+
 =back
 
 =head2 Read-only members

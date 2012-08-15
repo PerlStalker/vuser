@@ -398,6 +398,50 @@ sub RetrieveAllNicknamesInDomain {
 sub DeleteNickname {
 }
 
+## Aliases
+# see https://developers.google.com/google-apps/provisioning/#managing_user_aliases_in_multiple_domains
+sub CreateAlias {
+    my $self   = shift;
+    my $alias  = shift; # email address
+    my $target = shift; # email address
+
+    $self->google()->Login();
+
+    my $alias_dom = $alias;
+    $alias_dom =~ s/^.+@//; # remove the user@ part
+
+    my $url = "https://apps-apis.google.com/a/feeds/alias/2.0/$alias_dom";
+
+    my $post = "<atom:entry xmlns:atom='http://www.w3.org/2005/Atom' xmlns:apps='http://schemas.google.com/apps/2006'>";
+    $post .= "<apps:property name=\"aliasEmail\" value=\"$alias\" />";
+    $post .= "<apps:property name=\"userEmail\" value=\"$target\" />";
+    $post .= '</atom:entry>';
+
+    if ($self->google->Request('POST', $url, $post)) {
+	$self->dprint('Created alias');
+	my $entry = $self->_build_alias_entry($self->google->result);
+	return $entry;
+    }
+    else {
+	$self->dprint('CreateAlias failed: '.$self->google->result->{reason});
+	die "Error creating alias: ".$self->google->result->{reason}."\n";
+    }
+}
+
+sub UpdateAlias {
+    my $self   = shift;
+    my $alias  = shift;
+    my $target = shift;
+
+    return $self->CreateAlias($alias, $target);
+}
+
+sub RetrieveAlias {
+}
+
+sub RetrieveAllAliases {
+}
+
 # Takes the parsed XML object
 sub _build_user_entry {
     my $self = shift;
@@ -446,6 +490,25 @@ sub _build_user_entry {
     $entry->FamilyName($xml->{'apps:name'}[0]{'familyName'});
     $entry->GivenName($xml->{'apps:name'}[0]{'givenName'});
     $entry->Quota($xml->{'apps:quota'}[0]{'limit'});
+
+    return $entry;
+}
+
+sub _build_alias_entry {
+    my $self = shift;
+    my $xml  = shift;
+
+    my $entry = VUser::Google::Provisioning::AliasEntry->new();
+
+    $entry->id($xml->{'entry'}[0]{'id'}[0]);
+    foreach my $property (@{ $xml->{'entry'}[0]{'apps:property'} }) {
+	if ($property->{'userEmail'}) {
+	    $entry->UserEmail($property->{'userEmail'});
+	}
+	elsif ($property->{'aliasEntry'}) {
+	    $entry->AliasEmail($property->{'aliasEmail'});
+	}
+    }
 
     return $entry;
 }
