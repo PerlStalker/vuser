@@ -1,0 +1,439 @@
+# Getting Started #
+
+Extensions for vuser are subclasses of VUser::Extension. Your new extension may need to use a few packages from the main vuser package.
+
+  * VUser::Meta - Used to create options or specify data types when returning data.
+  * VUser::ResultSet - Used to when returning data
+  * VUser::Log qw(:levels) - Import the log level constants
+  * VUser::ExtLib - A library of useful tools.
+
+```
+package VUser::MyExtension;
+use warnings;
+use strict;
+
+use vars ('@ISA');
+
+use VUser::Log qw(:levels);
+use VUser::ExtLib qw(:config);
+use VUser::Meta;
+use VUser::ResultSet;
+use VUser::Extension;
+push @ISA, 'VUser::Extension';
+
+our $VERSION = '0.1.0';
+```
+
+Now you're ready to get into the meat of your extension. Adding New Keywords
+
+All the work of initializing your extension happens in init(). init() gets two parameters. The first is a reference to the VUser::ExtHandler that will dispatch tasks. The second is a tied hash from Config::IniFiles that represents the main config file, vuser.conf.
+
+Keywords are registered with the ExtHandler with the register\_keyword() method. So, to register the keyword, you would do something like this: `$eh->register_keyword('foo', 'Manage foo');`. The first option is the keyword and the second is a short description. Attempts register keywords that are already in use are silently ignored.
+
+```
+sub init
+{
+    my $eh = shift;
+    my %cfg = @_;
+
+    $eh->register_keyword('foo', 'Manage foo');
+}
+```
+
+# Adding New Actions #
+
+Each keyword will have one or more actions. These actions are what the user will use to do stuff. Like keywords, actions must be registered with the event handler in your init() function.
+
+```
+$eh->register_action('foo', 'add', 'Add a foo');
+```
+
+# Adding Options #
+
+It's quite likely that you will want to pass various options. Here's where things get a little complicated. One to do this is to create a hash of options. This way you can reuse the option without having to copy and paste code.
+
+```
+my %meta = ('color' => VUser::Meta->new('name' => 'color',
+                         'type' => 'string',
+                         'description' => 'Color of the foo'),
+            'shape' => VUser::Meta->name('name' => 'name',
+                         'type' => 'string',
+                         'description' => 'The shape of the foo'));
+
+sub init
+{
+...
+    $eh->register_option('foo', 'add', $meta{'name'}, 'required');
+    $eh->register_option('foo', 'add', $meta{'color'}); # optional
+}
+```
+
+Now when you run `vuser help foo` you should see all of your actions and their options with descriptions.
+
+Another option for keeping the meta data objects around is to use the `register_meta()` option. This makes the _VUser::Meta_ object easily accessible for other extensions that may want to use them.
+
+```
+sub init
+{
+...
+    $eh->register_meta(VUser::Meta->new('name' => 'color',
+                                        'type' => 'string',
+                                        'description' => 'Color'));
+    $eh->register_option('foo', 'add', $eh->get_meta('foo', 'color'), 'req');
+...
+}
+```
+
+# Registering Tasks #
+
+We've done lots of cools stuff so far but nothing will happen if you try to run vuser foo add because we have not registered any tasks.
+
+A task is a function that will actually do the work you want vuser to do. Any extention may register a task on any keyword, action pair. This lets you chain events together. For example, suppose you are using vuser to add an email account to your mail server. You can create an extension that adds a task to 'email|add' to initialize the user's spam filter settings.
+
+Like the other register`_*` methods, you will run register\_task() from init(). register\_task() takes three or four parameters: the keyword and action that you are adding the task to, a reference to the function that will be run when a user runs the action and, optionally, a priority. The priority can either be an integer (higher numbered tasks are run later) or a string prefixed with '+' or '-' to base of the default priority (which at the time of this writing is 10). You may put a space between the '+' and the number ('+ 4') to forcefully disambiguate '+4' from the number '4'. In most cases, you will not need to change the priority.
+
+```
+sub init
+{
+    ...
+    $eh->register_task('foo', 'add', \&foo_add);
+    ...
+}
+...
+sub foo_add {
+    my $cfg = shift;    # A reference to the configuration hash
+    my $opts = shift;   # A reference to a hash of the options passed to the action.
+    my $action = shift; # The name of the action that was run.
+    my $eh = shift;     # The ExtHandler that's dispatching tasks. 
+...
+}
+```
+
+# More on Tasks #
+
+Tasks can do just about anything you want. vuser doesn't really care. However, due to the way they're called, you don't get a lot of context. Some information is passed to the task that will help you know what it going on.
+
+  * $cfg - A reference to the configuration hash
+  * $opts - A reference to a hash of the options passed to the action. The keys are the names of the options (from register\_option). Options marked as required are guaranteed to exist. The rest are up to you to check the existence of. Options are also guaranteed to be of the type you specified. eg. `my $name = $opts->{name};`
+  * $action - The name of the action that was run.
+  * $eh - The ExtHandler that's dispatching tasks.
+
+The last two parameters are only needed if you are doing more complicated tasks such as tasks for wildcard actions or tasks that fire off other actions (useful for wrappers around otherwise separate actions).
+
+# Returning Data #
+
+Any task can return a VUser::ResultSet that will be passed back to the vuser script or SOAP client. Creating a result set takes three steps. Full details are in `perldoc VUser::ResultSet`.
+
+1. First, you need to create a result set.
+
+```
+my $rs = VUser::ResultSet->new();
+```
+
+2. Ok, now you need to add a little meta data to the ResultSet. This meta data will server two functions. First, it will act like column names so the client knows which data is which; and second, it provides data type information so the client can choose to render the data differently based on data type. For very common data sets, it's usually easier to create a global VUser::Meta object which you use all over the place, but that is certainly not required.
+
+```
+$rs->add_meta($meta{'color'});
+$rs->add_meta($meta{'shape'});
+$rs->add_meta(VUser::Meta->new(name='number',
+                     type=>'int',
+                     description => 'The number of foos'));
+```
+
+3. Finally, you need to add the data to the result set. Each record is an array reference with columns that match the meta data added previously.
+
+```
+$rs->add_data(['red', 'big', '4']);
+$rs->add_data(['blue', 'small', '42']);
+```
+
+4. When you're done, you simple need to return the result set. It will be added to any other result sets that are sent back to the client.
+
+```
+return $rs;
+```
+
+# Returning Errors #
+
+As of vuser 0.5.0, a VUser::ResultSet can also be used to return an error code and string to vuser.
+
+```
+$rs->error_code(42);
+$rs->add_error("Live, the universe and everything failed");
+```
+
+The argument to `add_error()` is passed through `sprintf` so, instead of a single string, you can pass a format statement and arguments.
+
+```
+my $failed_mod = 'Universe';
+$rs->add_error("Failure in: %s", $failed_mod);
+```
+
+`vuser` will exit with the error code from the first ResultSet with an error code. Do not set an error code if you do not have an error.
+
+**Note:** As of this writing, vsoapd does not support error codes. This is forth coming. See [issue #4](https://code.google.com/p/vuser/issues/detail?id=#4) for details.
+
+You can always use `die()` to return errors as well. The exit code will not be set in that case.
+
+# Configuration #
+
+Everytime an Extention function is called by the ExtHandler (init(), tasks, etc.), a hash (or hashref) is passed to the function that contains the system configuration. The configuration is open to any Extension to read from, which means that any Extension can read configuration options from vuser.conf. In order to keep things from getting messy and to keep extensions from stepping on each other, configuration options for each extention have their own section named 'Extension extname' (where extname is the name of the extension, e.g. an extension named VUser::Foo what use a section named Extension Foo). Some older extensions use 'Extension`_`extname'. This is nothing to worry about. At some point those extensions will be updated to use 'Extension extname'.
+
+```
+[Extension Foo]
+option 1 = true
+default color = green
+size = really big
+```
+
+You can access the options just like you would from any hash. WARNING: Whitespace is only stripped around the '=' sign. You can use VUser::ExtLib::strip\_ws() to remove white space from around options. See below.
+
+```
+my $def_color = $cfg->{'Extension Foo'}{'default color'};
+```
+
+# Extension Dependencies #
+
+Starting with VUser::ExtHandler 0.2.1, if your extension requires another extension to be loaded first (because it registers keywords and/or actions that you want to use, for example) you can use the function depends() to let the extension handler know about it.
+
+It is safe to include the required extension in both depends() and vuser|extensions in vuser.conf.
+
+```
+sub depends { return qw(Firewall); }
+```
+
+# Using VUser::ExtLib #
+
+VUser::ExtLib has a few functions that are frequently useful to extension writers. Two of the most common are strip\_ws() and check\_bool().
+
+  * strip\_ws() will remove any extra whitespace from the begining and end of a given string. This is very useful since trailing whitespace is not trimmed from configuration options.
+```
+use VUser::ExtLib qw(strip_ws);
+my $striped = strip_ws('  blah blah blah  ');
+# $striped now contains 'blah blah blah'
+```
+
+  * check\_bool() allows you to see if a given string is some generally accepted "yes" value. Case does not matter. These values are: 1, yes, true, ok, okay, sure, I guess so, and of course. Other values are considered to be "no". There is no need to strip whitespace from the value (with strip\_ws(), for example). check\_bool() takes care of that already.
+```
+use VUser::ExtLib qw(check_bool);
+
+if (check_bool($cfg->{Extension_Foo}{'option 1'})) {
+  # User said "yes". Do stuff
+} else {
+  # User said "no". Do other stuff
+}
+```
+
+# Finishing Up #
+
+There are few more minor things that need to be done. First, since Extensions are Perl modules, they must end with a true statement. Usually, one puts 1; at the end of the file.
+
+```
+package VUser::MyExtension;
+...
+1;
+__END__
+```
+
+The other thing that you should do is include some detailed documentation on how the module works and what it's configuration looks like. This documentation must be included, at least, as POD in the Extension. (See perldoc perlpod for docs on how POD works.) This will allow the users to read the docs with perldoc VUser::MyExtension or vuser man MyExtension.
+
+```
+1;
+__END__
+
+=head1 NAME
+
+VUser::MyExtension - My Extension to vuser that does stuff.
+
+=head1 DESCRIPTION
+
+Describe the extension here.
+
+=head1 CONFIGURATION
+
+ [Extension MyExtension]
+ # Use the first option
+ option 1 = true
+ 
+ # Pick the default color
+ default color = green
+ 
+ # Size does matter
+ size = Big
+
+=head1 AUTHOR
+
+Your Name <email@example.com>
+
+=head1 LICENSE
+
+License info here...
+```
+
+# A Note on Licensing #
+
+vuser is released under version 2 of the GPL. Publicly released Extensions must be licensed under terms compatible with GPL2.
+
+# Example #
+This is a fully functional example of a vuser extension. Name the file `Hello.pm` and put it in a directory named `VUser` in your perl `@INC` path or add the directory to your `include paths` in `vuser.conf`.
+
+For example, wanted to put the example extension in `/home/user/vuser`, you would `mkdir /home/user/vuser/VUser` then save `Hello.pm` in that directory.
+
+```
+[vuser]
+# Enable debugging (Lots of output)
+debug = no
+
+# Space delimited list of extensions to load
+# extensions = Email::Courier Radius::SQL
+extensions = Hello
+
+#log type = Syslog
+log level = notice
+#log level = debug
+
+# The default is not show the result set
+show result set = yes
+
+# Display the result set in a different format.
+# Allowed formats: CSV
+#display format = CSV
+
+include paths=/home/user/vuser
+
+[Extension Hello]
+say more = no
+default name = Fred
+```
+
+Enable the extension by adding `Hello` to `extensions` in `vuser.conf`.
+
+```
+package VUser::Hello;
+use warnings;
+use strict;
+
+
+use vars ('@ISA');
+
+use VUser::Log qw(:levels);
+use VUser::ExtLib qw(:config);
+use VUser::Meta;
+use VUser::ResultSet;
+use VUser::Extension;
+push @ISA, 'VUser::Extension';
+
+my $c_sec = 'Extension Hello';
+
+our $REVISION = (split (' ', '$Revision: 1.1 $'))[1];
+our $VERSION = '0.1.0';
+
+our %meta = ('name', VUser::Meta->new(name => 'name',
+				      type => 'string',
+				      description => 'Who to greet'),
+	     'greeting', VUser::Meta->new(name => 'greeting',
+					  type => 'string',
+					  description => 'Greeting')
+    );
+
+our $log;
+
+sub init
+{
+    my $eh = shift;
+    my %cfg = @_;
+
+    $log = $main::log;
+
+    $eh->register_keyword('hello', 'Say hello');
+
+    ## hello|world
+    $eh->register_action('hello', 'world', 'Greet a person');
+
+    # greeting is a required option
+    $eh->register_option('hello', 'world', $meta{'greeting'}, 'required');
+
+    # name is optional
+    $eh->register_option('hello', 'world', $meta{'name'});
+
+    $eh->register_task('hello', 'world', \&hello_world);
+
+    ## hello|error
+    $eh->register_action('hello', 'error', 'Generate an error');
+    $eh->register_task('hello', 'error', \&hello_error);
+}
+
+sub hello_world {
+    my $cfg = shift;    # A reference to the configuration hash
+    my $opts = shift;   # A reference to a hash of the options passed to the action.
+    my $action = shift; # The name of the action that was run.
+    my $eh = shift;     # The ExtHandler that's dispatching tasks.
+
+    # Get the 'greeting' option
+    my $greeting = $opts->{greeting};
+
+    # Get the 'name' option but default to the 'default name' setting
+    # in the configuration file.
+    my $name = $opts->{name} || strip_ws($cfg->{$c_sec}{'default name'});
+
+    # This creates an entry in the vuser logs.
+    $log->log(LOG_NOTICE, "$greeting, '$name'");
+
+    if (check_bool($cfg->{$c_sec}{'say more'})) {
+	# If you leave out the log level, it will default to LOG_NOTICE
+	$log->log("Saying more ...");
+    }
+
+    # Return the information in a way that vuser can display the data
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($meta{'greeting'});
+    $rs->add_meta($meta{'name'});
+
+    $rs->add_data([$greeting, $name]);
+
+    return $rs;
+}
+
+sub hello_error {
+    my ($cfg, $opts, $action, $eh) = @_;
+
+    my $rs = VUser::ResultSet->new();
+    $rs->add_meta($meta{'greeting'});
+    $rs->add_meta($meta{'name'});
+
+    $rs->error_code(97); # Set the return code
+
+    # Set the error string. Uses sprintf formats.
+    $rs->add_error("foo: %s", "bar");
+
+    return $rs;
+}
+
+sub unload {}
+
+1;
+
+__END__
+
+=head1 NAME
+
+VUser::Hello - descr
+
+=head1 SYNOPSIS
+
+ vuser hello world --greeting greeting [--name name]
+
+=head1 CONFIGURATION
+
+ [Extension Hello]
+ say more = no
+ default name = Fred
+ 
+```
+
+## Running the Example ##
+```
+vuser hello world --greeting Hello
+vuser hello world --greeting "Howdy pardner" --name Tex
+vuser hello error
+```

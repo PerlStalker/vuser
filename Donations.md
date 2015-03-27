@@ -1,0 +1,1 @@
+Vuser is an open source project and is made available in the hopes that it is useful. However, if you would like to drop me a few bucks to say "Thank you", you can [donate via PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=1465737).
